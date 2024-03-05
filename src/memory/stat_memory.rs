@@ -7,6 +7,11 @@ use serde::{Deserialize, Serialize};
 pub struct Stats {
     pub creep_count: u32,
     pub power_creep_count: u32,
+    pub combined_rcl: u32,
+    pub gcl_progress: u64,
+    pub gcl_total: u64,
+    pub gpl_progress: u64,
+    pub gpl_total: u64,
     pub rooms: HashMap<RoomName, RoomStats>,
 }
 
