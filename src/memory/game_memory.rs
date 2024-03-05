@@ -7,7 +7,7 @@ use crate::settings::Settings;
 
 use super::{
     creep_memory::{CreepMemory, PowerCreepMemory},
-    room_memory::RoomMemory,
+    room_memory::RoomMemory, stats::Stats,
 };
 
 #[derive(Serialize, Deserialize, Default)]
@@ -16,6 +16,7 @@ pub struct GameMemory {
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
     pub settings: Settings,
+    pub stats: Stats,
 }
 
 impl GameMemory {
