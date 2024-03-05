@@ -16,6 +16,9 @@ impl CollectiveOps {
     /// Generate a new unique creep id and increment the tracker
     pub fn new_creep_id(game_state: &mut GameState) -> Result<u32, GeneralResult> {
         let mut creep_id_index = game_state.creep_id_index;
+
+        // increase the id index until it doesn't match an existing creep's name
+        // make that the new creep id index
         while creep_id_index < u32::MAX {
             creep_id_index += 1;
 
@@ -26,9 +29,6 @@ impl CollectiveOps {
             game_state.creep_id_index = creep_id_index;
             return Ok(creep_id_index);
         }
-
-        // increase the id index until it doesn't match an existing creep's name
-        // make that the new creep id index
 
         Err(GeneralResult::Fail)
     }
