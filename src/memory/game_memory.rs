@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::settings::Settings;
 
 use super::{
-    creep_memory::{CreepMemory, PowerCreepMemory},
-    room_memory::RoomMemory, stat_memory::Stats,
+    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, room_memory::RoomMemory, stat_memory::Stats
 };
 
 #[derive(Serialize, Deserialize, Default)]
@@ -18,6 +17,9 @@ pub struct GameMemory {
     pub settings: Settings,
     // Consider putting stats in a segment instead
     pub stats: Stats,
+    pub work_requests: WorkRequests,
+    pub claim_requests: ClaimRequests,
+    pub combat_stats: HashMap<String, u32>,
 }
 
 impl GameMemory {
