@@ -41,12 +41,10 @@ pub fn game_loop() {
     warn!("this is an important warning!");
     error!("this is a critical error");
 
-    MEMORY.with(|mem_cell| {
-        let mut memory = mem_cell.borrow_mut();
+    MEMORY.with_borrow_mut(|memory| {
+        with_memory(memory);
 
-        with_memory(&mut memory);
-
-        MemoryOps::write(&memory);
+        MemoryOps::write(memory);
     });
 
     #[cfg(feature = "profile")]
@@ -68,7 +66,7 @@ fn with_memory(memory: &mut GameMemory) {
 
     use crate::settings::Settings;
 
-    // This should only be called once
+    // This should only be called once. I'm not sure how to do that well though
 
     let mut allies = HashSet::new();
     allies.insert(String::from("PandaMaster"));
