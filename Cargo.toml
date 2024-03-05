@@ -3,12 +3,15 @@ cargo-features = ["edition2024"]
 [package]
 name = "the_international_rust"
 version = "0.0.1"
-edition = "2024"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 screeps-game-api = "0.20.1"
+# If you'd like to use a locally-cloned out version of the game API crate
+# (for testing PRs, etc), you can use a local path (replacing the above line):
+# screeps-game-api = { path = "../screeps-game-api" }
 wasm-bindgen = "0.2.92"
 js-sys = "0.3.69"
 web-sys = { version = "0.3.69", features = ["console"] }
@@ -17,6 +20,9 @@ serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 regex = "1.10.3"
 html-escape = "0.2.13"
+room_visual_ext = "0.1.0"
+screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = true }
+screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -31,3 +37,8 @@ lto = true
 # --disable-sign-ext - prevents opcodes that the screeps servers can't load (see 
 # https://github.com/rustyscreeps/screeps-game-api/issues/391)
 wasm-opt = ["-g", "--disable-sign-ext"]
+
+[features]
+default = ["profile"]
+
+profile = ["screeps-timing", "screeps-timing-annotate"]
