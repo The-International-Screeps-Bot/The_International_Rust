@@ -74,8 +74,7 @@ fn with_memory(memory: &mut GameMemory) {
 
     let game_state = GameState::new();
 
-    // 
+    //
 
-
-
+    
 }
