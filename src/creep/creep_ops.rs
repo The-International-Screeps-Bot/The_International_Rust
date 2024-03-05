@@ -58,7 +58,7 @@ impl CreepOps {
 
         info!("running memory cleanup");
     
-        let _ = &memory.creeps.retain(|creep_name, _creep| {
+        memory.creeps.retain(|creep_name, _creep| {
 
             game_state.creeps.contains_key(creep_name)
         });
