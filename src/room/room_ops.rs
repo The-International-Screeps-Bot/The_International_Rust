@@ -69,16 +69,6 @@ impl RoomOps {
     //     Some(new_not_my_creeps)
     // }
 
-    // /* pub fn active_structure_ids(room: &Room) -> Vec<ObjectId<Structure>> {
-    //     let structures = room.find(find::STRUCTURES, None);
-    //     let active_structure_ids: Vec<ObjectId<Structure>> = structures
-    //         .iter()
-    //         .filter(|structure| structure.is_active())
-    //         .map(|structure| structure.id())
-    //         .collect();
-
-    //     active_structure_ids
-    // } */
     // pub fn harvest_positions(room: &Room, room_data: &mut RoomData) -> Option<Vec<Position>> {
 
     //     let harvest_positions = &room_data.harvest_positions;
