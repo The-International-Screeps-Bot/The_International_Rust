@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{creep::CreepsState, market::MarketState, room::RoomsState, structure::StructureState};
+use super::{creep::CreepsState, market::MarketState, room::RoomStates, structure::StructureState};
 
 #[derive(Default)]
 pub struct GameState {
@@ -13,7 +13,7 @@ pub struct GameState {
     pub rooms: HashMap<RoomName, Room>,
     pub communes: HashSet<RoomName>,
     pub creeps_state: CreepsState,
-    pub rooms_state: RoomsState,
+    pub rooms_state: RoomStates,
     pub creep_id_index: u32,
     pub has_terminal: bool,
     pub market_state: MarketState,
@@ -101,12 +101,11 @@ impl GameStateOps {
     }
 
     fn update_has_terminal(game_state: &mut GameState) {
-
         let rooms = &game_state.rooms;
         for (room_name, room) in rooms {
             if room.controller().is_some() {
                 game_state.has_terminal = true;
-                return
+                return;
             }
         }
 
