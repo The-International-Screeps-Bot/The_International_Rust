@@ -2,8 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{
-    creep::CreepsState, market::MarketState, room::RoomsState, structure::StructuresState,
+use super::{market::MarketState, room::RoomsState, structure::StructuresState};
+use crate::{
+    creep::{owned_creep, owned_creep::OwnedCreep},
+    state::creep::CreepsState,
 };
 
 #[derive(Debug, Default)]
@@ -11,7 +13,7 @@ use super::{
 pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,
-    pub creeps: HashMap<String, Creep>,
+    pub creeps: HashMap<String, OwnedCreep>,
     pub account_power_creeps: HashMap<String, AccountPowerCreep>,
     pub rooms: HashMap<RoomName, Room>,
     pub communes: HashSet<RoomName>,
@@ -45,10 +47,13 @@ impl GameStateOps {
         let js_creeps = screeps::game::creeps();
 
         for creep_name in js_creeps.keys() {
-            let Some(creep) = js_creeps.get(creep_name) else {
+            let Some(creep) = js_creeps
+                .get(creep_name)
+                .and_then(|creep| OwnedCreep::new(&creep).ok())
+            else {
                 continue;
             };
-            game_state.creeps.insert(creep.name(), creep);
+            game_state.creeps.insert(creep.inner().name(), creep);
         }
     }
 
