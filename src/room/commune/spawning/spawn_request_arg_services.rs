@@ -1,11 +1,13 @@
 use crate::constants::spawning::SpawnRequests;
 
-pub struct SpawnRequestServices;
+pub struct SpawnRequestArgServices;
 
-impl SpawnRequestServices { 
+
+impl SpawnRequestArgServices { 
+    // Construct args... not spawn requests
     pub fn create_spawn_requests() {
         let requests = SpawnRequests::new();
 
-        
+
     }
 }
