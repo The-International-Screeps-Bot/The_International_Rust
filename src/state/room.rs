@@ -5,14 +5,14 @@ use screeps::RoomName;
 use crate::constants::structure::OrganizedStructures;
 
 #[derive(Default)]
-pub struct RoomState {
-    pub structures: Option<OrganizedStructures>,
+pub struct RoomsState {
+    pub structures: HashMap<RoomName, OrganizedStructures>
 }
 
-impl RoomState {
+impl RoomsState {
     pub fn new() -> Self {
-        RoomState { ..Default::default() }
+        Self {
+            ..Default::default()
+        }
     }
 }
-
-pub type RoomStates = HashMap<RoomName, RoomState>;

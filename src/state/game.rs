@@ -2,7 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{creep::CreepsState, market::MarketState, room::RoomStates, structure::StructureState};
+use super::{
+    creep::CreepsState, market::MarketState, room::RoomsState, structure::StructuresState,
+};
 
 #[derive(Default)]
 pub struct GameState {
@@ -13,11 +15,11 @@ pub struct GameState {
     pub rooms: HashMap<RoomName, Room>,
     pub communes: HashSet<RoomName>,
     pub creeps_state: CreepsState,
-    pub rooms_state: RoomStates,
+    pub rooms_state: RoomsState,
     pub creep_id_index: u32,
     pub has_terminal: bool,
     pub market_state: MarketState,
-    pub structure_state: StructureState,
+    pub structures_state: StructuresState,
 }
 
 /// Contains important information about the game
@@ -32,8 +34,9 @@ impl GameState {
             account_power_creeps: HashMap::new(),
             rooms: HashMap::new(),
             communes: HashSet::new(),
-            creeps_state: HashMap::new(),
-            rooms_state: HashMap::new(),
+            creeps_state: CreepsState::new(),
+            rooms_state: RoomsState::new(),
+            structures_state: StructuresState::new(),
             ..Default::default()
         }
     }

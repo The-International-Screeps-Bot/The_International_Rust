@@ -7,7 +7,7 @@ use screeps::{
     Structure, StructureProperties, StructureType, Terrain,
 };
 
-use crate::{constants::structure::OrganizedStructures, memory::game_memory::GameMemory, settings::Settings, state::room::RoomState, utils::general::GeneralUtils};
+use crate::{constants::structure::OrganizedStructures, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, utils::general::GeneralUtils};
 
 pub struct RoomOps;
 
@@ -15,9 +15,9 @@ pub struct RoomOps;
 impl RoomOps {
     /// Acquires and caches structures in the room based on their structure type
     // I suspect this is some pretty sub-par code, and could do with improvements in regards to borrowing and cloning
-    pub fn structures(room: &Room, room_state: &mut RoomState) -> Option<OrganizedStructures> {
+    pub fn structures(room: &Room, game_state: &mut GameState) -> Option<OrganizedStructures> {
 
-        let mut organized_structures = &room_state.structures;
+        let mut organized_structures = game_state.rooms_state.structures.get_mut(&room.name());
         if let Some(organized_structures) = organized_structures {
             return Some(organized_structures.clone())
         }
@@ -31,7 +31,7 @@ impl RoomOps {
                 .push(structure);
         }
 
-        room_state.structures = Some(new_organized_structures.clone());
+        organized_structures.insert(&mut new_organized_structures);
         Some(new_organized_structures)
     }
 

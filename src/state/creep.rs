@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 #[derive(Default)]
-pub struct CreepState {
-
+pub struct CreepsState {
+    pub costs: HashMap<String, u32>,
 }
 
-impl CreepState {
+impl CreepsState {
     pub fn new() -> Self {
-        CreepState {  }
+        Self {
+            ..Default::default()
+        }
     }
 }
-
-pub type CreepsState = HashMap<String, CreepState>;
