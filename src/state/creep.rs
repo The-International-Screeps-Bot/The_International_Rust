@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct CreepsState {
     pub costs: HashMap<String, u32>,
 }

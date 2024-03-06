@@ -4,9 +4,9 @@ use screeps::RoomName;
 
 use crate::constants::structure::OrganizedStructures;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct RoomsState {
-    pub structures: HashMap<RoomName, OrganizedStructures>
+    pub structures: HashMap<RoomName, OrganizedStructures>,
 }
 
 impl RoomsState {

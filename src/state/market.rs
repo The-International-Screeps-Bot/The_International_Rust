@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
-use screeps::{game::market::{MyOrder, Order}, MarketResourceType, OrderType, RoomName};
+use screeps::{
+    game::market::{MyOrder, Order},
+    MarketResourceType, OrderType, RoomName,
+};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct MarketState {
     /// Resource types with values and their average price over the last 14 days
     pub resource_history: Option<ResourceHistory>,
