@@ -5,6 +5,10 @@ use crate::{constants::general::{CONSTRUCTION_PROGRESS_AGE_MULTIPLIER, MIN_CONST
 pub struct ConstructionSiteServices;
 
 impl ConstructionSiteServices {
+    /// Register new construction sites, 
+    /// remove keys for sites that no longer exist,
+    /// delete and remove sites that are too old
+    /// increment the age of remaining sites
     pub fn manage_sites(memory: &mut GameMemory) {
         let interval = 100;
         if !GeneralUtils::is_tick_interval(interval) {
