@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{creep::CreepsState, room::RoomsState};
+use super::{creep::CreepsState, market::MarketState, room::RoomsState};
 
 #[derive(Default)]
 pub struct GameState {
@@ -15,6 +15,8 @@ pub struct GameState {
     pub creeps_state: CreepsState,
     pub rooms_state: RoomsState,
     pub creep_id_index: u32,
+    pub has_terminal: bool,
+    pub market_state: MarketState,
 }
 
 /// Contains important information about the game
@@ -44,11 +46,12 @@ impl GameStateOps {
     pub fn update(game_state: &mut GameState) {
         game_state.tick = game::time();
 
-        GameStateOps::update_creeps(game_state);
+        Self::update_creeps(game_state);
         // GameStateOps::update_account_power_creeps(game_state);
-        GameStateOps::update_rooms(game_state);
-        GameStateOps::update_communes(game_state);
-        GameStateOps::update_creep_id_index(game_state);
+        Self::update_rooms(game_state);
+        Self::update_communes(game_state);
+        Self::update_creep_id_index(game_state);
+        Self::update_has_terminal(game_state);
     }
 
     fn update_creeps(game_state: &mut GameState) {
@@ -94,5 +97,18 @@ impl GameStateOps {
 
     fn update_creep_id_index(game_state: &mut GameState) {
         game_state.creep_id_index = 0;
+    }
+
+    fn update_has_terminal(game_state: &mut GameState) {
+
+        let rooms = &game_state.rooms;
+        for (room_name, room) in rooms {
+            if room.controller().is_some() {
+                game_state.has_terminal = true;
+                return
+            }
+        }
+
+        game_state.has_terminal = false
     }
 }
