@@ -18,3 +18,7 @@ impl fmt::Display for GeneralError {
 }
 
 impl Error for GeneralError {}
+
+pub const MIN_CONSTRUCTION_SITE_AGE: u32 = 20000;
+/// How much each point of progress is worth in terms of age
+pub const CONSTRUCTION_PROGRESS_AGE_MULTIPLIER: u32 = 5;

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use screeps::RoomName;
+use screeps::{ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
 use crate::settings::Settings;
@@ -20,6 +20,8 @@ pub struct GameMemory {
     pub work_requests: WorkRequests,
     pub claim_requests: ClaimRequests,
     pub combat_stats: HashMap<String, u32>,
+    // Consider putting construction sites in a segment
+    pub construction_sites: HashMap<ObjectId<ConstructionSite>, u32>,
 }
 
 impl GameMemory {

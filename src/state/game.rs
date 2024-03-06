@@ -57,7 +57,7 @@ impl GameStateOps {
     fn update_creeps(game_state: &mut GameState) {
         game_state.creeps.clear();
 
-        let js_creeps: screeps::prelude::JsHashMap<String, Creep> = screeps::game::creeps();
+        let js_creeps = screeps::game::creeps();
 
         for creep_name in js_creeps.keys() {
             let Some(creep) = js_creeps.get(creep_name) else {
