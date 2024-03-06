@@ -6,7 +6,8 @@ use super::{
     creep::CreepsState, market::MarketState, room::RoomsState, structure::StructuresState,
 };
 
-#[derive(Default)]
+#[derive(Debug, Default)]
+/// Contains important information about the game
 pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,
@@ -20,26 +21,6 @@ pub struct GameState {
     pub has_terminal: bool,
     pub market_state: MarketState,
     pub structures_state: StructuresState,
-}
-
-/// Contains important information about the game
-impl GameState {
-    pub fn new() -> Self {
-        let tick = game::time();
-
-        GameState {
-            init_tick: tick,
-            tick,
-            creeps: HashMap::new(),
-            account_power_creeps: HashMap::new(),
-            rooms: HashMap::new(),
-            communes: HashSet::new(),
-            creeps_state: CreepsState::new(),
-            rooms_state: RoomsState::new(),
-            structures_state: StructuresState::new(),
-            ..Default::default()
-        }
-    }
 }
 
 pub struct GameStateOps;
