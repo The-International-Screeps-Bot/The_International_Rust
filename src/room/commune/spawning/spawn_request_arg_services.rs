@@ -21,5 +21,6 @@ impl SpawnRequestArgServices {
 
     fn hauler_args(room: &Room, request_args: &mut Vec<SpawnRequestArgs>, game_state: &mut GameState) {
 
+        
     }
 }

@@ -16,3 +16,14 @@ impl RoomsState {
         }
     }
 }
+
+pub struct CommunePlanner {
+    grid_map: [u8; 2500],
+    terrain_map: [u8; 2500],
+    road_map: [u8; 2500],
+    plan_map: [u8; 2500],
+}
+
+pub struct RemotePlanner {
+
+}

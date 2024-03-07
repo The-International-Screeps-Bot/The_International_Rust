@@ -4,7 +4,7 @@ use screeps::RoomName;
 
 #[derive(Default, Debug)]
 pub struct CommunesState {
-    pub spawn_energy_capacitys: HashMap<RoomName, u32>
+    pub spawn_energy_capacities: HashMap<RoomName, u32>,
 }
 
 impl CommunesState {

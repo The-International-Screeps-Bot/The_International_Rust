@@ -2,10 +2,13 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{commune::CommunesState, market::MarketState, room::RoomsState, structure::StructuresState};
+use super::{
+    commune::CommunesState, market::MarketState, room::RoomsState, structure::StructuresState,
+};
 use crate::{
     creep::owned_creep::{self, OwnedCreep},
-    state::creep::CreepsState, utils::general::GeneralUtils,
+    state::creep::CreepsState,
+    utils::general::GeneralUtils,
 };
 
 #[derive(Debug, Default)]
@@ -108,9 +111,8 @@ impl GameStateOps {
     }
 
     fn update_rooms_state(game_state: &mut GameState) {
-
         if !GeneralUtils::is_tick_interval(100) {
-            return
+            return;
         }
 
         game_state.rooms_state.structures.clear();
@@ -118,15 +120,15 @@ impl GameStateOps {
 
     fn update_communes_state(game_state: &mut GameState) {
         if !GeneralUtils::is_tick_interval(100) {
-            return
+            return;
         }
 
-        game_state.communes_state.spawn_energy_capacitys.clear();
+        game_state.communes_state.spawn_energy_capacities.clear();
     }
 
     fn update_creeps_state(game_state: &mut GameState) {
         if !GeneralUtils::is_tick_interval(100) {
-            return
+            return;
         }
 
         game_state.creeps_state.costs.clear();
@@ -134,7 +136,7 @@ impl GameStateOps {
 
     fn update_structures_state(game_state: &mut GameState) {
         if !GeneralUtils::is_tick_interval(100) {
-            return
+            return;
         }
 
         game_state.structures_state.active_statuses.clear()
