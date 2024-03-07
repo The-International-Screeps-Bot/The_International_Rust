@@ -6,7 +6,7 @@ use std::{
 use screeps::{pathfinder::SearchGoal, Direction, Position};
 
 use crate::{
-    constants::general::{AnyResult, DIRECTIONS},
+    constants::general::{GeneralResult, DIRECTIONS},
     utils::general::GeneralUtils,
 };
 
@@ -73,7 +73,7 @@ impl PathfinderOps {
         origin:   Position,
         goals: &PathGoals,
         opts: Option<PathfinderOpts>,
-    ) -> Result<Vec<Position>, AnyResult> {
+    ) -> Result<Vec<Position>, GeneralResult> {
 
         let mut open_set = BinaryHeap::new();
         let mut visited = HashMap::new();
@@ -105,7 +105,7 @@ impl PathfinderOps {
 
                 let mut adj_traverse_cost: u8 = 0;
                 
-                if let Some(opts) = opts {
+                if let Some(opts) = &opts {
                     adj_traverse_cost = (opts.cost_callback)(&adj_pos);
                 };
 
@@ -122,7 +122,7 @@ impl PathfinderOps {
             }
         }
 
-        Err(AnyResult::Fail)
+        Err(GeneralResult::Fail)
     }
     /// Find cost as the lowest manhattan distance to any goal
     fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
