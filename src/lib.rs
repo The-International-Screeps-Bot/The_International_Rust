@@ -1,3 +1,6 @@
+// FIXME: remove this, but right now it's just causing warning fatigue
+#![allow(unused)]
+
 use core::cell::RefCell;
 
 use log::*;

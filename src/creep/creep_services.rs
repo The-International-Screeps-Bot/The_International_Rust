@@ -1,13 +1,8 @@
-use std::collections::HashSet;
-
-use js_sys::{JsString, Object, Reflect};
 use log::{debug, info};
-use screeps::{game, Creep, SharedCreepProperties};
-use wasm_bindgen::JsCast;
+use screeps::SharedCreepProperties;
 
+use super::owned_creep_ops::OwnedCreepOps;
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
-
-use super::creep_ops::CreepOps;
 
 pub struct CreepServices;
 
@@ -19,34 +14,28 @@ impl CreepServices {
         // record creep amounts to the rooms they come from (commune data)
 
         let creeps = &game_state.creeps;
-        for (creep_name, creep) in creeps {
-
-        }
+        for (creep_name, creep) in creeps {}
     }
 
     pub fn run_creeps(game_state: &GameState, memory: &mut GameMemory) {
-
         let creeps = &game_state.creeps;
-        for (creep_name, creep) in creeps {
+        for (creep_name, owned_creep) in creeps {
+            debug!("running creep {}", creep_name);
 
-            debug!("running creep {}", creep.name());
+            OwnedCreepOps::run_role(owned_creep, game_state, memory);
 
-            CreepOps::run_role(&creep, game_state, memory);
-    
+            let creep = owned_creep.inner();
             if creep.spawning() {
-    
                 continue;
             }
         }
     }
 
     pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
-
         info!("running memory cleanup");
-    
-        let _ = &memory.creeps.retain(|creep_name, _creep| {
 
-            game_state.creeps.contains_key(creep_name)
-        });
+        let _ = &memory
+            .creeps
+            .retain(|creep_name, _creep| game_state.creeps.contains_key(creep_name));
     }
 }

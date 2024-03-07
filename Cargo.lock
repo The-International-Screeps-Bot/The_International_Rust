@@ -253,6 +253,7 @@ dependencies = [
 [[package]]
 name = "screeps-game-api"
 version = "0.20.1"
+source = "git+https://github.com/The-International-Screeps-Bot/screeps-game-api.git#d0a0e1fc81a9cb57e93ed22e7e381fc298ebc355"
 dependencies = [
  "arrayvec",
  "enum-iterator 2.0.0",

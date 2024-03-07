@@ -9,7 +9,7 @@ impl CollectiveOps {
     pub fn kill_all_creeps(game_state: &GameState) {
         let creeps = &game_state.creeps;
         for (creep_name, creep) in creeps {
-            creep.suicide();
+            let _ = creep.inner().suicide();
         }
     }
 
