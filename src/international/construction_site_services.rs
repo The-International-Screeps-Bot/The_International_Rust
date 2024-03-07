@@ -18,29 +18,29 @@ impl ConstructionSiteServices {
         let construction_sites = game::construction_sites();
 
         // FIXME: this runs into some borrow checker issues
-        // for id in construction_sites.keys() {
-        //     if memory.construction_sites.contains_key(id) {
-        //         continue
-        //     }
+        for id in construction_sites.keys() {
+            if memory.construction_sites.contains_key(&id) {
+                continue
+            }
 
-        //     memory.construction_sites.insert(*id, 0);
-        // }
+            memory.construction_sites.insert(id, 0);
+        }
 
-        // for (id, age) in &memory.construction_sites {
-        //     let Some(site) = game::get_object_by_id_typed(id) else {
+        for (id, age) in &memory.construction_sites {
+            let Some(site) = game::get_object_by_id_typed(id) else {
 
-        //         memory.construction_sites.remove(&id);
-        //         continue;
-        //     };
+                memory.construction_sites.remove(&id);
+                continue;
+            };
 
-        //     if *age > Self::max_site_age(&site) {
-        //         site.remove();
-        //         memory.construction_sites.remove(&id);
-        //         continue;
-        //     }
+            if *age > Self::max_site_age(&site) {
+                site.remove();
+                memory.construction_sites.remove(&id);
+                continue;
+            }
 
-        //     memory.construction_sites.insert(id.clone(), age + 1 * interval);
-        // }
+            memory.construction_sites.insert(id.clone(), age + 1 * interval);
+        }
     }
 
     fn max_site_age(site: &ConstructionSite) -> u32 {
