@@ -1,6 +1,7 @@
 use screeps::Creep;
 
 #[derive(Clone, Debug)]
+#[repr(transparent)]
 pub struct OwnedCreep(Creep);
 
 impl OwnedCreep {
@@ -12,6 +13,7 @@ impl OwnedCreep {
         }
     }
 
+    #[inline]
     pub fn inner(&self) -> &Creep {
         &self.0
     }
