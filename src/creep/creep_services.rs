@@ -1,7 +1,9 @@
-use log::{debug, info};
-use screeps::SharedCreepProperties;
+use std::collections::HashSet;
 
-use super::owned_creep_ops::OwnedCreepOps;
+use log::{debug, info};
+use screeps::{Creep, SharedCreepProperties};
+
+use super::{creep_move_ops::CreepMoveOps, owned_creep_ops::OwnedCreepOps};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
 pub struct CreepServices;
@@ -37,5 +39,13 @@ impl CreepServices {
         let _ = &memory
             .creeps
             .retain(|creep_name, _creep| game_state.creeps.contains_key(creep_name));
+    }
+
+    pub fn move_creeps(game_state: &GameState) {
+        let creeps: Vec<Creep> = Vec::new();
+
+        for creep in creeps {
+            CreepMoveOps::try_run_move_request(&creep, game_state, &mut HashSet::new());
+        }
     }
 }

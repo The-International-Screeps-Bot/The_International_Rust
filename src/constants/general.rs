@@ -3,6 +3,7 @@ use std::error::Error;
 
 use screeps::Direction;
 
+#[derive(PartialEq)]
 pub enum GeneralResult {
     Success,
     Fail,
