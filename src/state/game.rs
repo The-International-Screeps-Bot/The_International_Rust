@@ -2,10 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
-use super::{market::MarketState, room::RoomsState, structure::StructuresState};
+use super::{commune::CommunesState, market::MarketState, room::RoomsState, structure::StructuresState};
 use crate::{
-    creep::{owned_creep, owned_creep::OwnedCreep},
-    state::creep::CreepsState,
+    creep::owned_creep::{self, OwnedCreep},
+    state::creep::CreepsState, utils::general::GeneralUtils,
 };
 
 #[derive(Debug, Default)]
@@ -23,6 +23,7 @@ pub struct GameState {
     pub has_terminal: bool,
     pub market_state: MarketState,
     pub structures_state: StructuresState,
+    pub communes_state: CommunesState,
 }
 
 pub struct GameStateOps;
@@ -39,6 +40,11 @@ impl GameStateOps {
         Self::update_communes(game_state);
         Self::update_creep_id_index(game_state);
         Self::update_has_terminal(game_state);
+
+        Self::update_rooms_state(game_state);
+        Self::update_communes_state(game_state);
+        Self::update_creeps_state(game_state);
+        Self::update_structures_state(game_state);
     }
 
     fn update_creeps(game_state: &mut GameState) {
@@ -99,5 +105,38 @@ impl GameStateOps {
         }
 
         game_state.has_terminal = false
+    }
+
+    fn update_rooms_state(game_state: &mut GameState) {
+
+        if !GeneralUtils::is_tick_interval(100) {
+            return
+        }
+
+        game_state.rooms_state.structures.clear();
+    }
+
+    fn update_communes_state(game_state: &mut GameState) {
+        if !GeneralUtils::is_tick_interval(100) {
+            return
+        }
+
+        game_state.communes_state.spawn_energy_capacitys.clear();
+    }
+
+    fn update_creeps_state(game_state: &mut GameState) {
+        if !GeneralUtils::is_tick_interval(100) {
+            return
+        }
+
+        game_state.creeps_state.costs.clear();
+    }
+
+    fn update_structures_state(game_state: &mut GameState) {
+        if !GeneralUtils::is_tick_interval(100) {
+            return
+        }
+
+        game_state.structures_state.active_statuses.clear()
     }
 }
