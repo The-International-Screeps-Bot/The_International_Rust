@@ -1,14 +1,24 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
-pub struct CreepsState {
-    pub costs: HashMap<String, u32>,
+use super::game::GameState;
+
+#[derive(Debug)]
+pub struct CreepState {
+    pub name: String,
+    pub cost: u32,
 }
 
-impl CreepsState {
-    pub fn new() -> Self {
-        Self {
-            ..Default::default()
-        }
+impl CreepState {
+    pub fn new(name: String) -> Self {
+        Self { name, cost: 0 }
+    }
+}
+
+pub struct CreepStateOps;
+
+impl CreepStateOps {
+    pub fn update_state(state: &mut CreepState) {
+
+
     }
 }

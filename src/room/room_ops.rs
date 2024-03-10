@@ -7,7 +7,13 @@ use screeps::{
     Structure, StructureProperties, StructureType, Terrain,
 };
 
-use crate::{constants::structure::OrganizedStructures, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, utils::general::GeneralUtils};
+use crate::{
+    constants::structure::OrganizedStructures,
+    memory::game_memory::GameMemory,
+    settings::Settings,
+    state::{game::GameState, room::RoomState},
+    utils::general::GeneralUtils,
+};
 
 pub struct RoomOps;
 
@@ -15,24 +21,22 @@ pub struct RoomOps;
 impl RoomOps {
     /// Acquires and caches structures in the room based on their structure type
     // I suspect this is some pretty sub-par code, and could do with improvements in regards to borrowing and cloning
-    pub fn structures(room: &Room, game_state: &mut GameState) -> Option<OrganizedStructures> {
+    pub fn structures<'room, 'state>(
+        room: &'room Room,
+        room_state: &'state mut RoomState,
+    ) -> &'state OrganizedStructures {
 
-        let mut organized_structures = game_state.rooms_state.structures.get_mut(&room.name());
-        if let Some(organized_structures) = organized_structures {
-            return Some(organized_structures.clone())
-        }
-
-        let mut new_organized_structures: OrganizedStructures = HashMap::new();
-        for structure in room.find(find::STRUCTURES, None) {
-            let structure_type = structure.structure_type();
+        room_state.structures.get_or_insert_with(|| {
+            let mut new_organized_structures = HashMap::new();
+            for structure in room.find(find::STRUCTURES, None) {
+                let structure_type = structure.structure_type();
+                new_organized_structures
+                    .entry(structure_type)
+                    .or_insert(Vec::new())
+                    .push(structure);
+            }
             new_organized_structures
-                .entry(structure_type)
-                .or_insert(Vec::new())
-                .push(structure);
-        }
-
-        organized_structures.insert(&mut new_organized_structures);
-        Some(new_organized_structures)
+        })
     }
 
     // pub fn get_sources(room: &Room, room_data: &mut RoomData) -> Option<Vec<Source>> {

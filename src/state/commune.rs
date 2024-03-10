@@ -1,16 +1,31 @@
 use std::collections::HashMap;
 
-use screeps::RoomName;
+use screeps::{Room, RoomName};
 
-#[derive(Default, Debug)]
-pub struct CommunesState {
-    pub spawn_energy_capacities: HashMap<RoomName, u32>,
+use super::game::GameState;
+
+#[derive(Debug)]
+pub struct CommuneState {
+    pub name: RoomName,
+    pub spawn_energy_capacity: u32,
+    pub min_energy: u32,
 }
 
-impl CommunesState {
-    pub fn new() -> Self {
+impl CommuneState {
+    pub fn new(room: &Room, name: RoomName) -> Self {
         Self {
-            ..Default::default()
+            name,
+            spawn_energy_capacity: room.energy_capacity_available(),
+            min_energy: 0,
         }
+    }
+}
+
+pub struct CommuneStateOps;
+
+impl CommuneStateOps {
+    pub fn update_state(state: &mut CommuneState) {
+
+        
     }
 }

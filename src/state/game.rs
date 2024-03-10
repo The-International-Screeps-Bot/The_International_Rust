@@ -3,11 +3,11 @@ use std::collections::{HashMap, HashSet};
 use screeps::{game, AccountPowerCreep, Creep, Room, RoomName, SharedCreepProperties};
 
 use super::{
-    commune::CommunesState, market::MarketState, room::RoomsState, structure::StructuresState,
+    commune::{CommuneState, CommuneStateOps}, creep::CreepStateOps, market::MarketState, room::{RoomState, RoomStateOps}, structure::StructuresState
 };
 use crate::{
     creep::owned_creep::{self, OwnedCreep},
-    state::creep::CreepsState,
+    state::creep::CreepState,
     utils::general::GeneralUtils,
 };
 
@@ -20,13 +20,13 @@ pub struct GameState {
     pub account_power_creeps: HashMap<String, AccountPowerCreep>,
     pub rooms: HashMap<RoomName, Room>,
     pub communes: HashSet<RoomName>,
-    pub creeps_state: CreepsState,
-    pub rooms_state: RoomsState,
     pub creep_id_index: u32,
     pub has_terminal: bool,
     pub market_state: MarketState,
     pub structures_state: StructuresState,
-    pub communes_state: CommunesState,
+    pub room_states: HashMap<RoomName, RoomState>,
+    pub commune_states: HashMap<RoomName, CommuneState>,
+    pub creep_states: HashMap<String, CreepState>,
 }
 
 pub struct GameStateOps;
@@ -115,7 +115,13 @@ impl GameStateOps {
             return;
         }
 
-        game_state.rooms_state.structures.clear();
+        game_state.room_states.retain(|room_name, _| {
+            game_state.rooms.contains_key(room_name)
+        });
+
+        for (room_name, room_state) in &mut game_state.room_states {
+            RoomStateOps::update_state(room_state);
+        }
     }
 
     fn update_communes_state(game_state: &mut GameState) {
@@ -123,7 +129,13 @@ impl GameStateOps {
             return;
         }
 
-        game_state.communes_state.spawn_energy_capacities.clear();
+        game_state.commune_states.retain(|room_name, _| {
+            game_state.communes.contains(room_name)
+        });
+
+        for (room_name, commune_state) in &mut game_state.commune_states {
+            CommuneStateOps::update_state(commune_state);
+        }
     }
 
     fn update_creeps_state(game_state: &mut GameState) {
@@ -131,7 +143,13 @@ impl GameStateOps {
             return;
         }
 
-        game_state.creeps_state.costs.clear();
+        game_state.creep_states.retain(|creep_name, _| {
+            game_state.creeps.contains_key(creep_name)
+        });
+
+        for (creep_name, creep_state) in &mut game_state.creep_states {
+            CreepStateOps::update_state(creep_state);
+        }
     }
 
     fn update_structures_state(game_state: &mut GameState) {
