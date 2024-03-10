@@ -42,9 +42,9 @@ impl MemoryOps {
     }
 
     pub fn try_apply_settings(memory: &mut GameMemory, settings: &Settings) {
-        if memory.settings.breaking_version != settings.breaking_version {}
+        if memory.breaking_version != settings.breaking_version {}
 
-        memory.settings = settings.clone();
+        memory.breaking_version = settings.breaking_version;
     }
 
     pub fn write(memory: &GameMemory) {
@@ -65,7 +65,7 @@ impl MemoryOps {
             return GeneralResult::Fail;
         }
 
-        if memory.settings.breaking_version == settings.breaking_version {
+        if memory.breaking_version == settings.breaking_version {
             return GeneralResult::Fail;
         }
 

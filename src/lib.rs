@@ -64,7 +64,13 @@ pub fn game_loop() {
     error!("this is a critical error");
 
     MEMORY.with_borrow_mut(|memory| {
-        with_memory(memory);
+        SETTINGS.with_borrow(|settings| {
+            GAME_STATE.with_borrow_mut(|game_state| {
+                
+                loop_with_params(memory, game_state, settings);
+                debug!("{:#?}", game_state);
+            });
+        });
 
         MemoryOps::write(memory);
     });
@@ -82,9 +88,6 @@ pub fn game_loop() {
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-fn with_memory(memory: &mut GameMemory) {
-    GAME_STATE.with_borrow_mut(|game_state| {
-        GameStateOps::update(game_state);
-        debug!("{:#?}", game_state);
-    });
+fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
+    GameStateOps::update(game_state, memory);
 }

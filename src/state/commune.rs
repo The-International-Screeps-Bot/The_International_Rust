@@ -24,6 +24,10 @@ impl CommuneState {
 pub struct CommuneStateOps;
 
 impl CommuneStateOps {
+    pub fn try_init_state(commune_name: &RoomName, game_state: &GameState) {
+        
+    }
+
     pub fn update_state(state: &mut CommuneState) {
 
         

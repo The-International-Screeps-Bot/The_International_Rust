@@ -1,5 +1,5 @@
 use js_sys::Math::max;
-use screeps::{game, Position};
+use screeps::{game, OwnedStructureProperties, Position};
 
 pub struct GeneralUtils;
 
@@ -20,7 +20,9 @@ impl GeneralUtils {
     }
 
     pub fn pos_range_euc(pos1: &Position, pos2: &Position) -> u32 {
-        (pos1.world_x().abs_diff(pos2.world_x()).pow(2) + (pos1.world_y().abs_diff(pos2.world_y()).pow(2))).pow(1/2)
+        (pos1.world_x().abs_diff(pos2.world_x()).pow(2)
+            + (pos1.world_y().abs_diff(pos2.world_y()).pow(2)))
+        .pow(1 / 2)
     }
 
     // Is somewhat inaccurate
@@ -54,5 +56,31 @@ impl GeneralUtils {
                 operation(&adjacent_pos);
             }
         }
+    }
+
+    pub fn me() -> Result<String, ()> {
+        let js_rooms = screeps::game::rooms();
+
+        for room_name in js_rooms.keys() {
+            let Some(room) = js_rooms.get(room_name) else {
+                continue;
+            };
+
+            let Some(controller) = room.controller() else {
+                continue;
+            };
+
+            if !controller.my() {
+                continue;
+            };
+
+            let Some(owner) = controller.owner() else {
+                continue
+            };
+
+            return Ok(owner.username())
+        }
+
+        return Err(())
     }
 }

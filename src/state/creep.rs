@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use crate::creep::owned_creep::OwnedCreep;
+use screeps::Creep;
+
 use super::game::GameState;
 
 #[derive(Debug)]
@@ -9,7 +12,7 @@ pub struct CreepState {
 }
 
 impl CreepState {
-    pub fn new(name: String) -> Self {
+    pub fn new(creep: &OwnedCreep, name: String) -> Self {
         Self { name, cost: 0 }
     }
 }
@@ -17,8 +20,5 @@ impl CreepState {
 pub struct CreepStateOps;
 
 impl CreepStateOps {
-    pub fn update_state(state: &mut CreepState) {
-
-
-    }
+    pub fn update_state(state: &mut CreepState) {}
 }
