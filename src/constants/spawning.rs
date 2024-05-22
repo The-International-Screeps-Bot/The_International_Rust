@@ -16,7 +16,7 @@ pub struct SpawnRequestArgs {
     pub memory_additions: CreepMemory,
     pub priority: u32,
     pub max_creeps: u32,
-    pub max_cost_per_creep: u32,
+    pub max_cost_per_creep: Option<u32>,
 }
 
 #[derive(Debug, Default)]

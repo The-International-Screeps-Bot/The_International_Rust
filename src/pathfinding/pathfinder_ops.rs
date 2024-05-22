@@ -124,6 +124,7 @@ impl PathfinderOps {
 
         Err(GeneralResult::Fail)
     }
+    
     /// Find cost as the lowest manhattan distance to any goal
     fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
         let mut lowest_cost = u32::MAX;

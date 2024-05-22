@@ -252,8 +252,9 @@ dependencies = [
 
 [[package]]
 name = "screeps-game-api"
-version = "0.20.1"
-source = "git+https://github.com/The-International-Screeps-Bot/screeps-game-api.git#d0a0e1fc81a9cb57e93ed22e7e381fc298ebc355"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cc400a684d152b3b40dce97f0c519ef5995471be14cae588a84fefa88b9f3e5"
 dependencies = [
  "arrayvec",
  "enum-iterator 2.0.0",
@@ -383,7 +384,7 @@ dependencies = [
  "log",
  "regex",
  "room_visual_ext",
- "screeps-game-api 0.20.1",
+ "screeps-game-api 0.21.0",
  "screeps-timing",
  "screeps-timing-annotate",
  "serde",

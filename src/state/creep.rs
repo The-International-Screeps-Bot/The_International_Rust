@@ -1,19 +1,22 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, default};
 
-use crate::creep::owned_creep::OwnedCreep;
+use crate::{constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType}, creep::owned_creep::OwnedCreep};
 use screeps::Creep;
 
 use super::game::GameState;
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct CreepState {
     pub name: String,
     pub cost: u32,
+    pub parts: Option<CreepParts>,
+    pub parts_by_type: Option<CreepPartsByType>,
+    pub active_parts_by_type: Option<ActiveCreepPartsByType>,
 }
 
 impl CreepState {
     pub fn new(creep: &OwnedCreep, name: String) -> Self {
-        Self { name, cost: 0 }
+        Self { name, cost: 0, ..Default::default() }
     }
 }
 
