@@ -1,53 +1,310 @@
-use screeps::Room;
+use std::collections::HashMap;
+use std::f64;
 
-use crate::{constants::spawning::{SpawnRequestArgs, SpawnRequests}, state::{commune::CommuneState, room::RoomState}};
+use enum_map::{enum_map, EnumMap};
+use screeps::{constants::creep::Part, BodyPart, Room, SpawnOptions, Spawning, MAX_CREEP_SIZE};
+
+use crate::{
+    constants::{
+        creep::{CreepPart, CreepParts},
+        spawning::{GroupSpawnRequestArgs, IndividualSpawnRequestArgs, SpawnRequest},
+    },
+    state::{commune::CommuneState, room::RoomState},
+};
 
 pub struct SpawnRequestArgOps;
 
 impl SpawnRequestArgOps {
-    pub fn create_spawn_requests_individual_uniform(room: &Room, args: &SpawnRequestArgs) {
+    pub fn spawn_request_individual_uniform<'a>(
+        spawn_requests: &mut Vec<SpawnRequest<'a>>,
+        room_state: &mut RoomState,
+        commune_state: &mut CommuneState,
+        args: &'a IndividualSpawnRequestArgs,
+    ) {
+        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, Some(args.max_cost_per_creep));
+        let mut creeps_quota = args.creeps_quota;
 
-        let spawn_requests: SpawnRequests = Vec::new();
+        while args.creeps_quota > 0 {
+            let mut body_part_counts: EnumMap<CreepPart, u32> = enum_map! {
+                CreepPart::Move => 0,
+                CreepPart::Attack => 0,
+                CreepPart::Carry => 0,
+                CreepPart::Claim => 0,
+                CreepPart::Heal => 0,
+                CreepPart::RangedAttack => 0,
+                CreepPart::Tough => 0,
+                CreepPart::Work => 0,
+            };
+            let mut tier = 0;
+            let mut cost = 0;
+
+            if args.default_parts.len() > 0 {
+                tier += 1;
+                for part in &args.default_parts {
+                    let part_cost = part.cost();
+                    if cost + part_cost > max_cost_per_creep {
+                        break;
+                    }
+
+                    cost += part_cost;
+                    body_part_counts[part.clone()] += 1;
+                }
+            }
+
+            let mut remaining_allowed_parts = MAX_CREEP_SIZE - args.default_parts.len() as u32;
+
+            if args.extra_parts.len() > 0 {
+                let mut remaining_extra_parts =
+                    args.extra_parts.len() as u32 * args.parts_quota;
+
+                while cost < max_cost_per_creep
+                    && remaining_allowed_parts >= args.extra_parts.len() as u32
+                    && remaining_extra_parts > 0
+                {
+                    tier += 1;
+
+                    for part in &args.extra_parts {
+                        let part_cost = part.cost();
+                        if cost + part_cost > max_cost_per_creep {
+                            break;
+                        }
+
+                        cost += part_cost;
+                        body_part_counts[part.clone()] += 1;
+
+                        remaining_allowed_parts -= 1;
+                        remaining_extra_parts -= 1;
+                    }
+
+                    if cost >= args.min_cost_per_creep && remaining_extra_parts <= 0 {
+                        break;
+                    }
+                }
+            }
+
+            spawn_requests.push(SpawnRequest {
+                role: args.role,
+                priority: args.priority,
+                body_part_counts: body_part_counts.clone(),
+                tier,
+                cost,
+                memory: &args.memory_additions,
+            });
+
+            creeps_quota -= 1;
+        }
     }
 
-    pub fn create_spawn_requests_group_diverse(room: &Room, args: &SpawnRequestArgs) {
+    pub fn spawn_request_group_diverse<'a>(
+        spawn_requests: &mut Vec<SpawnRequest<'a>>,
+        room_state: &mut RoomState,
+        commune_state: &mut CommuneState,
+        args: &'a GroupSpawnRequestArgs,
+    ) {
+        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, args.max_cost_per_creep);
 
-        let spawn_requests: SpawnRequests = Vec::new();
+        let total_extra_parts = args.extra_parts.len() as u32 * args.parts_quota;
+
+        let max_parts_per_creep = f64::min(
+            50.0 - args.default_parts.len() as f64,
+            total_extra_parts as f64,
+        ) as u32;
+
+        let mut total_extra_parts = total_extra_parts;
+
+        if (total_extra_parts as f32)
+            < (max_parts_per_creep as f32) * (args.threshold.unwrap_or(0.25))
+        {
+            return;
+        }
+
+        let mut max_creeps: u32 = args.max_creeps.unwrap_or(u32::MAX);
+
+        let mut extra_parts_cost = 0;
+
+        for part in &args.extra_parts {
+            extra_parts_cost += part.cost();
+        }
+
+        let mut parts_quota = args.parts_quota;
+
+        while total_extra_parts >= args.extra_parts.len() as u32 && args.max_creeps.unwrap_or(0) > 0
+        {
+            let mut body_part_counts: EnumMap<CreepPart, u32> = enum_map! {
+                CreepPart::Move => 0,
+                CreepPart::Attack => 0,
+                CreepPart::Carry => 0,
+                CreepPart::Claim => 0,
+                CreepPart::Heal => 0,
+                CreepPart::RangedAttack => 0,
+                CreepPart::Tough => 0,
+                CreepPart::Work => 0,
+            };
+            let mut tier = 0;
+            let mut cost = 0;
+
+            if args.default_parts.len() > 0 {
+                tier += 1;
+                for part in &args.default_parts {
+                    let part_cost = part.cost();
+                    if cost + part_cost > max_cost_per_creep {
+                        break;
+                    }
+
+                    cost += part_cost;
+                    body_part_counts[part.clone()] += 1;
+                }
+            }
+
+            let mut remaining_allowed_parts = max_parts_per_creep;
+
+            tier += 1;
+
+            for part in &args.extra_parts {
+                cost += part.cost();
+                body_part_counts[part.clone()] += 1;
+
+                remaining_allowed_parts -= 1;
+                total_extra_parts -= 1;
+            }
+
+            let mut stop = false;
+
+            while cost < max_cost_per_creep
+                && remaining_allowed_parts - args.extra_parts.len() as u32 >= 0
+            {
+                tier += 1;
+
+                for part in &args.extra_parts {
+                    let part_cost = part.cost();
+                    if cost + part_cost > max_cost_per_creep && cost >= args.min_cost_per_creep {
+                        stop = true;
+                        break;
+                    }
+
+                    cost += part_cost;
+                    body_part_counts[part.clone()] += 1;
+
+                    remaining_allowed_parts -= 1;
+                    total_extra_parts -= 1;
+                }
+
+                if stop {
+                    break;
+                }
+            }
+
+            spawn_requests.push(SpawnRequest {
+                role: args.role,
+                priority: args.priority,
+                body_part_counts: body_part_counts.clone(),
+                tier,
+                cost,
+                memory: &args.memory_additions,
+            });
+
+            max_creeps -= 1;
+        }
     }
 
-    // Not fully sold on needing group uniform
+    pub fn spawn_request_group_uniform<'a>(
+        spawn_requests: &mut Vec<SpawnRequest<'a>>,
+        room_state: &mut RoomState,
+        commune_state: &mut CommuneState,
+        args: &'a GroupSpawnRequestArgs,
+    ) {
+        if args.extra_parts.len() == 0 {
+            return;
+        }
 
-    pub fn create_spawn_requests_group_uniform(room: &Room, room_state: &mut RoomState, commune_state: &mut CommuneState, args: &SpawnRequestArgs) {
+        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, args.max_cost_per_creep);
+        let mut max_creeps: u32 = args.max_creeps.unwrap_or(u32::MAX);
 
-        let spawn_requests: SpawnRequests = Vec::new();
+        let mut parts_quota = args.parts_quota;
 
-        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args);
+        while args.parts_quota > 0 && max_creeps > 0 {
+            let mut body_part_counts: EnumMap<CreepPart, u32> = enum_map! {
+                CreepPart::Move => 0,
+                CreepPart::Attack => 0,
+                CreepPart::Carry => 0,
+                CreepPart::Claim => 0,
+                CreepPart::Heal => 0,
+                CreepPart::RangedAttack => 0,
+                CreepPart::Tough => 0,
+                CreepPart::Work => 0,
+            };
+            let mut parts_count = 0;
+            let mut tier = 0;
+            let mut cost = 0;
 
+            if args.default_parts.len() > 0 {
+                tier += 1;
+                for part in &args.default_parts {
+                    let part_cost = part.cost();
+                    if cost + part_cost > max_cost_per_creep {
+                        break;
+                    }
 
+                    cost += part_cost;
+                    body_part_counts[part.clone()] += 1;
+                    parts_count += 1;
+                }
+            }
+
+            let mut stop = false;
+
+            while cost < max_cost_per_creep
+                && parts_count + args.extra_parts.len() as u32 <= MAX_CREEP_SIZE
+            {
+                tier += 1;
+
+                for part in &args.extra_parts {
+                    let part_cost = part.cost();
+                    if cost + part_cost > max_cost_per_creep && cost >= args.min_cost_per_creep {
+                        stop = true;
+                        break;
+                    }
+
+                    cost += part_cost;
+                    body_part_counts[part.clone()] += 1;
+                    parts_count += 1;
+                }
+
+                if stop {
+                    break;
+                }
+            }
+
+            spawn_requests.push(SpawnRequest {
+                role: args.role,
+                priority: args.priority,
+                body_part_counts: body_part_counts.clone(),
+                tier,
+                cost,
+                memory: &args.memory_additions,
+            });
+
+            parts_quota -= parts_count;
+            max_creeps -= 1;
+        }
     }
 
-    fn get_max_cost_per_creep(commune_state: &mut CommuneState, args: &SpawnRequestArgs) -> u32 {
-        match args.max_cost_per_creep {
+    fn get_max_cost_per_creep(commune_state: &mut CommuneState, min_cost: u32, max_cost: Option<u32>) -> u32 {
+        match max_cost {
             Some(cost) => {
-                if cost < args.min_cost_per_creep {
+                if cost < min_cost {
                     panic!("Max cost per creep cannot be less than min cost per creep");
-                    return 0
+                    return 0;
                 }
 
                 if cost > commune_state.spawn_energy_capacity {
                     panic!("Max cost per creep cannot be greater than spawn energy capacity");
-                    return 0
+                    return 0;
                 }
 
                 0
             }
-            None => {
-                commune_state.spawn_energy_capacity
-            }
+            None => commune_state.spawn_energy_capacity,
         }
-    }
-
-    fn create_spawn_request(args: &SpawnRequestArgs) {
-
     }
 }

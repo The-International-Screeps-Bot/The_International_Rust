@@ -23,6 +23,7 @@ html-escape = "0.2.13"
 room_visual_ext = "0.1.0"
 screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = true }
 screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
+enum-map = "2.7.3"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
