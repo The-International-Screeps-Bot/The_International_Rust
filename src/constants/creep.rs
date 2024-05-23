@@ -14,6 +14,7 @@ pub enum CreepRole {
     Scout,
     Repairer,
     Antifa,
+    Unknown,
 }
 
 pub enum CreepOperationResult {

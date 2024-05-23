@@ -2,14 +2,17 @@ use std::collections::HashMap;
 use std::f64;
 
 use enum_map::{enum_map, EnumMap};
-use screeps::{constants::creep::Part, BodyPart, Room, SpawnOptions, Spawning, MAX_CREEP_SIZE};
+use screeps::{
+    constants::creep::Part, BodyPart, Room, RoomName, SpawnOptions, Spawning, MAX_CREEP_SIZE,
+};
 
 use crate::{
     constants::{
         creep::{CreepPart, CreepParts},
-        spawning::{GroupSpawnRequestArgs, IndividualSpawnRequestArgs, SpawnRequest},
+        spawning::{GroupUniformSpawnRequestArgs, IndividualUniformSpawnRequestArgs, SpawnRequest, SpawnRequestArgs},
     },
-    state::{commune::CommuneState, room::RoomState},
+    memory::game_memory::GameMemory,
+    state::{commune::CommuneState, game::GameState, room::RoomState},
 };
 
 pub struct SpawnRequestArgOps;
@@ -17,11 +20,17 @@ pub struct SpawnRequestArgOps;
 impl SpawnRequestArgOps {
     pub fn spawn_request_individual_uniform<'a>(
         spawn_requests: &mut Vec<SpawnRequest<'a>>,
-        room_state: &mut RoomState,
-        commune_state: &mut CommuneState,
-        args: &'a IndividualSpawnRequestArgs,
+        args: &'a IndividualUniformSpawnRequestArgs,
+        room_name: &RoomName,
+        game_state: &mut GameState,
+        memory: &mut GameMemory,
     ) {
-        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, Some(args.max_cost_per_creep));
+        let max_cost_per_creep = Self::get_max_cost_per_creep(
+            args.min_cost_per_creep,
+            Some(args.max_cost_per_creep),
+            room_name,
+            game_state,
+        );
         let mut creeps_quota = args.creeps_quota;
 
         while args.creeps_quota > 0 {
@@ -54,8 +63,7 @@ impl SpawnRequestArgOps {
             let mut remaining_allowed_parts = MAX_CREEP_SIZE - args.default_parts.len() as u32;
 
             if args.extra_parts.len() > 0 {
-                let mut remaining_extra_parts =
-                    args.extra_parts.len() as u32 * args.parts_quota;
+                let mut remaining_extra_parts = args.extra_parts.len() as u32 * args.parts_quota;
 
                 while cost < max_cost_per_creep
                     && remaining_allowed_parts >= args.extra_parts.len() as u32
@@ -97,11 +105,17 @@ impl SpawnRequestArgOps {
 
     pub fn spawn_request_group_diverse<'a>(
         spawn_requests: &mut Vec<SpawnRequest<'a>>,
-        room_state: &mut RoomState,
-        commune_state: &mut CommuneState,
-        args: &'a GroupSpawnRequestArgs,
+        args: &'a GroupUniformSpawnRequestArgs,
+        room_name: &RoomName,
+        game_state: &mut GameState,
+        memory: &mut GameMemory,
     ) {
-        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, args.max_cost_per_creep);
+        let max_cost_per_creep = Self::get_max_cost_per_creep(
+            args.min_cost_per_creep,
+            args.max_cost_per_creep,
+            room_name,
+            game_state,
+        );
 
         let total_extra_parts = args.extra_parts.len() as u32 * args.parts_quota;
 
@@ -171,7 +185,7 @@ impl SpawnRequestArgOps {
             let mut stop = false;
 
             while cost < max_cost_per_creep
-                && remaining_allowed_parts - args.extra_parts.len() as u32 >= 0
+                && remaining_allowed_parts - (args.extra_parts.len() as u32) >= 0
             {
                 tier += 1;
 
@@ -209,15 +223,22 @@ impl SpawnRequestArgOps {
 
     pub fn spawn_request_group_uniform<'a>(
         spawn_requests: &mut Vec<SpawnRequest<'a>>,
-        room_state: &mut RoomState,
-        commune_state: &mut CommuneState,
-        args: &'a GroupSpawnRequestArgs,
+        args: &'a GroupUniformSpawnRequestArgs,
+        room_name: &RoomName,
+        game_state: &mut GameState,
+        memory: &mut GameMemory,
     ) {
         if args.extra_parts.len() == 0 {
             return;
         }
 
-        let max_cost_per_creep = Self::get_max_cost_per_creep(commune_state, args.min_cost_per_creep, args.max_cost_per_creep);
+        let max_cost_per_creep = Self::get_max_cost_per_creep(
+            args.min_cost_per_creep,
+            args.max_cost_per_creep,
+            room_name,
+            game_state,
+        );
+
         let mut max_creeps: u32 = args.max_creeps.unwrap_or(u32::MAX);
 
         let mut parts_quota = args.parts_quota;
@@ -289,7 +310,14 @@ impl SpawnRequestArgOps {
         }
     }
 
-    fn get_max_cost_per_creep(commune_state: &mut CommuneState, min_cost: u32, max_cost: Option<u32>) -> u32 {
+    fn get_max_cost_per_creep(
+        min_cost: u32,
+        max_cost: Option<u32>,
+        room_name: &RoomName,
+        game_state: &mut GameState,
+    ) -> u32 {
+        let commune_state = game_state.commune_states.get_mut(room_name).unwrap();
+
         match max_cost {
             Some(cost) => {
                 if cost < min_cost {

@@ -176,7 +176,7 @@ impl GameStateOps {
             .retain(|room_name, _| game_state.communes.contains(room_name));
 
         for (room_name, commune_state) in &mut game_state.commune_states {
-            CommuneStateOps::update_state(commune_state);
+            CommuneStateOps::update_state(room_name, commune_state);
         }
     }
 
@@ -205,7 +205,8 @@ impl GameStateOps {
     fn update_terminal_communes(game_state: &mut GameState) {
         let mut terminal_communes: HashSet<RoomName> = HashSet::new();
 
-        for room_name in &game_state.communes {
+        let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
+        for room_name in &room_names {
             let Some(room) = game_state.rooms.get(room_name) else {
                 continue;
             };
@@ -214,15 +215,9 @@ impl GameStateOps {
                 continue;
             };
 
-            let structures = RoomOps::structures(room, room_state);
-
-            let Some(terminals) = structures.get(&StructureType::Terminal) else {
+            let Some(terminal) = RoomOps::terminal(room_name, game_state) else {
                 continue;
             };
-
-            if terminals.len() < 1 {
-                continue;
-            }
 
             terminal_communes.insert(room_name.clone());
         }

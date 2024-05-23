@@ -7,7 +7,7 @@ use crate::memory::creep_memory::CreepMemory;
 
 use super::creep::{CreepPart, CreepRole};
 
-pub struct IndividualSpawnRequestArgs {
+pub struct IndividualUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
     pub extra_parts: Vec<CreepPart>,
@@ -19,7 +19,7 @@ pub struct IndividualSpawnRequestArgs {
     pub creeps_quota: u32,
 }
 
-pub struct GroupSpawnRequestArgs {
+pub struct GroupUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
     pub extra_parts: Vec<CreepPart>,
@@ -30,6 +30,25 @@ pub struct GroupSpawnRequestArgs {
     pub priority: u32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
+}
+
+pub struct GroupDiverseSpawnRequestArgs {
+    pub role: CreepRole,
+    pub default_parts: Vec<CreepPart>,
+    pub extra_parts: Vec<CreepPart>,
+    pub parts_quota: u32,
+    pub min_cost_per_creep: u32,
+    pub max_cost_per_creep: Option<u32>,
+    pub memory_additions: CreepMemory,
+    pub priority: u32,
+    pub max_creeps: Option<u32>,
+    pub threshold: Option<f32>,
+}
+
+pub enum SpawnRequestArgs {
+    IndividualUniform(IndividualUniformSpawnRequestArgs),
+    GroupUniform(GroupUniformSpawnRequestArgs),
+    GroupDiverse(GroupDiverseSpawnRequestArgs),
 }
 
 #[derive(Debug, Default)]
@@ -48,8 +67,6 @@ pub struct SpawnRequest<'a> {
     pub memory: &'a CreepMemory,
     pub body_part_counts: EnumMap<CreepPart, u32>,
 }
-
-pub type SpawnRequests = Vec<SpawnRequest>;
 
 #[derive(Default)]
 pub struct BodypartsByPriority {

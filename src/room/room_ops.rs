@@ -1,18 +1,28 @@
 use std::collections::HashMap;
 
+use enum_map::{enum_map, EnumMap};
 use screeps::{
     find,
     game::{self, map::RoomStatus},
-    look, Creep, HasPosition, ObjectId, Position, Room, RoomName, SharedCreepProperties, Source,
-    Structure, StructureProperties, StructureType, Terrain,
+    look, structure, Creep, HasPosition, ObjectId, Position, Room, RoomName, SharedCreepProperties,
+    Source, Structure, StructureContainer, StructureController, StructureExtension,
+    StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink,
+    StructureNuker, StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn,
+    StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage,
+    StructureTerminal, StructureTower, StructureType, StructureWall, Terrain,
 };
 
 use crate::{
-    constants::structure::OrganizedStructures,
-    memory::game_memory::GameMemory,
+    constants::structure::{OldOrganizedStructures, OrganizedStructures, SpawnsByActivity},
+    memory::{game_memory::GameMemory, room_memory::RoomMemory},
     settings::Settings,
-    state::{game::GameState, room::RoomState},
+    state::{
+        game::GameState,
+        market::MarketState,
+        room::{self, RoomState},
+    },
     utils::general::GeneralUtils,
+    GAME_STATE,
 };
 
 pub struct RoomOps;
@@ -20,11 +30,13 @@ pub struct RoomOps;
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 impl RoomOps {
     /// Acquires and caches structures in the room based on their structure type
-    // I suspect this is some pretty sub-par code, and could do with improvements in regards to borrowing and cloning
-    pub fn structures<'room, 'state>(
-        room: &'room Room,
-        room_state: &'state mut RoomState,
-    ) -> &'state OrganizedStructures {
+    /*     pub fn structures<'room, 'state>(
+        room_name: &'room RoomName,
+        game_state: &'state mut GameState,
+    ) -> &'state OldOrganizedStructures {
+
+        let room = game_state.rooms.get(room_name).unwrap();
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
 
         room_state.structures.get_or_insert_with(|| {
             let mut new_organized_structures = HashMap::new();
@@ -37,7 +49,173 @@ impl RoomOps {
             }
             new_organized_structures
         })
+    } */
+
+    #[inline]
+    pub fn structures<'room, 'state>(
+        room_name: &'room RoomName,
+        game_state: &'state mut GameState,
+    ) -> &'state OrganizedStructures {
+        let room = game_state.rooms.get(room_name).unwrap();
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+        let organized_structures = room_state.structures.get_or_insert_with(|| {
+            let mut new_organized_structures = OrganizedStructures {
+                ..Default::default()
+            };
+            for structure in room.find(find::STRUCTURES, None) {
+                match structure.structure_type() {
+                    StructureType::Spawn => {
+                        new_organized_structures
+                            .spawn
+                            .push(TryInto::<StructureSpawn>::try_into(structure).unwrap());
+                    }
+                    StructureType::Extension => {
+                        new_organized_structures
+                            .extension
+                            .push(TryInto::<StructureExtension>::try_into(structure).unwrap());
+                    }
+                    StructureType::Road => {
+                        new_organized_structures
+                            .road
+                            .push(TryInto::<StructureRoad>::try_into(structure).unwrap());
+                    }
+                    StructureType::Wall => {
+                        new_organized_structures
+                            .wall
+                            .push(TryInto::<StructureWall>::try_into(structure).unwrap());
+                    }
+                    StructureType::Rampart => {
+                        new_organized_structures
+                            .rampart
+                            .push(TryInto::<StructureRampart>::try_into(structure).unwrap());
+                    }
+                    StructureType::Container => {
+                        new_organized_structures
+                            .container
+                            .push(TryInto::<StructureContainer>::try_into(structure).unwrap());
+                    }
+                    StructureType::Link => {
+                        new_organized_structures
+                            .link
+                            .push(TryInto::<StructureLink>::try_into(structure).unwrap());
+                    }
+                    StructureType::KeeperLair => {
+                        new_organized_structures
+                            .keeper_lair
+                            .push(TryInto::<StructureKeeperLair>::try_into(structure).unwrap());
+                    }
+                    StructureType::PowerBank => {
+                        new_organized_structures
+                            .power_bank
+                            .push(TryInto::<StructurePowerBank>::try_into(structure).unwrap());
+                    }
+                    StructureType::Tower => {
+                        new_organized_structures
+                            .tower
+                            .push(TryInto::<StructureTower>::try_into(structure).unwrap());
+                    }
+                    StructureType::InvaderCore => {
+                        new_organized_structures
+                            .invader_core
+                            .push(TryInto::<StructureInvaderCore>::try_into(structure).unwrap());
+                    }
+                    _ => {}
+                }
+            }
+            new_organized_structures
+        });
+        organized_structures
     }
+
+    #[inline]
+    pub fn storage<'state>(
+        room_name: &RoomName,
+        game_state: &'state mut GameState,
+    ) -> &'state Option<StructureStorage> {
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+        room_state.storage = room.storage();
+        &room_state.storage
+    }
+
+    #[inline]
+    pub fn controller<'state>(
+        room_name: &RoomName,
+        game_state: &'state mut GameState,
+    ) -> &'state Option<StructureController> {
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+        room_state.controller = room.controller();
+        &room_state.controller
+    }
+
+    #[inline]
+    pub fn terminal<'state>(
+        room_name: &RoomName,
+        game_state: &'state mut GameState,
+    ) -> &'state Option<StructureTerminal> {
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+        room_state.terminal = room.terminal();
+        &room_state.terminal
+    }
+
+    // pub fn spawns_by_activity<'state>(
+    //     room_name: &RoomName,
+    //     game_state: &'state mut GameState,
+    // ) -> &'state Option<SpawnsByActivity<'state>> {
+
+    //     let structures = Self::structures(room_name, game_state);
+
+    //     let Some(commune_state) = game_state.commune_states.get_mut(room_name) else {
+    //         return &None
+    //     };
+
+    //     let spawns_by_activity = commune_state.spawns_by_activity.get_or_insert_with(|| SpawnsByActivity::new());
+
+    //     for spawn in &structures.spawn {
+    //         match spawn.spawning() {
+    //             Some(spawning) => spawns_by_activity.active.push(&spawn),
+    //             _ => spawns_by_activity.inactive.push(&spawn),
+    //         }
+    //     }
+
+    //     &commune_state.spawns_by_activity
+    // }
+
+    // pub fn spawns_by_activity<'state>(
+    //     room_name: &RoomName,
+    //     game_state: &'state mut GameState<'state>,
+    // ) -> &'state Option<SpawnsByActivity<'state>> {
+    //     let mut spawns_by_activity = {
+    //         let spawns_by_activity = SpawnsByActivity::new();
+
+    //         let structures = Self::structures(room_name, game_state);
+
+    //         for spawn in &structures.spawn {
+    //             match spawn.spawning() {
+    //                 Some(spawning) => spawns_by_activity.active.push(&spawn),
+    //                 _ => spawns_by_activity.inactive.push(&spawn),
+    //             }
+    //         }
+
+    //         spawns_by_activity
+    //     };
+
+    //     let Some(commune_state) = game_state.commune_states.get_mut(room_name) else {
+    //         return &None;
+    //     };
+
+    //     commune_state.spawns_by_activity = Some(spawns_by_activity);
+    //     &commune_state.spawns_by_activity
+    // }
 
     // pub fn get_sources(room: &Room, room_data: &mut RoomData) -> Option<Vec<Source>> {
 
@@ -117,4 +295,22 @@ impl RoomOps {
         room_memory.status = Some(new_status.clone());
         Some(new_status)
     }
+
+    pub fn move_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+        let Some(room) = game_state.rooms.get_mut(room_name) else {
+            return;
+        };
+
+        let Some(room_state) = game_state.room_states.get_mut(room_name) else {
+            return;
+        };
+
+        let Some(room_memory) = memory.rooms.get_mut(room_name) else {
+            return;
+        };
+
+        Self::move_creep(room_name, game_state, memory);
+    }
+
+    pub fn move_creep(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {}
 }
