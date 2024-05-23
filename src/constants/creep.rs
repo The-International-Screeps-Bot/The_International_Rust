@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use enum_map::Enum;
+use enum_map::{Enum, EnumMap};
 use screeps::{BodyPart, Creep, Part};
 use serde::{Deserialize, Serialize};
 
@@ -54,3 +54,5 @@ impl CreepPart {
         }
     }
 }
+
+pub type BodypartCounts = EnumMap<CreepPart, u32>;

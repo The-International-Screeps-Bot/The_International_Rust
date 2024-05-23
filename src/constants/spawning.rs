@@ -59,12 +59,12 @@ pub enum SpawnRequestTypes {
     GroupUniform,
 }
 
-pub struct SpawnRequest<'a> {
+pub struct SpawnRequest {
     pub role: CreepRole,
     pub priority: u32,
     pub tier: u32,
     pub cost: u32,
-    pub memory: &'a CreepMemory,
+    pub memory: CreepMemory,
     pub body_part_counts: EnumMap<CreepPart, u32>,
 }
 
