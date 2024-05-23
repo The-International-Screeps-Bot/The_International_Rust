@@ -19,17 +19,19 @@ impl CreepServices {
         for (creep_name, creep) in creeps {}
     }
 
-    pub fn run_creeps(game_state: &GameState, memory: &mut GameMemory) {
-        let creeps = &game_state.creeps;
-        for (creep_name, owned_creep) in creeps {
+    pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+        
+        let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
+        for creep_name in &creep_names {
             debug!("running creep {}", creep_name);
 
-            OwnedCreepOps::run_role(owned_creep, game_state, memory);
+            let creep = game_state.creeps.get(creep_name).unwrap();
 
-            let creep = owned_creep.inner();
-            if creep.spawning() {
+            if creep.inner().spawning() {
                 continue;
             }
+
+            OwnedCreepOps::run_role(creep_name, game_state, memory);
         }
     }
 
@@ -42,10 +44,10 @@ impl CreepServices {
     }
 
     pub fn move_creeps(game_state: &GameState) {
-        let creeps: Vec<Creep> = Vec::new();
 
-        for creep in creeps {
-            CreepMoveOps::try_run_move_request(&creep, game_state, &mut HashSet::new());
+        let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
+        for creep_name in &creep_names {
+            CreepMoveOps::try_run_move_request(creep_name, game_state, &mut HashSet::new());
         }
     }
 }

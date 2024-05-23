@@ -1,4 +1,4 @@
-use screeps::Creep;
+use screeps::{Creep, HasPosition};
 
 #[derive(Clone, Debug)]
 #[repr(transparent)]
