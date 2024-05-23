@@ -83,4 +83,18 @@ impl GeneralUtils {
 
         return Err(())
     }
+
+    pub fn find_index_with_lowest_score<T>(iter: &Vec<T>, f: &dyn Fn(&T) -> u32/* for<'a> fn(val: &'a T) -> u32 *//* impl Fn(val: T) -> number | false */) -> (u32, u32) {
+        let (mut lowest_score, mut index) = (u32::MAX, 0);
+    
+        for (i, val) in iter.iter().enumerate() {
+            let val_score = f(val);
+    
+            if val_score < lowest_score {
+                (lowest_score, index) = (val_score, i as u32);
+            }
+        }
+    
+        (lowest_score, index)
+    }
 }

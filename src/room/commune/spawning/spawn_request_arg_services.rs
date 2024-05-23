@@ -48,6 +48,7 @@ impl SpawnRequestArgServices {
                     priority: 1,
                     max_creeps: None,
                     threshold: None,
+                    spawn_target: None,
                 },
             ));
 

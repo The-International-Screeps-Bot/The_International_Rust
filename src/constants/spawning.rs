@@ -1,7 +1,7 @@
 use std::default;
 
 use enum_map::{Enum, EnumMap};
-use screeps::{constants::creep::Part, BodyPart, SpawnOptions};
+use screeps::{constants::creep::Part, BodyPart, Position, SpawnOptions};
 
 use crate::memory::creep_memory::CreepMemory;
 
@@ -17,6 +17,7 @@ pub struct IndividualUniformSpawnRequestArgs {
     pub memory_additions: CreepMemory,
     pub priority: u32,
     pub creeps_quota: u32,
+    pub spawn_target: Option<Position>,
 }
 
 pub struct GroupUniformSpawnRequestArgs {
@@ -30,6 +31,7 @@ pub struct GroupUniformSpawnRequestArgs {
     pub priority: u32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
+    pub spawn_target: Option<Position>,
 }
 
 pub struct GroupDiverseSpawnRequestArgs {
@@ -43,6 +45,7 @@ pub struct GroupDiverseSpawnRequestArgs {
     pub priority: u32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
+    pub spawn_target: Option<Position>,
 }
 
 pub enum SpawnRequestArgs {
@@ -66,6 +69,7 @@ pub struct SpawnRequest {
     pub cost: u32,
     pub memory: CreepMemory,
     pub body_part_counts: EnumMap<CreepPart, u32>,
+    pub spawn_target: Option<Position>,
 }
 
 #[derive(Default)]

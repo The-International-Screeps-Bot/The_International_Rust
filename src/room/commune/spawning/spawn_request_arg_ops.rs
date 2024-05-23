@@ -9,7 +9,10 @@ use screeps::{
 use crate::{
     constants::{
         creep::{BodypartCounts, CreepPart, CreepParts},
-        spawning::{GroupDiverseSpawnRequestArgs, GroupUniformSpawnRequestArgs, IndividualUniformSpawnRequestArgs, SpawnRequest, SpawnRequestArgs},
+        spawning::{
+            GroupDiverseSpawnRequestArgs, GroupUniformSpawnRequestArgs,
+            IndividualUniformSpawnRequestArgs, SpawnRequest, SpawnRequestArgs,
+        },
     },
     memory::game_memory::GameMemory,
     state::{commune::CommuneState, game::GameState, room::RoomState},
@@ -98,10 +101,11 @@ impl SpawnRequestArgOps {
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),
+                spawn_target: args.spawn_target,
             });
 
             creeps_quota -= 1;
-        };
+        }
 
         spawn_requests
     }
@@ -220,10 +224,11 @@ impl SpawnRequestArgOps {
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),
+                spawn_target: args.spawn_target,
             });
 
             max_creeps -= 1;
-        };
+        }
 
         spawn_requests
     }
@@ -311,12 +316,13 @@ impl SpawnRequestArgOps {
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),
+                spawn_target: args.spawn_target,
             });
 
             parts_quota -= parts_count;
             max_creeps -= 1;
-        };
-        
+        }
+
         spawn_requests
     }
 

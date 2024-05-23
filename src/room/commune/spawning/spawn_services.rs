@@ -8,9 +8,12 @@ use crate::{
     memory::{game_memory::GameMemory, room_memory::RoomMemory},
     room::room_ops::RoomOps,
     state::{commune::CommuneState, game::GameState, room::RoomState},
+    utils::general::GeneralUtils,
 };
 
-use super::{spawn_request_arg_ops::SpawnRequestArgOps, spawn_request_arg_services::SpawnRequestArgServices};
+use super::{
+    spawn_request_arg_ops::SpawnRequestArgOps, spawn_request_arg_services::SpawnRequestArgServices,
+};
 
 pub struct SpawnServices;
 
@@ -48,22 +51,32 @@ impl SpawnServices {
         for spawn_request_args in spawn_requests_args {
             let spawn_requests = match spawn_request_args {
                 SpawnRequestArgs::IndividualUniform(args) => {
-                    SpawnRequestArgOps::spawn_request_individual_uniform(args, room_name, game_state, memory)
+                    SpawnRequestArgOps::spawn_request_individual_uniform(
+                        args, room_name, game_state, memory,
+                    )
                 }
                 SpawnRequestArgs::GroupUniform(args) => {
-                    SpawnRequestArgOps::spawn_request_group_uniform(&args, room_name, game_state, memory)
+                    SpawnRequestArgOps::spawn_request_group_uniform(
+                        &args, room_name, game_state, memory,
+                    )
                 }
                 SpawnRequestArgs::GroupDiverse(args) => {
-                    SpawnRequestArgOps::spawn_request_group_diverse(&args, room_name, game_state, memory)
+                    SpawnRequestArgOps::spawn_request_group_diverse(
+                        &args, room_name, game_state, memory,
+                    )
                 }
             };
 
             for spawn_request in spawn_requests {
-
+                Self::process_spawn_request(&spawn_request)
             }
         }
-            
+
         for spawn in inactive_spawns {}
+    }
+
+    fn process_spawn_request(spawn_request: &SpawnRequest) {
+        let body = Self::constructBodyForSpawnRequest(spawn_request);
     }
 
     fn constructBodyForSpawnRequest(spawn_request: &SpawnRequest) -> Vec<Part> {
@@ -74,7 +87,8 @@ impl SpawnServices {
             == spawn_request.body_part_counts[CreepPart::Carry] * Part::cost(Part::Carry)
                 + spawn_request.body_part_counts[CreepPart::Move] * Part::cost(Part::Move)
         {
-            let ratio = spawn_request.body_part_counts[CreepPart::Carry] / spawn_request.body_part_counts[CreepPart::Move];
+            let ratio = spawn_request.body_part_counts[CreepPart::Carry]
+                / spawn_request.body_part_counts[CreepPart::Move];
 
             let i: i32 = -1;
             while i < spawn_request.body_part_counts[CreepPart::Carry] as i32 - 1 {
@@ -88,5 +102,21 @@ impl SpawnServices {
         }
 
         body
+    }
+
+    fn find_spawn_index_for_spawn_request(
+        spawn_request: &SpawnRequest,
+        inactive_spawns: Vec<StructureSpawn>,
+    ) -> u32 {
+        let Some(spawn_target) = spawn_request.spawn_target else {
+            return 0;
+        };
+
+        let (score, index) =
+            GeneralUtils::find_index_with_lowest_score(&inactive_spawns, &|spawn| {
+                return GeneralUtils::pos_range(&screeps::HasPosition::pos(&spawn), &spawn_target);
+            });
+
+        index
     }
 }
