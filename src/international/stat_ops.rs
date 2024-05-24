@@ -1,8 +1,8 @@
 use crate::state::game::GameState;
 
-pub struct StatProcs;
+pub struct StatOps;
 
-impl StatProcs {
+impl StatOps {
     pub fn find_combined_rcl(game_state: &GameState) -> u32 {
         let mut combined_rcl: u32 = 0;
 

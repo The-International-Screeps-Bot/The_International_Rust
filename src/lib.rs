@@ -1,34 +1,56 @@
+// FIXME: remove this, but right now it's just causing warning fatigue
+#![allow(unused)]
+
+use core::cell::RefCell;
+
 use log::*;
 use memory::game_memory::GameMemory;
 use screeps::game;
 use wasm_bindgen::prelude::*;
 
-use crate::memory::memory_ops::{MemoryOps, MEMORY};
+use crate::{
+    memory::memory_ops::{MemoryOps, MEMORY},
+    settings::Settings,
+    state::game::{GameState, GameStateOps},
+};
 
-mod logging;
-mod settings;
-mod pathfinding;
-mod memory;
-mod state;
-mod utils;
 mod constants;
 mod creep;
-mod room;
-mod structures;
 mod international;
+mod logging;
+mod memory;
+mod pathfinding;
+mod room;
+mod settings;
+mod state;
+mod structures;
+mod utils;
+
+thread_local! {
+    static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::default());
+    static SETTINGS: RefCell<Settings> = RefCell::new(Settings::default());
+}
 
 #[wasm_bindgen]
 pub fn init() {
     logging::setup_logger(LevelFilter::Trace);
     info!("Initializing...");
+    GAME_STATE.with_borrow_mut(|game_state| {
+        game_state.init_tick = game::time();
+    });
+
+    SETTINGS.with_borrow_mut(|settings| {
+        settings.allies.insert(String::from("PandaMaster"));
+    });
 }
 
 #[wasm_bindgen]
 pub fn game_loop() {
-
     #[cfg(feature = "profile")]
     {
-        screeps_timing::start_trace(Box::new(|| (screeps::game::cpu::get_used() * 1000.0) as u64));
+        screeps_timing::start_trace(Box::new(|| {
+            (screeps::game::cpu::get_used() * 1000.0) as u64
+        }));
     }
 
     let tick = game::time();
@@ -42,7 +64,13 @@ pub fn game_loop() {
     error!("this is a critical error");
 
     MEMORY.with_borrow_mut(|memory| {
-        with_memory(memory);
+        SETTINGS.with_borrow(|settings| {
+            GAME_STATE.with_borrow_mut(|game_state| {
+                
+                loop_with_params(memory, game_state, settings);
+                debug!("{:#?}", game_state);
+            });
+        });
 
         MemoryOps::write(memory);
     });
@@ -54,28 +82,12 @@ pub fn game_loop() {
         if let Some(trace_output) = serde_json::to_string(&trace).ok() {
             info!("{}", trace_output);
         }
-    }   
+    }
 
     info!("Ending tick {}: {:.3} CPU", tick, game::cpu::get_used());
 }
 
-#[cfg(feature = "profile")]
-fn with_memory(memory: &mut GameMemory) {
-    use std::collections::HashSet;
-    use state::game::GameState;
-
-    use crate::settings::Settings;
-
-    // This should only be called once. I'm not sure how to do that well though
-
-    let mut allies = HashSet::new();
-    allies.insert(String::from("PandaMaster"));
-    let settings = Settings::new(allies);
-
-    let game_state = GameState::new();
-
-    // 
-
-
-
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
+    GameStateOps::update(game_state, memory);
 }

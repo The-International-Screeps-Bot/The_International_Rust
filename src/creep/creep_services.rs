@@ -1,13 +1,10 @@
 use std::collections::HashSet;
 
-use js_sys::{JsString, Object, Reflect};
 use log::{debug, info};
-use screeps::{game, Creep, SharedCreepProperties};
-use wasm_bindgen::JsCast;
+use screeps::{Creep, SharedCreepProperties};
 
+use super::{creep_move_ops::CreepMoveOps, owned_creep_ops::OwnedCreepOps};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
-
-use super::creep_ops::CreepOps;
 
 pub struct CreepServices;
 
@@ -19,34 +16,38 @@ impl CreepServices {
         // record creep amounts to the rooms they come from (commune data)
 
         let creeps = &game_state.creeps;
-        for (creep_name, creep) in creeps {
-
-        }
+        for (creep_name, creep) in creeps {}
     }
 
-    pub fn run_creeps(game_state: &GameState, memory: &mut GameMemory) {
+    pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+        
+        let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
+        for creep_name in &creep_names {
+            debug!("running creep {}", creep_name);
 
-        let creeps = &game_state.creeps;
-        for (creep_name, creep) in creeps {
+            let creep = game_state.creeps.get(creep_name).unwrap();
 
-            debug!("running creep {}", creep.name());
-
-            CreepOps::run_role(&creep, game_state, memory);
-    
-            if creep.spawning() {
-    
+            if creep.inner().spawning() {
                 continue;
             }
+
+            OwnedCreepOps::run_role(creep_name, game_state, memory);
         }
     }
 
     pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
-
         info!("running memory cleanup");
-    
-        let _ = &memory.creeps.retain(|creep_name, _creep| {
 
-            game_state.creeps.contains_key(creep_name)
-        });
+        let _ = &memory
+            .creeps
+            .retain(|creep_name, _creep| game_state.creeps.contains_key(creep_name));
+    }
+
+    pub fn move_creeps(game_state: &GameState) {
+
+        let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
+        for creep_name in &creep_names {
+            CreepMoveOps::try_run_move_request(creep_name, game_state, &mut HashSet::new());
+        }
     }
 }

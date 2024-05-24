@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
+use enum_map::EnumMap;
 use screeps::RoomName;
 use serde::{Deserialize, Serialize};
 
+use crate::constants::creep::CreepRole;
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct Stats {
-    pub creep_count: u32,
+    pub total_creeps: u32,
+    pub alive_power_creeps: u32,
     pub power_creep_count: u32,
     pub combined_rcl: u32,
     pub gcl_progress: u64,
@@ -13,10 +17,34 @@ pub struct Stats {
     pub gpl_progress: u64,
     pub gpl_total: u64,
     pub rooms: HashMap<RoomName, RoomStats>,
+    pub communes: HashMap<RoomName, CommuneStats>,
+    pub cpu_used: u32,
+    pub game_time: u32,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct RoomStats {
-    creep_count: u32,
-    stored_energy: u32,
+
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct CommuneStats {
+    pub creeps: u32,
+    pub creeps_from_room: u32,
+    pub power_creeps: u32,
+    pub stored_energy: u32,
+    pub energy_out_upgrade: u32,
+    pub energy_out_build: u32,
+    pub energy_out_repair_economy: u32,
+    pub energy_out_repair_barricades: u32,
+    pub energy_out_spawn: u32,
+    pub energy_out_renew: u32,
+    pub energy_out_terminal_domestic: u32,
+    pub energy_out_terminal_foreign: u32,
+    pub energy_out_terminal_transaction_costs: u32,
+    pub controller_level: u32,
+    pub remote_count: u32,
+    pub minerals_harvested: u32,
+    pub min_hauler_cost: u32,
+    pub spawn_usage_percent: u32,
 }
