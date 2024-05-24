@@ -76,10 +76,10 @@ impl SpawnServices {
     }
 
     fn process_spawn_request(spawn_request: &SpawnRequest) {
-        let body = Self::constructBodyForSpawnRequest(spawn_request);
+        let body = Self::construct_body_for_spawn_request(spawn_request);
     }
 
-    fn constructBodyForSpawnRequest(spawn_request: &SpawnRequest) -> Vec<Part> {
+    fn construct_body_for_spawn_request(spawn_request: &SpawnRequest) -> Vec<Part> {
         let mut body: Vec<Part> = Vec::new();
 
         // If the creep is only made up of carry and move
