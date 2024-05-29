@@ -49,5 +49,15 @@ impl CreepServices {
         for creep_name in &creep_names {
             CreepMoveOps::try_run_move_request(creep_name, game_state, &mut HashSet::new());
         }
+
+        // for creep_name in game_state.creeps.keys().into_iter().collect::<Vec<String>>() {
+
+        // }
+
+        let creeps = game_state.creeps.values();
+        for creep/* (creep_name, creep) */ in creeps {
+
+            CreepMoveOps::try_run_move_request(&creep.inner().name(), game_state, &mut HashSet::new());
+        }
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::{cell::RefCell, collections::{HashMap, HashSet}};
 
 use screeps::{
     game, AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName,

@@ -6,13 +6,15 @@ use screeps::{
     StructureProperties, StructureStorage, StructureTerminal, StructureType,
 };
 
-use crate::constants::structure::OrganizedStructures;
+use crate::constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}};
 
 use super::game::GameState;
 
 #[derive(Debug)]
 pub struct RoomState {
     pub name: RoomName,
+
+    // Structures
     pub structures: Option<OrganizedStructures>,
     pub storage: Option<StructureStorage>,
     pub terminal: Option<StructureTerminal>,
@@ -21,6 +23,14 @@ pub struct RoomState {
     pub nuker: Option<StructureNuker>,
     pub factory: Option<StructureFactory>,
     pub commune_plan: Option<CommunePlan>,
+    pub spawns_by_activity: Option<SpawnsByActivity>,
+
+    // Sources
+    pub sources: Option<Vec<Source>>,
+    pub harvest_positions: Option<Vec<Position>>,
+
+    // Creeps
+    pub not_my_creeps: Option<NotMyCreeps>,
 }
 
 impl RoomState {
@@ -35,6 +45,10 @@ impl RoomState {
             nuker: None,
             factory: None,
             commune_plan: None,
+            sources: None,
+            harvest_positions: None,
+            not_my_creeps: None,
+            spawns_by_activity: None,
         }
     }
 }

@@ -13,7 +13,7 @@ use screeps::{
 };
 
 use crate::{
-    constants::structure::{OldOrganizedStructures, OrganizedStructures, SpawnsByActivity},
+    constants::{room::NotMyCreeps, structure::{OldOrganizedStructures, OrganizedStructures, SpawnsByActivity}},
     memory::{game_memory::GameMemory, room_memory::RoomMemory},
     settings::Settings,
     state::{
@@ -217,68 +217,78 @@ impl RoomOps {
     //     &commune_state.spawns_by_activity
     // }
 
-    // pub fn get_sources(room: &Room, room_data: &mut RoomData) -> Option<Vec<Source>> {
-
-    //     let mut sources = &room_data.sources;
-    //     if let Some(sources) = sources {
-    //         return Some(sources.clone())
-    //     };
-
-    //     let new_sources: Vec<Source> = room.find(find::SOURCES, None);
-    //     room_data.sources = Some(new_sources.clone());
-    //     Some(new_sources)
-    // }
-
     // /// Gets creeps that we don't own, seperated into those that are enemies and those that are allies
-    // pub fn not_my_creeps(room: &Room, room_data: &mut RoomData, settings: &Settings) -> Option<NotMyCreeps> {
+    pub fn not_my_creeps(room: &Room, game_state: &mut GameState, settings: &Settings) -> Option<NotMyCreeps> {
 
-    //     let mut not_my_creeps = &room_data.not_my_creeps;
-    //     if let Some(enemy_creeps) = not_my_creeps {
-    //         return Some(enemy_creeps.clone())
-    //     }
+        let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
 
-    //     let mut new_not_my_creeps: NotMyCreeps = NotMyCreeps::new();
+        let mut not_my_creeps = &room_data.not_my_creeps;
+        if let Some(enemy_creeps) = not_my_creeps {
+            return Some(enemy_creeps.clone())
+        }
 
-    //     let unorganized_not_my_creeps: Vec<Creep> = room.find(find::HOSTILE_CREEPS, None);
-    //     for creep in unorganized_not_my_creeps {
-    //         if settings.allies.contains(&creep.name()) {
-    //             new_not_my_creeps.ally.push(creep);
-    //             continue;
-    //         }
+        let mut new_not_my_creeps: NotMyCreeps = NotMyCreeps::new();
 
-    //         new_not_my_creeps.enemy.push(creep);
-    //     }
+        let unorganized_not_my_creeps: Vec<Creep> = room.find(find::HOSTILE_CREEPS, None);
+        for creep in unorganized_not_my_creeps {
+            if settings.allies.contains(&creep.name()) {
+                new_not_my_creeps.ally.push(creep);
+                continue;
+            }
 
-    //     room_data.not_my_creeps = Some(new_not_my_creeps.clone());
-    //     Some(new_not_my_creeps)
-    // }
+            new_not_my_creeps.enemy.push(creep);
+        }
 
-    // pub fn harvest_positions(room: &Room, room_data: &mut RoomData) -> Option<Vec<Position>> {
+        room_data.not_my_creeps = Some(new_not_my_creeps.clone());
+        Some(new_not_my_creeps)
+    }
 
-    //     let harvest_positions = &room_data.harvest_positions;
-    //     if let Some(harvest_positions) = harvest_positions {
-    //         return Some(harvest_positions.clone())
-    //     }
+    pub fn get_sources(room: &Room, game_state: &mut GameState) -> Option<Vec<Source>> {
 
-    //     let sources = RoomOps::get_sources(room, room_data);
-    //     let Some(sources) = sources else {
-    //         return None;
-    //     };
+        let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
 
-    //     let new_harvest_positions: Vec<Position> = Vec::new();
+        let mut sources = &room_data.sources;
+        if let Some(sources) = sources {
+            return Some(sources.clone())
+        };
 
-    //     for source in sources {
-    //         GeneralUtils::for_adjacent_positions(source.pos(), &|adjacent_pos| {
-    //             let terrain = room.look_for_at(look::TERRAIN, adjacent_pos);
-    //             terrain.contains(&Terrain::Wall);
+        let new_sources: Vec<Source> = room.find(find::SOURCES, None);
+        room_data.sources = Some(new_sources.clone());
+        Some(new_sources)
+    }
 
-    //             ();
-    //         })
-    //     }
+    pub fn harvest_positions(room: &Room, game_state: &mut GameState) -> Option<Vec<Position>> {
 
-    //     room_data.harvest_positions = Some(new_harvest_positions.clone());
-    //     Some(new_harvest_positions)
-    // }
+        {
+            let room_data = game_state.room_states.get(&room.name()).unwrap();
+
+            let harvest_positions = &room_data.harvest_positions;
+            if let Some(harvest_positions) = harvest_positions {
+                return Some(harvest_positions.clone())
+            }
+        }
+
+        let sources = RoomOps::get_sources(room, game_state);
+        let Some(sources) = sources else {
+            return None;
+        };
+
+        let new_harvest_positions: Vec<Position> = Vec::new();
+
+        for source in sources {
+            GeneralUtils::for_adjacent_positions(source.pos(), &|adjacent_pos| {
+                let terrain = room.look_for_at(look::TERRAIN, adjacent_pos);
+                terrain.contains(&Terrain::Wall);
+
+                ();
+            })
+        }
+
+        let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
+
+        room_data.harvest_positions = Some(new_harvest_positions.clone());
+        Some(new_harvest_positions)
+    }
 
     pub fn room_status(room_name: &RoomName, memory: &mut GameMemory) -> Option<RoomStatus> {
         let Some(room_memory) = memory.rooms.get_mut(room_name) else {
@@ -313,4 +323,16 @@ impl RoomOps {
     }
 
     pub fn move_creep(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {}
+
+    /* pub fn test_state(room: &Room, room_state: &mut RoomState, game_state: &mut GameState, memory: &mut GameMemory) {
+
+    }
+
+    pub fn test_state_name(room_name: &RoomName, room_state: &mut RoomState, game_state: &mut GameState, memory: &mut GameMemory) {
+
+    }
+
+    pub fn test_name(room_name: &RoomName, room: &Room, game_state: &mut GameState, memory: &mut GameMemory) {
+        
+    } */
 }

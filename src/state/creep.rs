@@ -1,7 +1,7 @@
 use std::{collections::HashMap, default};
 
 use crate::{constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType}, creep::owned_creep::OwnedCreep};
-use screeps::Creep;
+use screeps::{Creep, Position};
 
 use super::game::GameState;
 
@@ -12,6 +12,7 @@ pub struct CreepState {
     pub parts: Option<CreepParts>,
     pub parts_by_type: Option<CreepPartsByType>,
     pub active_parts_by_type: Option<ActiveCreepPartsByType>,
+    pub move_request: Option<Position>,
 }
 
 impl CreepState {
