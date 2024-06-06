@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use creep::my_creep::MyCreep;
 use log::*;
 use memory::game_memory::GameMemory;
-use room::commune::my_room::MyRoom;
+use room::commune::{commune_services, my_room::MyRoom};
 use screeps::{game, RoomName};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
@@ -107,4 +107,6 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     let mut my_room_names: Vec<RoomName> = Vec::new(); */
 
     GameStateOps::update(game_state, memory);
+
+    commune_services::run_towers(game_state, memory);
 }

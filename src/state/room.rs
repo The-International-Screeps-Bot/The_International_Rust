@@ -4,7 +4,7 @@ use screeps::{
     find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
 };
 
-use crate::constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}};
+use crate::{constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}}, creep::my_creep::MyCreep};
 
 use super::game::GameState;
 
@@ -31,6 +31,7 @@ pub struct RoomState {
     pub harvest_positions: Option<Vec<Position>>,
 
     // Creeps
+    pub my_creeps: Option<Vec<MyCreep>>,
     pub not_my_creeps: Option<NotMyCreeps>,
 }
 
@@ -49,6 +50,7 @@ impl RoomState {
             commune_plan: None,
             sources: None,
             harvest_positions: None,
+            my_creeps: None,
             not_my_creeps: None,
             spawns_by_activity: None,
         }

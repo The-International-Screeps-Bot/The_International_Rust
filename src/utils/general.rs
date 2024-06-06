@@ -3,6 +3,12 @@ use screeps::{game, OwnedStructureProperties, Position};
 
 pub struct GeneralUtils;
 
+pub fn is_tick_interval(tick: u32, interval: u32) -> bool {
+    let tick = game::time();
+
+    tick % interval == 0
+}
+
 impl GeneralUtils {
     pub fn is_tick_interval(interval: u32) -> bool {
         let tick = game::time();

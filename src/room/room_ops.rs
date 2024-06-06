@@ -55,7 +55,7 @@ impl RoomOps {
     pub fn structures<'state>(
         room_name: &RoomName,
         game_state: &'state mut GameState,
-    ) -> &'state OrganizedStructures {
+    ) -> &'state mut OrganizedStructures {
         let room = game_state.rooms.get(room_name).unwrap();
         let room_state = game_state.room_states.get_mut(room_name).unwrap();
 
@@ -218,20 +218,22 @@ impl RoomOps {
     // }
 
     // /// Gets creeps that we don't own, seperated into those that are enemies and those that are allies
-    pub fn not_my_creeps(room: &Room, game_state: &mut GameState, settings: &Settings) -> Option<NotMyCreeps> {
+    pub fn not_my_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &GameMemory) -> NotMyCreeps {
 
-        let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
+        let room_data = game_state.room_states.get_mut(room_name).unwrap();
 
         let mut not_my_creeps = &room_data.not_my_creeps;
         if let Some(enemy_creeps) = not_my_creeps {
-            return Some(enemy_creeps.clone())
+            return enemy_creeps.clone()
         }
 
         let mut new_not_my_creeps: NotMyCreeps = NotMyCreeps::new();
 
+        let room = game_state.rooms.get(room_name).unwrap();
+
         let unorganized_not_my_creeps: Vec<Creep> = room.find(find::HOSTILE_CREEPS, None);
         for creep in unorganized_not_my_creeps {
-            if settings.allies.contains(&creep.name()) {
+            if memory.allies.contains_key(&creep.name()) {
                 new_not_my_creeps.ally.push(creep);
                 continue;
             }
@@ -240,7 +242,7 @@ impl RoomOps {
         }
 
         room_data.not_my_creeps = Some(new_not_my_creeps.clone());
-        Some(new_not_my_creeps)
+        new_not_my_creeps
     }
 
     pub fn get_sources(room: &Room, game_state: &mut GameState) -> Vec<Source> {
