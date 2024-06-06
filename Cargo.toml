@@ -9,6 +9,7 @@ edition = "2021"
 
 [dependencies]
 screeps-game-api = "0.21.0"
+screeps-game-utils = "0.21.1"
 # If you'd like to use a locally-cloned out version of the game API crate
 # (for testing PRs, etc), you can use a local path (replacing the above line):
 # screeps-game-api = { git = "https://github.com/The-International-Screeps-Bot/screeps-game-api.git" }

@@ -48,8 +48,6 @@ impl CommunePlanningOps {
         game_state: &mut GameState,
         memory: &mut GameMemory,
     ) -> CommunePlanResult {
-
-
         let room_state = game_state.room_states.get_mut(room_name).unwrap();
         room_state.commune_plan = Some(CommunePlan::new());
 
@@ -65,7 +63,6 @@ impl CommunePlanningOps {
         game_state: &mut GameState,
         memory: &mut GameMemory,
     ) -> CommunePlanResult {
-
         let room_state = game_state.room_states.get_mut(room_name).unwrap();
         let mut plan = CommunePlan::new();
 
@@ -81,7 +78,7 @@ impl CommunePlanningOps {
             return CommunePlanResult::Never;
         };
 
-        if fast_filler_start_positions.len() == 0 {
+        if fast_filler_start_positions.is_empty() {
             return CommunePlanResult::Never;
         }
 
@@ -93,12 +90,10 @@ impl CommunePlanningOps {
         game_state: &mut GameState,
         memory: &mut GameMemory,
     ) {
-
-
     }
 
     fn try_config_plan(
-        room_name: &String,
+        room_name: &RoomName,
         game_state: &mut GameState,
         memory: &mut GameMemory,
         plan: &mut CommunePlan,

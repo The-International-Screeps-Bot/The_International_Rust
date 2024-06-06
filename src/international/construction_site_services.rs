@@ -37,7 +37,7 @@ impl ConstructionSiteServices {
         // delete and remove caches for construction sites that are too old relative to their progress
 
         memory.construction_sites.retain(|id, age| {
-            let Some(site) = construction_sites.get(&id) else {
+            let Some(site) = construction_sites.get(id) else {
 
                 return false
             };
@@ -54,7 +54,7 @@ impl ConstructionSiteServices {
 
         for (id, age) in &mut memory.construction_sites {
             // times inveral because we only run the code every interval, but we cant to track how many ticks have passed
-            *age += 1 * interval;
+            *age += interval;
         }
     }
 

@@ -2,14 +2,17 @@
 #![allow(unused)]
 
 use core::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 
+use creep::my_creep::MyCreep;
 use log::*;
 use memory::game_memory::GameMemory;
-use screeps::game;
+use room::commune::my_room::MyRoom;
+use screeps::{game, RoomName};
+use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    memory::memory_ops::{MemoryOps, MEMORY},
     settings::Settings,
     state::game::{GameState, GameStateOps},
 };
@@ -25,10 +28,17 @@ mod settings;
 mod state;
 mod structures;
 mod utils;
+mod init;
 
 thread_local! {
-    static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::default());
-    static SETTINGS: RefCell<Settings> = RefCell::new(Settings::default());
+    static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
+    static SETTINGS: RefCell<Settings> = RefCell::new(Settings::new());
+    static MEMORY: RefCell<GameMemory> = RefCell::new(GameMemory::load_from_memory_or_default());
+
+    static ROOM_STATES: RefCell<HashMap<RoomName, RoomState>> = RefCell::new(HashMap::new());
+    static MY_ROOM_STATES: RefCell<HashMap<RoomName, MyRoom>> = RefCell::new(HashMap::new());
+    static CREEP_STATES: RefCell<HashMap<String, CreepState>> = RefCell::new(HashMap::new());
+    static MY_CREEP_STATES: RefCell<HashMap<String, MyCreep>> = RefCell::new(HashMap::new());
 }
 
 #[wasm_bindgen]
@@ -72,14 +82,14 @@ pub fn game_loop() {
             });
         });
 
-        MemoryOps::write(memory);
+        memory.write();
     });
 
     #[cfg(feature = "profile")]
     {
         let trace = screeps_timing::stop_trace();
 
-        if let Some(trace_output) = serde_json::to_string(&trace).ok() {
+        if let Ok(trace_output) = serde_json::to_string(&trace) {
             info!("{}", trace_output);
         }
     }
@@ -89,5 +99,12 @@ pub fn game_loop() {
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
+
+    /* let mut my_creeps: HashMap<String, MyCreep> = HashMap::new();
+    let mut my_creep_names: Vec<String> = Vec::new();
+
+    let mut my_rooms: HashMap<RoomName, MyRoom> = HashMap::new();
+    let mut my_room_names: Vec<RoomName> = Vec::new(); */
+
     GameStateOps::update(game_state, memory);
 }

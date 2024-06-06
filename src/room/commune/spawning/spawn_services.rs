@@ -90,12 +90,14 @@ impl SpawnServices {
             let ratio = spawn_request.body_part_counts[CreepPart::Carry]
                 / spawn_request.body_part_counts[CreepPart::Move];
 
-            let i: i32 = -1;
+            let mut i: i32 = -1;
             while i < spawn_request.body_part_counts[CreepPart::Carry] as i32 - 1 {
                 body.push(Part::Carry);
                 if i % ratio as i32 == 0 {
                     body.push(Part::Move);
                 }
+
+                i += 1;
             }
 
             return body;
@@ -114,7 +116,7 @@ impl SpawnServices {
 
         let (score, index) =
             GeneralUtils::find_index_with_lowest_score(&inactive_spawns, &|spawn| {
-                return GeneralUtils::pos_range(&screeps::HasPosition::pos(&spawn), &spawn_target);
+                GeneralUtils::pos_range(&screeps::HasPosition::pos(&spawn), &spawn_target)
             });
 
         index

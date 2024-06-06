@@ -3,20 +3,46 @@ use std::default;
 use screeps::{game::map::RoomStatus, ObjectId, Source};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct RoomMemory {
-    pub room_type: Option<RoomType>,
-    pub status: Option<RoomStatus>,
-    pub danger: Option<i32>,
-    pub commune_sources: Vec<ObjectId<Source>>,
+    pub room_type: RoomType,
+    pub danger: u32,
+    pub highway: Option<HighwayRoomMemory>,
+    pub intersection: Option<IntersectionRoomMemory>,
+    pub center: Option<CenterRoomMemory>,
+    pub keeper: Option<KeeperRoomMemory>,
+    pub ally: Option<AllyRoomMemory>,
+    pub enemy: Option<EnemyRoomMemory>,
+    pub remote: Option<RemoteRoomMemory>,
+    pub commune: Option<CommuneRoomMemory>,
+    pub commune_sources: Option<Vec<ObjectId<Source>>>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+impl RoomMemory {
+    pub fn new() -> Self {
+        Self {
+            room_type: RoomType::Neutral,
+            danger: 0,
+            commune_sources: None,
+            highway: None,
+            intersection: None,
+            center: None,
+            keeper: None,
+            ally: None,
+            enemy: None,
+            remote: None,
+            commune: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum RoomType {
-    #[default]
     /// Rooms we control the controller of
     Commune,
-    /// Includes reserved rooms. Essentially anything that doesn't fall under another type
+    /// Rooms we intend to or will potentially harvest from
+    Remote,
+    /// Essentially anything that doesn't fall under another type
     Neutral,
     /// Rooms claimed by an enemy
     Enemy,
@@ -31,3 +57,97 @@ pub enum RoomType {
     /// Rooms bordering sectors that are corners and potentially contain portals
     Intersection,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct HighwayRoomMemory {
+    pub deposits: Vec<u32>,
+    pub power_banks: Vec<u32>,
+}
+
+impl HighwayRoomMemory {
+    pub fn new() -> Self {
+        Self {
+            deposits: Vec::new(),
+            power_banks: Vec::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CommuneRoomMemory {
+    pub sources: Vec<ObjectId<Source>>,
+}
+
+impl CommuneRoomMemory {
+    pub fn new() -> Self {
+        Self { sources: Vec::new() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct RemoteRoomMemory {
+    pub sources: Vec<ObjectId<Source>>,
+}
+
+impl RemoteRoomMemory {
+    pub fn new() -> Self {
+        Self { sources: Vec::new() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct IntersectionRoomMemory {
+    pub portals: Vec<u32>,
+}
+
+impl IntersectionRoomMemory {
+    pub fn new() -> Self {
+        Self { portals: Vec::new() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CenterRoomMemory {
+    pub portals: Vec<u32>,
+}
+
+impl CenterRoomMemory {
+    pub fn new() -> Self {
+        Self { portals: Vec::new() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct KeeperRoomMemory {
+    pub portals: Vec<u32>,
+}
+
+impl KeeperRoomMemory {
+    pub fn new() -> Self {
+        Self { portals: Vec::new() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AllyRoomMemory {
+    pub owner: String,
+}
+
+impl AllyRoomMemory {
+    pub fn new() -> Self {
+        Self { owner: "".to_string() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EnemyRoomMemory {
+    pub owner: String,
+}
+
+impl EnemyRoomMemory {
+    pub fn new() -> Self {
+        Self { owner: "".to_string() }
+    }
+}
+
+

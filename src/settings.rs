@@ -11,9 +11,9 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn new(allies: HashSet<String>) -> Self {
+    pub fn new() -> Self {
         Settings {
-            allies,
+            allies: HashSet::new(),
             breaking_version: 0,
         }
     }

@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use log::{debug, info};
 use screeps::{Creep, SharedCreepProperties};
 
-use super::{creep_move_ops::CreepMoveOps, owned_creep_ops::OwnedCreepOps};
+use super::{creep_move_ops::CreepMoveOps, my_creep_ops::MyCreepOps};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
-pub struct CreepServices;
+pub struct MyCreepServices;
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-impl CreepServices {
+impl MyCreepServices {
     pub fn track_creeps(game_state: &GameState) {
         // record creep names to the room they are in (room data)
         // record creep positions to the rooms they are in
@@ -31,7 +31,7 @@ impl CreepServices {
                 continue;
             }
 
-            OwnedCreepOps::run_role(creep_name, game_state, memory);
+            MyCreepOps::run_role(creep_name, game_state, memory);
         }
     }
 

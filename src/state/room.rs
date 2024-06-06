@@ -1,18 +1,19 @@
 use std::collections::HashMap;
 
 use screeps::{
-    find, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer,
-    StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn,
-    StructureProperties, StructureStorage, StructureTerminal, StructureType,
+    find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
 };
 
 use crate::constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}};
 
 use super::game::GameState;
 
+pub type RoomStates = HashMap<RoomName, RoomState>;
+
 #[derive(Debug)]
 pub struct RoomState {
     pub name: RoomName,
+    pub status: Option<RoomStatus>,
 
     // Structures
     pub structures: Option<OrganizedStructures>,
@@ -37,6 +38,7 @@ impl RoomState {
     pub fn new(room: &Room, room_name: RoomName) -> Self {
         Self {
             name: room_name,
+            status: None,
             structures: None,
             storage: None,
             terminal: None,

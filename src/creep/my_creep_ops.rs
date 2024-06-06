@@ -3,17 +3,17 @@ use screeps::{ErrorCode, HasPosition, ObjectId, SharedCreepProperties, Source};
 
 use crate::{
     constants::creep::{CreepOperationResult, CreepRole},
-    creep::owned_creep::OwnedCreep,
+    creep::my_creep::MyCreep,
     memory::game_memory::GameMemory,
     state::game::GameState,
 };
 
 use super::{creep_move_ops::CreepMoveOps, roles::source_harvester_ops::SourceHarvesterOps};
 
-pub struct OwnedCreepOps;
+pub struct MyCreepOps;
 
 /// Only creeps the bot owns should use these functions
-impl OwnedCreepOps {
+impl MyCreepOps {
     // The running of creep roles should be more dynamic and seperated. For example, a function to run harvesting for all harvesters, etc.
     pub fn run_role(creep_name: &String, game_state: &mut GameState, memory: &mut GameMemory) {
         let creep = game_state.creeps.get(creep_name).unwrap();
@@ -34,20 +34,15 @@ impl OwnedCreepOps {
 
     pub fn drop_harvest(
         creep_name: &String,
-        source_id: &ObjectId<Source>,
+        source: &Source,
         game_state: &mut GameState,
         memory: &mut GameMemory,
     ) -> CreepOperationResult {
         let creep = game_state.creeps.get(creep_name).unwrap();
 
-        let Some(source) = source_id.resolve() else {
-            warn!("source id {} not found", source_id);
-            return CreepOperationResult::Exception;
-        };
-
         let source_pos = source.pos();
         if creep.inner().pos().is_near_to(source_pos) {
-            return match creep.inner().harvest(&source) {
+            return match creep.inner().harvest(source) {
                 Ok(()) | Err(ErrorCode::NotEnough) => CreepOperationResult::Fail,
                 Err(e) => {
                     warn!(

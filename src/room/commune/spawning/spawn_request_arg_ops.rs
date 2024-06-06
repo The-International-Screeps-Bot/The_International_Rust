@@ -21,7 +21,7 @@ use crate::{
 pub struct SpawnRequestArgOps;
 
 impl SpawnRequestArgOps {
-    pub fn spawn_request_individual_uniform<'a>(
+    pub fn spawn_request_individual_uniform(
         args: IndividualUniformSpawnRequestArgs,
         room_name: &RoomName,
         game_state: &mut GameState,
@@ -37,7 +37,7 @@ impl SpawnRequestArgOps {
 
         let mut spawn_requests = Vec::new();
 
-        while args.creeps_quota > 0 {
+        while creeps_quota > 0 {
             let mut body_part_counts: BodypartCounts = enum_map! {
                 CreepPart::Move => 0,
                 CreepPart::Attack => 0,
@@ -51,7 +51,7 @@ impl SpawnRequestArgOps {
             let mut tier = 0;
             let mut cost = 0;
 
-            if args.default_parts.len() > 0 {
+            if !args.default_parts.is_empty() {
                 tier += 1;
                 for part in &args.default_parts {
                     let part_cost = part.cost();
@@ -60,14 +60,14 @@ impl SpawnRequestArgOps {
                     }
 
                     cost += part_cost;
-                    body_part_counts[part.clone()] += 1;
+                    body_part_counts[*part] += 1;
                 }
             }
 
             let mut remaining_allowed_parts = MAX_CREEP_SIZE - args.default_parts.len() as u32;
 
-            if args.extra_parts.len() > 0 {
-                let mut remaining_extra_parts = args.extra_parts.len() as u32 * args.parts_quota;
+            if !args.extra_parts.is_empty() {
+                let mut remaining_extra_parts = args.parts_quota as i32 - args.default_parts.len() as i32;
 
                 while cost < max_cost_per_creep
                     && remaining_allowed_parts >= args.extra_parts.len() as u32
@@ -82,7 +82,7 @@ impl SpawnRequestArgOps {
                         }
 
                         cost += part_cost;
-                        body_part_counts[part.clone()] += 1;
+                        body_part_counts[(*part)] += 1;
 
                         remaining_allowed_parts -= 1;
                         remaining_extra_parts -= 1;
@@ -97,7 +97,7 @@ impl SpawnRequestArgOps {
             spawn_requests.push(SpawnRequest {
                 role: args.role,
                 priority: args.priority,
-                body_part_counts: body_part_counts,
+                body_part_counts,
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),
@@ -110,8 +110,8 @@ impl SpawnRequestArgOps {
         spawn_requests
     }
 
-    pub fn spawn_request_group_diverse<'a>(
-        args: &'a GroupDiverseSpawnRequestArgs,
+    pub fn spawn_request_group_diverse(
+        args: &GroupDiverseSpawnRequestArgs,
         room_name: &RoomName,
         game_state: &mut GameState,
         memory: &mut GameMemory,
@@ -166,7 +166,7 @@ impl SpawnRequestArgOps {
             let mut tier = 0;
             let mut cost = 0;
 
-            if args.default_parts.len() > 0 {
+            if !args.default_parts.is_empty() {
                 tier += 1;
                 for part in &args.default_parts {
                     let part_cost = part.cost();
@@ -175,17 +175,17 @@ impl SpawnRequestArgOps {
                     }
 
                     cost += part_cost;
-                    body_part_counts[part.clone()] += 1;
+                    body_part_counts[(*part)] += 1;
                 }
             }
 
-            let mut remaining_allowed_parts = max_parts_per_creep;
+            let mut remaining_allowed_parts = max_parts_per_creep as i32;
 
             tier += 1;
 
             for part in &args.extra_parts {
                 cost += part.cost();
-                body_part_counts[part.clone()] += 1;
+                body_part_counts[(*part)] += 1;
 
                 remaining_allowed_parts -= 1;
                 total_extra_parts -= 1;
@@ -194,7 +194,7 @@ impl SpawnRequestArgOps {
             let mut stop = false;
 
             while cost < max_cost_per_creep
-                && remaining_allowed_parts - (args.extra_parts.len() as u32) >= 0
+                && remaining_allowed_parts - (args.extra_parts.len() as i32) >= 0
             {
                 tier += 1;
 
@@ -206,7 +206,7 @@ impl SpawnRequestArgOps {
                     }
 
                     cost += part_cost;
-                    body_part_counts[part.clone()] += 1;
+                    body_part_counts[(*part)] += 1;
 
                     remaining_allowed_parts -= 1;
                     total_extra_parts -= 1;
@@ -220,7 +220,7 @@ impl SpawnRequestArgOps {
             spawn_requests.push(SpawnRequest {
                 role: args.role,
                 priority: args.priority,
-                body_part_counts: body_part_counts,
+                body_part_counts,
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),
@@ -233,13 +233,13 @@ impl SpawnRequestArgOps {
         spawn_requests
     }
 
-    pub fn spawn_request_group_uniform<'a>(
-        args: &'a GroupUniformSpawnRequestArgs,
+    pub fn spawn_request_group_uniform(
+        args: &GroupUniformSpawnRequestArgs,
         room_name: &RoomName,
         game_state: &mut GameState,
         memory: &mut GameMemory,
     ) -> Vec<SpawnRequest> {
-        if args.extra_parts.len() == 0 {
+        if args.extra_parts.is_empty() {
             return Vec::new();
         }
 
@@ -271,7 +271,7 @@ impl SpawnRequestArgOps {
             let mut tier = 0;
             let mut cost = 0;
 
-            if args.default_parts.len() > 0 {
+            if !args.default_parts.is_empty() {
                 tier += 1;
                 for part in &args.default_parts {
                     let part_cost = part.cost();
@@ -280,7 +280,7 @@ impl SpawnRequestArgOps {
                     }
 
                     cost += part_cost;
-                    body_part_counts[part.clone()] += 1;
+                    body_part_counts[(*part)] += 1;
                     parts_count += 1;
                 }
             }
@@ -300,7 +300,7 @@ impl SpawnRequestArgOps {
                     }
 
                     cost += part_cost;
-                    body_part_counts[part.clone()] += 1;
+                    body_part_counts[(*part)] += 1;
                     parts_count += 1;
                 }
 
@@ -312,7 +312,7 @@ impl SpawnRequestArgOps {
             spawn_requests.push(SpawnRequest {
                 role: args.role,
                 priority: args.priority,
-                body_part_counts: body_part_counts,
+                body_part_counts,
                 tier,
                 cost,
                 memory: args.memory_additions.clone(),

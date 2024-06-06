@@ -52,8 +52,8 @@ impl RoomOps {
     } */
 
     #[inline]
-    pub fn structures<'room, 'state>(
-        room_name: &'room RoomName,
+    pub fn structures<'state>(
+        room_name: &RoomName,
         game_state: &'state mut GameState,
     ) -> &'state OrganizedStructures {
         let room = game_state.rooms.get(room_name).unwrap();
@@ -243,18 +243,22 @@ impl RoomOps {
         Some(new_not_my_creeps)
     }
 
-    pub fn get_sources(room: &Room, game_state: &mut GameState) -> Option<Vec<Source>> {
+    pub fn get_sources(room: &Room, game_state: &mut GameState) -> Vec<Source> {
 
         let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
 
         let mut sources = &room_data.sources;
         if let Some(sources) = sources {
-            return Some(sources.clone())
+            return sources.clone()
         };
 
         let new_sources: Vec<Source> = room.find(find::SOURCES, None);
         room_data.sources = Some(new_sources.clone());
-        Some(new_sources)
+        new_sources
+    }
+
+    pub fn commune_sources(room: &Room, game_state: &mut GameState) -> Vec<Source> {
+        Self::get_sources(room, game_state)
     }
 
     pub fn harvest_positions(room: &Room, game_state: &mut GameState) -> Option<Vec<Position>> {
@@ -269,9 +273,6 @@ impl RoomOps {
         }
 
         let sources = RoomOps::get_sources(room, game_state);
-        let Some(sources) = sources else {
-            return None;
-        };
 
         let new_harvest_positions: Vec<Position> = Vec::new();
 
@@ -280,7 +281,7 @@ impl RoomOps {
                 let terrain = room.look_for_at(look::TERRAIN, adjacent_pos);
                 terrain.contains(&Terrain::Wall);
 
-                ();
+                
             })
         }
 
@@ -290,20 +291,23 @@ impl RoomOps {
         Some(new_harvest_positions)
     }
 
-    pub fn room_status(room_name: &RoomName, memory: &mut GameMemory) -> Option<RoomStatus> {
-        let Some(room_memory) = memory.rooms.get_mut(room_name) else {
-            return None;
-        };
+    pub fn room_type(room_name: &RoomName, memory: &mut GameMemory) {
 
-        if let Some(status) = room_memory.status {
-            return Some(status);
+    }
+
+    pub fn room_status(room_name: &RoomName, game_state: &mut GameState) -> RoomStatus {
+
+        let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+        if let Some(status) = room_state.status {
+            return status;
         }
 
         let status_result = game::map::get_room_status(*room_name).unwrap();
         let new_status = status_result.status();
 
-        room_memory.status = Some(new_status.clone());
-        Some(new_status)
+        room_state.status = Some(new_status);
+        new_status
     }
 
     pub fn move_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {

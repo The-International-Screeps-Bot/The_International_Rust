@@ -1,4 +1,7 @@
-use std::{cell::RefCell, collections::{HashMap, HashSet}};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+};
 
 use screeps::{
     game, AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName,
@@ -9,11 +12,12 @@ use super::{
     commune::{CommuneState, CommuneStateOps},
     creep::CreepStateOps,
     market::MarketState,
+    my_creep::{MyCreepState, MyCreepStateOps},
     room::{RoomState, RoomStateOps},
     structure::{self, StructuresState},
 };
 use crate::{
-    creep::owned_creep::{self, OwnedCreep},
+    creep::my_creep::{self, MyCreep},
     memory::game_memory::GameMemory,
     room::room_ops::RoomOps,
     settings::Settings,
@@ -26,7 +30,7 @@ use crate::{
 pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,
-    pub creeps: HashMap<String, OwnedCreep>,
+    pub creeps: HashMap<String, MyCreep>,
     pub account_power_creeps: HashMap<String, AccountPowerCreep>,
     pub rooms: HashMap<RoomName, Room>,
     pub communes: HashSet<RoomName>,
@@ -37,6 +41,16 @@ pub struct GameState {
     pub room_states: HashMap<RoomName, RoomState>,
     pub commune_states: HashMap<RoomName, CommuneState>,
     pub creep_states: HashMap<String, CreepState>,
+    pub my_creep_states: HashMap<String, MyCreepState>,
+}
+
+impl GameState {
+    pub fn new() -> Self {
+        Self {
+            init_tick: game::time(),
+            ..Default::default()
+        }
+    }
 }
 
 pub struct GameStateOps;
@@ -47,7 +61,7 @@ impl GameStateOps {
     pub fn update(game_state: &mut GameState, memory: &GameMemory) {
         game_state.tick = game::time();
 
-        Self::update_creeps(game_state);
+        Self::update_my_creeps(game_state);
         // TODO
         // GameStateOps::update_account_power_creeps(game_state);
         Self::update_rooms(game_state, memory);
@@ -57,6 +71,7 @@ impl GameStateOps {
 
         Self::update_rooms_state(game_state);
         Self::update_communes_state(game_state);
+        Self::update_my_creeps_state(game_state);
         Self::update_creeps_state(game_state);
         Self::update_structures_state(game_state);
 
@@ -65,7 +80,7 @@ impl GameStateOps {
         Self::update_terminal_communes(game_state);
     }
 
-    fn update_creeps(game_state: &mut GameState) {
+    fn update_my_creeps(game_state: &mut GameState) {
         game_state.creeps.clear();
 
         let js_creeps = screeps::game::creeps();
@@ -77,14 +92,14 @@ impl GameStateOps {
                 continue;
             };
 
-            let Some(creep) = OwnedCreep::new(&any_creep).ok() else {
+            let Some(creep) = MyCreep::new(&any_creep).ok() else {
                 continue;
             };
 
-            if !game_state.creep_states.contains_key(&creep_name) {
+            if !game_state.my_creep_states.contains_key(&creep_name) {
                 game_state
-                    .creep_states
-                    .insert(creep_name.clone(), CreepState::new(&creep, creep_name));
+                    .my_creep_states
+                    .insert(creep_name.clone(), MyCreepState::new(&creep, creep_name));
             }
 
             game_state.creeps.insert(creep.inner().name(), creep);
@@ -115,11 +130,7 @@ impl GameStateOps {
 
             Self::try_update_commune(&room, &room_name, game_state, memory);
 
-            if !game_state.room_states.contains_key(&room_name) {
-                game_state
-                    .room_states
-                    .insert(room_name.clone(), RoomState::new(&room, room_name));
-            }
+            game_state.room_states.entry(room_name).or_insert_with(|| RoomState::new(&room, room_name));
 
             game_state.rooms.insert(room_name, room);
         }
@@ -139,12 +150,12 @@ impl GameStateOps {
             return;
         }
 
-        game_state.communes.insert(room_name.clone());
+        game_state.communes.insert(*room_name);
         // If the commune doesn't have a state, create one
         if !game_state.commune_states.contains_key(room_name) {
             game_state
                 .commune_states
-                .insert(room_name.clone(), CommuneState::new(room, *room_name));
+                .insert(*room_name, CommuneState::new(room, *room_name));
         };
     }
 
@@ -180,7 +191,7 @@ impl GameStateOps {
         }
     }
 
-    fn update_creeps_state(game_state: &mut GameState) {
+    fn update_my_creeps_state(game_state: &mut GameState) {
         if !GeneralUtils::is_tick_interval(100) {
             return;
         }
@@ -188,6 +199,16 @@ impl GameStateOps {
         game_state
             .creep_states
             .retain(|creep_name, _| game_state.creeps.contains_key(creep_name));
+
+        for (creep_name, my_creep_state) in &mut game_state.my_creep_states {
+            MyCreepStateOps::update_state(my_creep_state);
+        }
+    }
+
+    fn update_creeps_state(game_state: &mut GameState) {
+        if !GeneralUtils::is_tick_interval(100) {
+            return;
+        }
 
         for (creep_name, creep_state) in &mut game_state.creep_states {
             CreepStateOps::update_state(creep_state);
@@ -219,7 +240,7 @@ impl GameStateOps {
                 continue;
             };
 
-            terminal_communes.insert(room_name.clone());
+            terminal_communes.insert(*room_name);
         }
 
         game_state.terminal_communes = terminal_communes;

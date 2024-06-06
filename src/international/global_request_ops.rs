@@ -7,7 +7,7 @@ impl GlobalRequestOps {
     pub fn is_abandoned(request: &WorkRequest) -> bool {
         match request.abandon {
             None => {
-                return true;
+                true
             }
             Some(abandon) => {
                if abandon > 0 {

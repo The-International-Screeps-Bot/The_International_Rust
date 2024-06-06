@@ -290,6 +290,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "screeps-game-utils"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80a0e190b1884d98c5d778ec2145002f0be912523418b29c37da354204d62ba3"
+dependencies = [
+ "screeps-game-api 0.21.0",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "screeps-timing"
 version = "0.1.0"
 source = "git+https://github.com/Azaril/screeps-timing#acd8616c556f790656f6b657b62eb2604d4f8f26"
@@ -406,6 +417,7 @@ dependencies = [
  "regex",
  "room_visual_ext",
  "screeps-game-api 0.21.0",
+ "screeps-game-utils",
  "screeps-timing",
  "screeps-timing-annotate",
  "serde",
