@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use log::{debug, info};
 use screeps::{Creep, SharedCreepProperties};
 
-use super::{creep_move_ops::CreepMoveOps, my_creep_ops::MyCreepOps};
+use super::{creep_move_ops::CreepMoveOps, my_creep_ops};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
 pub struct MyCreepServices;
@@ -31,7 +31,7 @@ impl MyCreepServices {
                 continue;
             }
 
-            MyCreepOps::run_role(creep_name, game_state, memory);
+            my_creep_ops::run_role(creep_name, game_state, memory);
         }
     }
 

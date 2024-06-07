@@ -25,10 +25,8 @@ use crate::{
     GAME_STATE,
 };
 
-pub struct RoomOps;
-
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-impl RoomOps {
+
     /// Acquires and caches structures in the room based on their structure type
     /*     pub fn structures<'room, 'state>(
         room_name: &'room RoomName,
@@ -260,7 +258,7 @@ impl RoomOps {
     }
 
     pub fn commune_sources(room: &Room, game_state: &mut GameState) -> Vec<Source> {
-        Self::get_sources(room, game_state)
+        get_sources(room, game_state)
     }
 
     pub fn harvest_positions(room: &Room, game_state: &mut GameState) -> Option<Vec<Position>> {
@@ -274,7 +272,7 @@ impl RoomOps {
             }
         }
 
-        let sources = RoomOps::get_sources(room, game_state);
+        let sources = get_sources(room, game_state);
 
         let new_harvest_positions: Vec<Position> = Vec::new();
 
@@ -325,7 +323,7 @@ impl RoomOps {
             return;
         };
 
-        Self::move_creep(room_name, game_state, memory);
+        move_creep(room_name, game_state, memory);
     }
 
     pub fn move_creep(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {}
@@ -341,4 +339,3 @@ impl RoomOps {
     pub fn test_name(room_name: &RoomName, room: &Room, game_state: &mut GameState, memory: &mut GameMemory) {
         
     } */
-}

@@ -6,7 +6,7 @@ use crate::{
         spawning::{SpawnRequest, SpawnRequestArgs},
     },
     memory::{game_memory::GameMemory, room_memory::RoomMemory},
-    room::room_ops::RoomOps,
+    room::room_ops,
     state::{commune::CommuneState, game::GameState, room::RoomState},
     utils::general::GeneralUtils,
 };
@@ -16,7 +16,7 @@ use super::{
 };
 
 pub fn try_spawn_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    let structures = RoomOps::structures(room_name, game_state);
+    let structures = room_ops::structures(room_name, game_state);
 
     let mut active_spawns: Vec<&StructureSpawn> = Vec::new();
     let mut inactive_spawns: Vec<&StructureSpawn> = Vec::new();

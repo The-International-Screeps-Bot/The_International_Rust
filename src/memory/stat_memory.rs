@@ -16,7 +16,7 @@ pub struct StatsMemory {
     pub gcl_total: u64,
     pub gpl_progress: u64,
     pub gpl_total: u64,
-    pub rooms: HashMap<RoomName, RoomStatsMemory>,
+    pub remotes: HashMap<RoomName, RemoteStatsMemory>,
     pub communes: HashMap<RoomName, CommuneStatsMemory>,
     pub cpu_used: u32,
     pub game_time: u32,
@@ -31,11 +31,11 @@ impl StatsMemory {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct RoomStatsMemory {
+pub struct RemoteStatsMemory {
 
 }
 
-impl RoomStatsMemory {
+impl RemoteStatsMemory {
     pub fn new() -> Self {
         Self {
             ..Default::default()

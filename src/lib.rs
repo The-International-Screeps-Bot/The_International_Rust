@@ -5,6 +5,7 @@ use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use creep::my_creep::MyCreep;
+use international::{construction_site_services, global_request_ops, global_request_services};
 use log::*;
 use memory::game_memory::GameMemory;
 use room::commune::{commune_services, my_room::MyRoom};
@@ -14,7 +15,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     settings::Settings,
-    state::game::{GameState, GameStateOps},
+    state::game::{GameState},
 };
 
 mod constants;
@@ -106,7 +107,9 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     let mut my_rooms: HashMap<RoomName, MyRoom> = HashMap::new();
     let mut my_room_names: Vec<RoomName> = Vec::new(); */
 
-    GameStateOps::update(game_state, memory);
+    game_state.update(memory);
 
+    construction_site_services::manage_sites(memory);
+    global_request_services::manage_requests(game_state, memory);
     commune_services::run_towers(game_state, memory);
 }

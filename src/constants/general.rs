@@ -4,6 +4,13 @@ use std::error::Error;
 use screeps::Direction;
 
 #[derive(PartialEq)]
+/// Results intended to inform basic control flow
+pub enum FlowResult {
+    Stop,
+    Continue,
+}
+
+#[derive(PartialEq)]
 pub enum GeneralResult {
     Success,
     Fail,

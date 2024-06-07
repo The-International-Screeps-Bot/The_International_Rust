@@ -8,13 +8,13 @@ use screeps::{
 
 use crate::{
     memory::game_memory::GameMemory,
-    room::room_ops::RoomOps,
+    room::room_ops,
     state::game::GameState,
     utils::general::{is_tick_interval, GeneralUtils},
 };
 
 pub fn run_towers(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    let mut towers = RoomOps::structures(room_name, game_state).tower.clone();
+    let mut towers = room_ops::structures(room_name, game_state).tower.clone();
 
     if towers_creep_actions(room_name, game_state, memory, &mut towers) == TowersResult::Stop {
         return;
@@ -77,7 +77,7 @@ fn tower_not_my_creep_actions(
     memory: &GameMemory,
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
-    let mut creeps = RoomOps::not_my_creeps(room_name, game_state, memory);
+    let mut creeps = room_ops::not_my_creeps(room_name, game_state, memory);
 
     if towers_attack_enemies(room_name, game_state, memory, towers, &mut creeps.enemy)
         == TowersResult::Stop
@@ -194,7 +194,7 @@ fn towers_repair_ramparts(
     memory: &GameMemory,
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
-    let mut ramparts = &mut RoomOps::structures(room_name, game_state).rampart;
+    let mut ramparts = &mut room_ops::structures(room_name, game_state).rampart;
 
     if ramparts.is_empty() {
         return TowersResult::Continue;

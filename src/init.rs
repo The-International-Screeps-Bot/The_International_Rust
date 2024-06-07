@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use log::{info, LevelFilter};
 use screeps::game;
 
-use crate::{logging, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, GAME_STATE, MEMORY, SETTINGS};
+use crate::{international::stat_services, logging, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, GAME_STATE, MEMORY, SETTINGS};
 
 #[wasm_bindgen]
 /// Runs every global reset
@@ -21,6 +21,7 @@ pub fn init() {
 
 fn init_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &mut Settings) {
 
+    stat_services::init_stats(game_state, memory);
     init_settings(settings);
 }
 

@@ -5,10 +5,10 @@ use log::{error, warn};
 use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
-use crate::{constants::general::GeneralResult, international::collective_ops::CollectiveOps, settings::Settings, state::game::GameState, utils::general::GeneralUtils, SETTINGS};
+use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::general::GeneralUtils, SETTINGS};
 
 use super::{
-    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::RoomMemory, stat_memory::StatsMemory
+    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
 };
 
 #[derive(Serialize, Deserialize)]
@@ -16,6 +16,14 @@ pub struct GameMemory {
     pub breaking_version: Option<u32>,
     pub me: String,
     pub rooms: HashMap<RoomName, RoomMemory>,
+    pub remotes: HashMap<RoomName, RemoteRoomMemory>,
+    pub communes: HashMap<RoomName, CommuneRoomMemory>,
+    pub highway: HashMap<RoomName, HighwayRoomMemory>,
+    pub intersection: HashMap<RoomName, IntersectionRoomMemory>,
+    pub center: HashMap<RoomName, CenterRoomMemory>,
+    pub keeper: HashMap<RoomName, KeeperRoomMemory>,
+    pub ally: HashMap<RoomName, AllyMemory>,
+    pub enemy: HashMap<RoomName, EnemyMemory>,
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
     // Consider putting stats in a segment instead
@@ -37,6 +45,14 @@ impl GameMemory {
             breaking_version,
             me: GeneralUtils::me().unwrap(),
             rooms: HashMap::new(),
+            remotes: HashMap::new(),
+            communes: HashMap::new(),
+            highway: HashMap::new(),
+            intersection: HashMap::new(),
+            center: HashMap::new(),
+            keeper: HashMap::new(),
+            ally: HashMap::new(),
+            enemy: HashMap::new(),
             creeps: HashMap::new(),
             power_creeps: HashMap::new(),
             stats: StatsMemory::new(),
@@ -108,7 +124,7 @@ impl GameMemory {
         game_state: &GameState,
         settings: &Settings,
     ) -> GeneralResult {
-        CollectiveOps::kill_all_creeps(game_state);
+        collective_ops::kill_all_creeps(game_state);
         let _ = mem::replace(self, GameMemory::new(Some(settings.breaking_version)));
 
         GeneralResult::Success

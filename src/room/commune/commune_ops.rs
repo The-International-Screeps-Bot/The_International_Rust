@@ -1,6 +1,6 @@
 use screeps::{Room, RoomName};
 
-use crate::{constants::structure::SpawnsByActivity, room::room_ops::RoomOps, state::{commune::{self, CommuneState}, game::GameState}};
+use crate::{constants::structure::SpawnsByActivity, room::room_ops, state::{commune::{self, CommuneState}, game::GameState}};
 
 pub struct CommuneOps;
 
@@ -11,7 +11,7 @@ impl CommuneOps {
     ) -> &'state Option<SpawnsByActivity> {
         let mut spawns_by_activity = SpawnsByActivity::new();
 
-        let structures = RoomOps::structures(room_name, game_state);
+        let structures = room_ops::structures(room_name, game_state);
 
         for spawn in &structures.spawn {
             match spawn.spawning() {

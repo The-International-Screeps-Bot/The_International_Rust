@@ -7,15 +7,6 @@ use serde::{Deserialize, Serialize};
 pub struct RoomMemory {
     pub room_type: RoomType,
     pub danger: u32,
-    pub highway: Option<HighwayRoomMemory>,
-    pub intersection: Option<IntersectionRoomMemory>,
-    pub center: Option<CenterRoomMemory>,
-    pub keeper: Option<KeeperRoomMemory>,
-    pub ally: Option<AllyRoomMemory>,
-    pub enemy: Option<EnemyRoomMemory>,
-    pub remote: Option<RemoteRoomMemory>,
-    pub commune: Option<CommuneRoomMemory>,
-    pub commune_sources: Option<Vec<ObjectId<Source>>>,
 }
 
 impl RoomMemory {
@@ -23,15 +14,6 @@ impl RoomMemory {
         Self {
             room_type: RoomType::Neutral,
             danger: 0,
-            commune_sources: None,
-            highway: None,
-            intersection: None,
-            center: None,
-            keeper: None,
-            ally: None,
-            enemy: None,
-            remote: None,
-            commune: None,
         }
     }
 }
