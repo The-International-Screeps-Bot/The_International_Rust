@@ -79,16 +79,22 @@ impl CommuneRoomMemory {
 pub struct RemoteRoomMemory {
     pub source_positions: Vec<Position>,
     pub controller_pos: Position,
+    pub commune: RoomName,
+    pub source_paths: Vec<Vec<Position>>,
+    pub cost: u32,
 }
 
 impl RemoteRoomMemory {
-    pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
+    pub fn new(room_name: &RoomName, game_state: &mut GameState, cost: u32, source_paths: Vec<Vec<Position>>,) -> Self {
 
         let room = game_state.rooms.get(room_name).unwrap();
 
         Self {
             source_positions: Vec::new(),
             controller_pos: room.controller().unwrap().pos(),
+            commune: *room_name,
+            source_paths,
+            cost,
         }
     }
 }
