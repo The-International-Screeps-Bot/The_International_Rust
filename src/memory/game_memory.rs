@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::general::GeneralUtils, SETTINGS};
 
 use super::{
-    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
+    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
 };
 
 #[derive(Serialize, Deserialize)]
@@ -24,6 +24,7 @@ pub struct GameMemory {
     pub keeper: HashMap<RoomName, KeeperRoomMemory>,
     pub ally: HashMap<RoomName, AllyMemory>,
     pub enemy: HashMap<RoomName, EnemyMemory>,
+    pub neutral: HashMap<RoomName, NeutralRoomMemory>,
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
     // Consider putting stats in a segment instead
@@ -53,6 +54,7 @@ impl GameMemory {
             keeper: HashMap::new(),
             ally: HashMap::new(),
             enemy: HashMap::new(),
+            neutral: HashMap::new(),
             creeps: HashMap::new(),
             power_creeps: HashMap::new(),
             stats: StatsMemory::new(),

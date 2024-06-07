@@ -1,7 +1,9 @@
-use std::default;
+use std::{collections::HashSet, default};
 
-use screeps::{game::map::RoomStatus, ObjectId, Source};
+use screeps::{game::map::RoomStatus, HasPosition, ObjectId, Position, RoomName, Source};
 use serde::{Deserialize, Serialize};
+
+use crate::state::game::GameState;
 
 #[derive(Serialize, Deserialize)]
 pub struct RoomMemory {
@@ -57,23 +59,55 @@ impl HighwayRoomMemory {
 
 #[derive(Serialize, Deserialize)]
 pub struct CommuneRoomMemory {
-    pub sources: Vec<ObjectId<Source>>,
+    pub source_positions: Vec<Position>,
+    pub controller_pos: Position,
 }
 
 impl CommuneRoomMemory {
-    pub fn new() -> Self {
-        Self { sources: Vec::new() }
+    pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
+
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        Self {
+            source_positions: Vec::new(),
+            controller_pos: room.controller().unwrap().pos(),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct RemoteRoomMemory {
-    pub sources: Vec<ObjectId<Source>>,
+    pub source_positions: Vec<Position>,
+    pub controller_pos: Position,
 }
 
 impl RemoteRoomMemory {
-    pub fn new() -> Self {
-        Self { sources: Vec::new() }
+    pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
+
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        Self {
+            source_positions: Vec::new(),
+            controller_pos: room.controller().unwrap().pos(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct NeutralRoomMemory {
+    pub source_positions: Vec<Position>,
+    pub controller_pos: Position,
+}
+
+impl NeutralRoomMemory {
+    pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
+
+        let room = game_state.rooms.get(room_name).unwrap();
+
+        Self {
+            source_positions: Vec::new(),
+            controller_pos: room.controller().unwrap().pos(),
+        }
     }
 }
 
@@ -84,29 +118,44 @@ pub struct IntersectionRoomMemory {
 
 impl IntersectionRoomMemory {
     pub fn new() -> Self {
-        Self { portals: Vec::new() }
+        Self {
+            portals: Vec::new(),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct CenterRoomMemory {
     pub portals: Vec<u32>,
+    pub source_positions: Vec<Position>,
 }
 
 impl CenterRoomMemory {
     pub fn new() -> Self {
-        Self { portals: Vec::new() }
+        Self {
+            portals: Vec::new(),
+            source_positions: Vec::new(),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct KeeperRoomMemory {
-    pub portals: Vec<u32>,
+    pub keeper_positions: HashSet<Position>,
+    pub source_coords: Vec<Position>,
+    pub mineral_coords: Vec<Position>,
+    pub invader_core_level: Option<u32>,
 }
 
 impl KeeperRoomMemory {
     pub fn new() -> Self {
-        Self { portals: Vec::new() }
+
+        Self {
+            keeper_positions: HashSet::new(),
+            source_coords: Vec::new(),
+            mineral_coords: Vec::new(),
+            invader_core_level: None,
+        }
     }
 }
 
@@ -117,19 +166,27 @@ pub struct AllyRoomMemory {
 
 impl AllyRoomMemory {
     pub fn new() -> Self {
-        Self { owner: "".to_string() }
+        Self {
+            owner: "".to_string(),
+        }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct EnemyRoomMemory {
     pub owner: String,
+    pub terminal: bool,
+    pub stored_energy: u32,
+    pub min_hits_to_breach: Option<u32>,
 }
 
 impl EnemyRoomMemory {
     pub fn new() -> Self {
-        Self { owner: "".to_string() }
+        Self {
+            owner: "".to_string(),
+            terminal: false,
+            stored_energy: 0,
+            min_hits_to_breach: None,
+        }
     }
 }
-
-
