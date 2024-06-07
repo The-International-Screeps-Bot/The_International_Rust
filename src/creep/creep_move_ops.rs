@@ -12,7 +12,7 @@ impl CreepMoveOps {
     }
 
     fn assign_move_request(creep_name: &String) {
-
+        
     }
 
     pub fn try_run_move_request(creep_name: &String, game_state: &GameState, avoid_positions: &mut HashSet<Position>) -> GeneralResult {
@@ -23,7 +23,7 @@ impl CreepMoveOps {
 
         let target_pos = creep.inner().pos();
 
-        let move_pos = Self::find_move_coord(creep_name, game_state, &avoid_positions, Some(&target_pos));
+        let move_pos = Self::find_move_coord(creep_name, game_state, avoid_positions, Some(&target_pos));
         let Some(move_pos) = move_pos else {
             return GeneralResult::Fail
         };

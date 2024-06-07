@@ -55,7 +55,7 @@ impl PathfinderOpenSetEntry {
         goals_set: &HashSet<Position>,
         open_dir: Option<Direction>,
     ) -> Self {
-        let heuristic_cost = PathfinderOps::get_heuristic_cost_to_closest_goal(pos, &goals_set);
+        let heuristic_cost = PathfinderOps::get_heuristic_cost_to_closest_goal(pos, goals_set);
 
         PathfinderOpenSetEntry {
             pos,
@@ -109,7 +109,7 @@ impl PathfinderOps {
                     adj_traverse_cost = (opts.cost_callback)(&adj_pos);
                 };
 
-                if adj_traverse_cost >= u8::MAX {
+                if adj_traverse_cost == u8::MAX {
                     continue;
                 }
 

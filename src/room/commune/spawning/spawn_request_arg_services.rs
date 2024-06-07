@@ -51,10 +51,10 @@ impl SpawnRequestArgServices {
                     spawn_target: None,
                 },
             ));
-
-            return;
         };
     }
 
-    fn hauler_args(room: &Room, request_args: &mut Vec<SpawnRequestArgs>, game_state: &GameState) {}
+    fn hauler_args(room: &Room, request_args: &mut Vec<SpawnRequestArgs>, game_state: &GameState) {
+        let _ = request_args;
+    }
 }

@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use log::{debug, info};
 use screeps::{Creep, SharedCreepProperties};
 
-use super::{creep_move_ops::CreepMoveOps, owned_creep_ops::OwnedCreepOps};
+use super::{creep_move_ops::CreepMoveOps, my_creep_ops};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
-pub struct CreepServices;
+pub struct MyCreepServices;
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-impl CreepServices {
+impl MyCreepServices {
     pub fn track_creeps(game_state: &GameState) {
         // record creep names to the room they are in (room data)
         // record creep positions to the rooms they are in
@@ -31,7 +31,7 @@ impl CreepServices {
                 continue;
             }
 
-            OwnedCreepOps::run_role(creep_name, game_state, memory);
+            my_creep_ops::run_role(creep_name, game_state, memory);
         }
     }
 
@@ -48,6 +48,16 @@ impl CreepServices {
         let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
         for creep_name in &creep_names {
             CreepMoveOps::try_run_move_request(creep_name, game_state, &mut HashSet::new());
+        }
+
+        // for creep_name in game_state.creeps.keys().into_iter().collect::<Vec<String>>() {
+
+        // }
+
+        let creeps = game_state.creeps.values();
+        for creep/* (creep_name, creep) */ in creeps {
+
+            CreepMoveOps::try_run_move_request(&creep.inner().name(), game_state, &mut HashSet::new());
         }
     }
 }

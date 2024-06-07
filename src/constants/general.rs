@@ -4,6 +4,13 @@ use std::error::Error;
 use screeps::Direction;
 
 #[derive(PartialEq)]
+/// Results intended to inform basic control flow
+pub enum FlowResult {
+    Stop,
+    Continue,
+}
+
+#[derive(PartialEq)]
 pub enum GeneralResult {
     Success,
     Fail,
@@ -36,3 +43,10 @@ pub const DIRECTIONS: [Direction; 8] = [
     Direction::Left,
     Direction::TopLeft,
 ];
+
+pub const DEFAULT_PLAINS_COST: u32 = 1;
+pub const DEFAULT_ROAD_PLANNING_PLAINS_COST: u32 = 3;
+pub const DEFAULT_ROAD_PLANNING_SWAMP_COST: u32 = 5;
+pub const DEFAULT_CREEP_SWAMP_COST: u32 = 8;
+
+pub const DEFAULT_DATA_DECAY: f32 = 0.99999;

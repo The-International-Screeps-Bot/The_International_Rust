@@ -3,6 +3,12 @@ use screeps::{game, OwnedStructureProperties, Position};
 
 pub struct GeneralUtils;
 
+pub fn is_tick_interval(tick: u32, interval: u32) -> bool {
+    let tick = game::time();
+
+    tick % interval == 0
+}
+
 impl GeneralUtils {
     pub fn is_tick_interval(interval: u32) -> bool {
         let tick = game::time();
@@ -40,7 +46,7 @@ impl GeneralUtils {
     }
 
     /// Currently dysfunctional
-    pub fn for_adjacent_positions(position: Position, operation: &dyn Fn(&Position) -> ()) {
+    pub fn for_adjacent_positions(position: Position, operation: &dyn Fn(&Position)) {
         let (pos_x, pos_y) = position.coords_signed();
 
         let mut x = pos_x - 1;
@@ -54,7 +60,11 @@ impl GeneralUtils {
 
                 let adjacent_pos = Position::from_world_coords(x.into(), y.into());
                 operation(&adjacent_pos);
+
+                y += 1;
             }
+
+            x += 1;
         }
     }
 
@@ -81,10 +91,10 @@ impl GeneralUtils {
             return Ok(owner.username())
         }
 
-        return Err(())
+        Err(())
     }
 
-    pub fn find_index_with_lowest_score<T>(iter: &Vec<T>, f: &dyn Fn(&T) -> u32/* for<'a> fn(val: &'a T) -> u32 *//* impl Fn(val: T) -> number | false */) -> (u32, u32) {
+    pub fn find_index_with_lowest_score<T>(iter: &[T], f: &dyn Fn(&T) -> u32/* for<'a> fn(val: &'a T) -> u32 *//* impl Fn(val: T) -> number | false */) -> (u32, u32) {
         let (mut lowest_score, mut index) = (u32::MAX, 0);
     
         for (i, val) in iter.iter().enumerate() {

@@ -19,7 +19,7 @@ impl PortalRouterOps {
         let mut path_from = HashMap::new();
         let mut lowest_next_gen_cost: u32 = u32::MAX;
 
-        while current_generation.len() > 0 {
+        while !current_generation.is_empty() {
             let mut next_generation = HashSet::new();
             let lowest_gen_cost = lowest_next_gen_cost;
             lowest_next_gen_cost = u32::MAX;
@@ -81,9 +81,9 @@ impl PortalRouterOps {
         path_from: &HashMap<RoomName, RoomName>,
     ) -> HashSet<RoomName> {
         let mut path = HashSet::new();
-        path.insert(room_name.clone());
+        path.insert(*room_name);
 
-        let mut next_room_name = path_from.get(&room_name);
+        let mut next_room_name = path_from.get(room_name);
 
         while next_room_name.is_some() {
             path.insert(*next_room_name.unwrap());
