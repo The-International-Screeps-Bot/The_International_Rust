@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use enum_map::{enum_map, EnumMap};
 use screeps::{
     find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
 };
 
-use crate::{constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}}, creep::my_creep::MyCreep};
+use crate::{constants::{creep::CreepRole, room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}}, creep::my_creep::MyCreep};
 
 use super::game::GameState;
 
@@ -24,14 +25,14 @@ pub struct RoomState {
     pub nuker: Option<StructureNuker>,
     pub factory: Option<StructureFactory>,
     pub commune_plan: Option<CommunePlan>,
-    pub spawns_by_activity: Option<SpawnsByActivity>,
 
     // Sources
     pub sources: Option<Vec<Source>>,
     pub harvest_positions: Option<Vec<Position>>,
 
     // Creeps
-    pub my_creeps: Option<Vec<MyCreep>>,
+    pub my_creeps: Vec<String>,
+    pub creeps_by_role: EnumMap<CreepRole, Vec<String>>,
     pub not_my_creeps: Option<NotMyCreeps>,
 }
 
@@ -50,10 +51,24 @@ impl RoomState {
             commune_plan: None,
             sources: None,
             harvest_positions: None,
-            my_creeps: None,
+            my_creeps: Vec::new(),
             not_my_creeps: None,
-            spawns_by_activity: None,
+            creeps_by_role: creeps_by_role(),
         }
+    }
+
+    pub fn tick_update(&mut self, room_name: &RoomName) {
+        self.structures = None;
+        self.storage = None;
+        self.terminal = None;
+        self.power_spawn = None;
+        self.controller = None;
+        self.nuker = None;
+        self.factory = None;
+
+        self.my_creeps = Vec::new();
+        self.creeps_by_role = creeps_by_role();
+        self.not_my_creeps = None;
     }
 }
 
@@ -160,18 +175,15 @@ pub struct CommunePlanAttemptSummary {
     upgrade_path: Vec<Position>,
 }
 
-pub struct RemotePlanner {}
-
-pub struct RoomStateOps;
-
-impl RoomStateOps {
-    pub fn update_state(state: &mut RoomState) {
-        state.structures = None;
-        state.storage = None;
-        state.terminal = None;
-        state.power_spawn = None;
-        state.controller = None;
-        state.nuker = None;
-        state.factory = None;
+fn creeps_by_role() -> EnumMap<CreepRole, Vec<String>> {
+    enum_map! {
+        CreepRole::SourceHarvester => Vec::new(),
+        CreepRole::Builder => Vec::new(),
+        CreepRole::Upgrader => Vec::new(),
+        CreepRole::Scout => Vec::new(),
+        CreepRole::Hauler => Vec::new(),
+        CreepRole::Repairer => Vec::new(),
+        CreepRole::Antifa => Vec::new(),
+        CreepRole::Unknown => Vec::new(),
     }
 }

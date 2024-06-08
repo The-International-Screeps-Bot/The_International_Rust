@@ -23,15 +23,10 @@ impl CommuneState {
             spawns_by_activity: None,
         }
     }
-}
 
-pub struct CommuneStateOps;
+    pub fn tick_update(&mut self, room_name: &RoomName) {
 
-impl CommuneStateOps {
-
-    pub fn update_state(room_name: &RoomName, state: &mut CommuneState) {
-
-        state.min_energy = None;
-        state.spawns_by_activity = None;
+        self.min_energy = None;
+        self.spawns_by_activity = None;
     }
 }

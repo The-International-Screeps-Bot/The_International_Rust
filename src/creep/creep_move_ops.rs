@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{Creep, HasPosition, Position};
 
-use crate::{constants::general::{GeneralError, GeneralResult}, memory::game_memory::GameMemory, state::game::GameState, utils::general::GeneralUtils};
+use crate::{constants::general::{GeneralError, GeneralResult}, memory::game_memory::GameMemory, state::game::GameState, utils::{self, general::GeneralUtils}};
 
 pub struct CreepMoveOps;
 
@@ -66,11 +66,11 @@ impl CreepMoveOps {
             }
 
             if avoid_positions.contains(&pos) { continue }
-            if GeneralUtils::is_exit(pos) { continue }
+            if utils::general::is_exit(pos) { continue }
 
             let mut score: u32 = 0;
             if let Some(target_pos) = target_pos {
-                score += GeneralUtils::pos_range_euc(target_pos, &pos);
+                score += utils::general::pos_range_euc(target_pos, &pos);
             }
 
             if score >= lowest_score { continue }

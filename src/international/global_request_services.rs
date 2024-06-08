@@ -2,7 +2,7 @@ use js_sys::global;
 use screeps::{game, HasPosition};
 
 use crate::{
-    memory::game_memory::GameMemory, state::game::GameState, utils::general::GeneralUtils,
+    memory::game_memory::GameMemory, state::game::GameState, utils::{self, general::GeneralUtils},
 };
 
 use super::global_request_ops;
@@ -13,7 +13,7 @@ use super::global_request_ops;
 pub fn manage_requests(game_state: &mut GameState, memory: &mut GameMemory) {
     update_requests(game_state, memory);
 
-    if GeneralUtils::is_tick_interval(100) {
+    if utils::general::is_tick_interval(game_state.tick, 100) {
         try_assign_requests(game_state, memory);
     }
 }

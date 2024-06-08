@@ -32,7 +32,7 @@ impl StatsMemory {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct RemoteStatsMemory {
-
+    pub energy_in_harvest: u32,
 }
 
 impl RemoteStatsMemory {

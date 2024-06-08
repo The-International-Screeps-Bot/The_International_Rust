@@ -4,7 +4,7 @@
 use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
-use creep::my_creep::MyCreep;
+use creep::{my_creep::MyCreep, role_services};
 use international::{construction_site_services, global_request_ops, global_request_services};
 use log::*;
 use memory::game_memory::GameMemory;
@@ -109,7 +109,11 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     game_state.update(memory);
 
-    construction_site_services::manage_sites(memory);
+    construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);
     commune_services::run_towers(game_state, memory);
+
+    role_services::try_register_scout_targets(game_state, memory);
+
+    role_services::try_scouts(game_state, memory);
 }

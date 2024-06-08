@@ -5,7 +5,7 @@ use log::{error, warn};
 use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
-use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::general::GeneralUtils, SETTINGS};
+use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
 
 use super::{
     creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
@@ -44,7 +44,7 @@ impl GameMemory {
 
         GameMemory {
             breaking_version,
-            me: GeneralUtils::me().unwrap(),
+            me: utils::general::me().unwrap(),
             rooms: HashMap::new(),
             remotes: HashMap::new(),
             communes: HashMap::new(),

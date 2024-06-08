@@ -4,9 +4,8 @@ use enum_map::{Enum, EnumMap};
 use screeps::{BodyPart, Creep, Part};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Enum, Debug)]
 pub enum CreepRole {
-    #[default]
     SourceHarvester,
     Hauler,
     Upgrader,

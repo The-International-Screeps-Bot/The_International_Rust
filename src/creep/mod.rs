@@ -4,3 +4,4 @@ pub mod my_creep;
 pub mod my_creep_ops;
 pub mod roles;
 pub mod creep_functions;
+pub mod role_services;

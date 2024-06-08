@@ -28,7 +28,7 @@ use crate::{
         market::MarketState,
         room::{self, RoomState},
     },
-    utils::general::GeneralUtils,
+    utils::{self, general::GeneralUtils},
     GAME_STATE,
 };
 
@@ -261,7 +261,7 @@ pub fn get_sources(room_name: &RoomName, game_state: &mut GameState) -> Vec<Sour
         return sources.clone();
     };
 
-    let room = game_state.rooms.get(&room_name).unwrap();
+    let room = game_state.rooms.get(room_name).unwrap();
 
     let new_sources: Vec<Source> = room.find(find::SOURCES, None);
     room_data.sources = Some(new_sources.clone());
@@ -291,7 +291,7 @@ pub fn harvest_positions(
     let room = game_state.rooms.get(room_name).unwrap();
 
     for source in sources {
-        GeneralUtils::for_adjacent_positions(source.pos(), &|adjacent_pos| {
+        utils::general::for_adjacent_positions(source.pos(), &|adjacent_pos| {
             let terrain = room.look_for_at(look::TERRAIN, adjacent_pos);
             terrain.contains(&Terrain::Wall);
         })

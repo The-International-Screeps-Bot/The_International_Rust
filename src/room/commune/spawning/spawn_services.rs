@@ -8,7 +8,7 @@ use crate::{
     memory::{game_memory::GameMemory, room_memory::RoomMemory},
     room::room_ops,
     state::{commune::CommuneState, game::GameState, room::RoomState},
-    utils::general::GeneralUtils,
+    utils::{self, general::GeneralUtils},
 };
 
 use super::{
@@ -107,8 +107,8 @@ fn find_spawn_index_for_spawn_request(
         return 0;
     };
 
-    let (score, index) = GeneralUtils::find_index_with_lowest_score(&inactive_spawns, &|spawn| {
-        GeneralUtils::pos_range(&screeps::HasPosition::pos(&spawn), &spawn_target)
+    let (score, index) = utils::general::find_index_with_lowest_score(&inactive_spawns, &|spawn| {
+        utils::general::pos_range(&screeps::HasPosition::pos(&spawn), &spawn_target)
     });
 
     index

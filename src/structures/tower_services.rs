@@ -10,7 +10,7 @@ use crate::{
     memory::game_memory::GameMemory,
     room::room_ops,
     state::game::GameState,
-    utils::general::{is_tick_interval, GeneralUtils},
+    utils::{self, general::{is_tick_interval, GeneralUtils}},
 };
 
 pub fn run_towers(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
@@ -47,20 +47,24 @@ fn tower_my_creep_actions(
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
-    let Some(creeps) = &mut room_state.my_creeps else {
-        return TowersResult::Continue;
-    };
+    let mut creep_names = &mut room_state.my_creeps;
     
     // Also make sure the creep isn't in enemy attack coords and hasn't been healed too often over the last few ticks (use a tower heal heat metric)
 
-    creeps.retain(|creep| creep.inner().hits() < creep.inner().hits_max());
+    creep_names.retain(|creep_name| {
+        let my_creep = game_state.creeps.get(creep_name).unwrap();
 
-    if creeps.is_empty() {
+        my_creep.inner().hits() < my_creep.inner().hits_max()
+    });
+
+    if creep_names.is_empty() {
         return TowersResult::Continue;
     }
 
     towers.retain(|tower| {
-        tower.heal(creeps[0].inner());
+
+        let my_creep = game_state.creeps.get(&creep_names[0]).unwrap();
+        tower.heal(my_creep.inner());
 
         false
     });
@@ -136,7 +140,7 @@ pub fn find_towers_attack_power(towers: &[StructureTower], target_pos: &Position
     let mut total_attack_power = 0;
 
     for tower in towers {
-        let range = GeneralUtils::pos_range(&tower.pos(), target_pos);
+        let range = utils::general::pos_range(&tower.pos(), target_pos);
 
         total_attack_power += screeps_utils::math::tower_attack_power_at_range(range as u8)
     }
