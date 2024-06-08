@@ -6,13 +6,29 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Enum, Debug)]
 pub enum CreepRole {
+    // Commune
     SourceHarvester,
     Hauler,
     Upgrader,
     Builder,
-    Scout,
+    MineralHarvester,
     Repairer,
+    FastFill,
+    Hub,
+    // Remote
+    RemoteHauler,
+    RemoteSourceHarvester,
+    RemoteMineralHarvester,
+    RemoteReserver,
+    RemoteBuilder,
+    // Global
+    Scout,
+    Claimer,
+    Vanguard,
+    // Includes dismantlers, melee attackers, healers, ranged attackers (and defenders)
     Antifa,
+    Downgraders,
+    // Other
     Unknown,
 }
 

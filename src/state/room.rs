@@ -2,10 +2,19 @@ use std::collections::HashMap;
 
 use enum_map::{enum_map, EnumMap};
 use screeps::{
-    find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
+    find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source,
+    StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject,
+    StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType,
 };
 
-use crate::{constants::{creep::CreepRole, room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}}, creep::my_creep::MyCreep};
+use crate::{
+    constants::{
+        creep::CreepRole,
+        room::NotMyCreeps,
+        structure::{OrganizedStructures, SpawnsByActivity},
+    },
+    creep::my_creep::MyCreep,
+};
 
 use super::game::GameState;
 
@@ -185,5 +194,16 @@ fn creeps_by_role() -> EnumMap<CreepRole, Vec<String>> {
         CreepRole::Repairer => Vec::new(),
         CreepRole::Antifa => Vec::new(),
         CreepRole::Unknown => Vec::new(),
+        CreepRole::FastFill => Vec::new(),
+        CreepRole::MineralHarvester => Vec::new(),
+        CreepRole::RemoteHauler => Vec::new(),
+        CreepRole::RemoteMineralHarvester => Vec::new(),
+        CreepRole::RemoteBuilder => Vec::new(),
+        CreepRole::RemoteSourceHarvester => Vec::new(),
+        CreepRole::Downgraders => Vec::new(),
+        CreepRole::Claimer => Vec::new(),
+        CreepRole::RemoteReserver => Vec::new(),
+        CreepRole::Hub => Vec::new(),
+        CreepRole::Vanguard => Vec::new(),
     }
 }

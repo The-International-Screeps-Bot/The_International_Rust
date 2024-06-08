@@ -157,7 +157,7 @@ impl GameState {
         // If the commune doesn't have a state, create one
         if !self.commune_states.contains_key(room_name) {
             self.commune_states
-                .insert(*room_name, CommuneState::new(room, *room_name));
+                .insert(*room_name, CommuneState::new(room, *room_name, memory));
         };
     }
 

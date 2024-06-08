@@ -23,3 +23,23 @@ pub fn try_scouts(game_state: &mut GameState, memory: &mut GameMemory) {
         }
     }
 }
+
+pub fn harvest_commune_sources(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
+    for room_name in room_names {
+        let room_state = game_state.room_states.get(&room_name).unwrap();
+        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
+            
+        }
+    }
+}
+
+pub fn harvest_remote_sources(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
+    for room_name in room_names {
+        let room_state = game_state.room_states.get(&room_name).unwrap();
+        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
+            
+        }
+    }
+}

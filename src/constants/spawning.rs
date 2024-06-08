@@ -93,3 +93,37 @@ impl BodypartsByPriority {
         }
     }
 }
+
+pub mod spawn_priority_bounds {
+    pub const SOURCE_HARVESTER: (f32, f32) = (2.0, 1000.0);
+    pub const HAULER: (f32, f32) = (1.0, 1000.0);
+    // 0-1 as a percent of repair need fulfilled. Perhaps repair need increases as ramparts get closer to being super low
+    pub const URGENT_REPAIRER: (f32, f32) = (3.0, 4.0);
+    // 0-1 as a percent of damage need fulfilled
+    pub const DEFENDER: (f32, f32) = (3.0, 4.0);
+
+    // Remote room
+    // Each remote room adds + 1 priority
+    pub const REMOTE_RESERVER: (f32, f32) = (10.0, 1000.0);
+    pub const REMOTE_BUILDER: (f32, f32) = (10.2, 1000.0);
+
+    // Remote source
+    // Each remote source adds +1 priority
+
+    pub const REMOTE_SOURCE_HARVESTER: (f32, f32) = (10.1, 1000.0);
+    // Source harvester + .1
+    pub const REMOTE_HAULER: (f32, f32) = (10.3, 1000.0);
+
+    // Still need to figure these out. Ideally we spawn them in between efficiency peaks. As in, when we can spawn very efficient creeps don't spawn these guys, otherwise spawn them
+    // Determine how much repair, upgrade, build combat and scout spawn time we need
+    // Compare to predictions of spawn time for remoting and other needs
+    // Cut down on remotes until we have sufficient spawn time for these creeps
+    // Then, when we would have spent spawn time on the less efficient remotes, we instead spawn these guys
+
+    pub const NORMAL_REPAIRER: (f32, f32) = (0.0, 1000.0);
+    pub const UPGRADER: (f32, f32) = (0.0, 1000.0);
+    pub const BUILDER: (f32, f32) = (0.0, 1000.0);
+    // Give more spawn time the more RCL weighted hate we have
+    pub const ANTIFA: (f32, f32) = (0.0, 1000.0);
+    pub const SCOUT: (f32, f32) = (0.0, 1000.0);
+}
