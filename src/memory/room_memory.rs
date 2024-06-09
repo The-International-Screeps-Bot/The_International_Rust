@@ -62,6 +62,8 @@ impl HighwayRoomMemory {
 #[derive(Serialize, Deserialize)]
 pub struct CommuneRoomMemory {
     pub source_positions: Vec<Position>,
+    // #[serde(serialize_with="serialize_pos")]
+    #[serde(with = "screeps::local::serde_position_packed")]
     pub controller_pos: Position,
 }
 

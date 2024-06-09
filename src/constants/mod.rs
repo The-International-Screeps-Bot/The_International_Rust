@@ -6,3 +6,4 @@ pub mod structure;
 pub mod base_plans;
 pub mod room;
 pub mod player;
+pub mod serialize;
