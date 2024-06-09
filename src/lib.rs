@@ -1,5 +1,6 @@
 // FIXME: remove this, but right now it's just causing warning fatigue
 #![allow(unused)]
+#![feature(int_roundings)]
 
 use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -8,7 +9,7 @@ use creep::{my_creep::MyCreep, role_services};
 use international::{construction_site_services, global_request_ops, global_request_services};
 use log::*;
 use memory::game_memory::GameMemory;
-use room::commune::{commune_services, my_room::MyRoom};
+use room::commune::{commune_services, my_room::MyRoom, spawning::spawn_services};
 use screeps::{game, RoomName};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
@@ -42,18 +43,18 @@ thread_local! {
     static MY_CREEP_STATES: RefCell<HashMap<String, MyCreep>> = RefCell::new(HashMap::new());
 }
 
-#[wasm_bindgen]
-pub fn init() {
-    logging::setup_logger(LevelFilter::Trace);
-    info!("Initializing...");
-    GAME_STATE.with_borrow_mut(|game_state| {
-        game_state.init_tick = game::time();
-    });
+// #[wasm_bindgen]
+// pub fn init() {
+//     logging::setup_logger(LevelFilter::Trace);
+//     info!("Initializing...");
+//     GAME_STATE.with_borrow_mut(|game_state| {
+//         game_state.init_tick = game::time();
+//     });
 
-    SETTINGS.with_borrow_mut(|settings| {
-        settings.allies.insert(String::from("PandaMaster"));
-    });
-}
+//     SETTINGS.with_borrow_mut(|settings| {
+//         settings.allies.insert(String::from("PandaMaster"));
+//     });
+// }
 
 #[wasm_bindgen]
 pub fn game_loop() {
@@ -68,18 +69,13 @@ pub fn game_loop() {
     let bucket = game::cpu::bucket();
     info!("Starting game tick {} with {} bucket", tick, bucket);
 
-    trace!("this is a trace message");
-    debug!("this is a debug message");
-    info!("this is an info message");
-    warn!("this is an important warning!");
-    error!("this is a critical error");
-
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow(|settings| {
             GAME_STATE.with_borrow_mut(|game_state| {
+
+                info!("Log filter: {}", settings.log_filter);
                 
                 loop_with_params(memory, game_state, settings);
-                debug!("{:#?}", game_state);
             });
         });
 
@@ -107,11 +103,13 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     let mut my_rooms: HashMap<RoomName, MyRoom> = HashMap::new();
     let mut my_room_names: Vec<RoomName> = Vec::new(); */
 
-    game_state.update(memory);
+    game_state.tick_update(memory);
 
     construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);
     commune_services::run_towers(game_state, memory);
+
+    commune_services::run_spawning(game_state, memory);
 
     role_services::try_register_scout_targets(game_state, memory);
 

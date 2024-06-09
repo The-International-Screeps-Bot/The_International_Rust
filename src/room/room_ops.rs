@@ -32,8 +32,6 @@ use crate::{
     GAME_STATE,
 };
 
-#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-
 /// Acquires and caches structures in the room based on their structure type
 /*     pub fn structures<'room, 'state>(
     room_name: &'room RoomName,
@@ -55,8 +53,7 @@ use crate::{
         new_organized_structures
     })
 } */
-
-#[inline]
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn structures<'state>(
     room_name: &RoomName,
     game_state: &'state mut GameState,

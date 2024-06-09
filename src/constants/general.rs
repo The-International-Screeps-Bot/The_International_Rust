@@ -3,11 +3,19 @@ use std::error::Error;
 
 use screeps::Direction;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 /// Results intended to inform basic control flow
 pub enum FlowResult {
     Stop,
     Continue,
+}
+
+impl Error for FlowResult {}
+
+impl fmt::Display for FlowResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(PartialEq)]
@@ -21,13 +29,13 @@ pub enum GeneralError {
     Fail,
 }
 
+impl Error for GeneralError {}
+
 impl fmt::Display for GeneralError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }
-
-impl Error for GeneralError {}
 
 pub const MIN_CONSTRUCTION_SITE_AGE: u32 = 20000;
 /// How much each point of progress is worth in terms of age

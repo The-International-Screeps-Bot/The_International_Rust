@@ -7,7 +7,6 @@ use super::{creep_move_ops::CreepMoveOps, my_creep_ops};
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-
 pub fn track_creeps(game_state: &GameState) {
     // record creep names to the room they are in (room data)
     // record creep positions to the rooms they are in
@@ -17,10 +16,10 @@ pub fn track_creeps(game_state: &GameState) {
     for (creep_name, creep) in creeps {}
 }
 
+// Not part of design philosphy
 pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
     for creep_name in &creep_names {
-        debug!("running creep {}", creep_name);
 
         let creep = game_state.creeps.get(creep_name).unwrap();
 

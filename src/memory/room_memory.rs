@@ -1,6 +1,6 @@
 use std::{collections::HashSet, default};
 
-use screeps::{find, game::{self, map::RoomStatus}, FindConstant, HasPosition, ObjectId, Position, RoomName, Source};
+use screeps::{find, game::{self, map::RoomStatus}, FindConstant, HasPosition, ObjectId, Position, Room, RoomName, Source};
 use serde::{Deserialize, Serialize};
 
 use crate::{room::room_ops, state::game::GameState};

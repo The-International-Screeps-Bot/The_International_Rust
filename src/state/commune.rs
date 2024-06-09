@@ -10,6 +10,7 @@ use super::game::GameState;
 pub struct CommuneState {
     pub name: RoomName,
     pub spawn_energy_capacity: u32,
+    pub rcl: u8,
     pub min_energy: Option<u32>,
     pub spawns_by_activity: Option<SpawnsByActivity>,
     pub upgrade_strength: u32,
@@ -23,7 +24,7 @@ pub struct CommuneState {
 }
 
 impl CommuneState {
-    pub fn new(room: &Room, room_name: RoomName, memory: &GameMemory) -> Self {
+    pub fn new(room_name: RoomName, game_state: &GameState, memory: &GameMemory) -> Self {
 
         let commune_memory = memory.communes.get(&room_name).unwrap();
 
@@ -36,9 +37,15 @@ impl CommuneState {
             source_harvest_strengths.push(0);
         }
 
+        let room = game_state.rooms.get(&room_name).unwrap();
+
+        let controller = room.controller().unwrap();
+        let rcl = controller.level();
+
         Self {
             name: room_name,
             spawn_energy_capacity: room.energy_capacity_available(),
+            rcl,
             min_energy: Some(0),
             spawns_by_activity: None,
             upgrade_strength: 0,

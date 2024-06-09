@@ -43,7 +43,7 @@ pub enum CustomStructureType {
 }
 
 impl CustomStructureType {
-    pub fn as_structure_type(self) -> StructureType {
+    pub fn as_structure_type(&self) -> StructureType {
         match self {
             Self::Spawn => StructureType::Spawn,
             Self::Extension => StructureType::Extension,

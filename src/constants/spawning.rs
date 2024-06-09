@@ -1,4 +1,7 @@
-use std::default;
+use std::{
+    default,
+    fmt::{self, Debug},
+};
 
 use enum_map::{Enum, EnumMap};
 use screeps::{constants::creep::Part, BodyPart, Position, SpawnOptions};
@@ -15,7 +18,7 @@ pub struct IndividualUniformSpawnRequestArgs {
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: u32,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub creeps_quota: u32,
     pub spawn_target: Option<Position>,
 }
@@ -28,7 +31,7 @@ pub struct GroupUniformSpawnRequestArgs {
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: Option<u32>,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
     pub spawn_target: Option<Position>,
@@ -42,7 +45,7 @@ pub struct GroupDiverseSpawnRequestArgs {
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: Option<u32>,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
     pub spawn_target: Option<Position>,
@@ -52,6 +55,23 @@ pub enum SpawnRequestArgs {
     IndividualUniform(IndividualUniformSpawnRequestArgs),
     GroupUniform(GroupUniformSpawnRequestArgs),
     GroupDiverse(GroupDiverseSpawnRequestArgs),
+}
+
+impl Debug for SpawnRequestArgs {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let role = match self {
+            SpawnRequestArgs::IndividualUniform(args) => args.role,
+            SpawnRequestArgs::GroupUniform(args) => args.role,
+            SpawnRequestArgs::GroupDiverse(args) => args.role,
+        };
+
+        write!(
+            f,
+            "{:?}",
+            role,
+        )
+    }
 }
 
 #[derive(Debug, Default)]
@@ -64,12 +84,25 @@ pub enum SpawnRequestTypes {
 
 pub struct SpawnRequest {
     pub role: CreepRole,
-    pub priority: u32,
+    pub priority: f32,
     pub tier: u32,
     pub cost: u32,
     pub memory: CreepMemory,
     pub body_part_counts: EnumMap<CreepPart, u32>,
     pub spawn_target: Option<Position>,
+}
+
+impl Debug for SpawnRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let role = self.role;
+
+        write!(
+            f,
+            "{:?}",
+            role,
+        )
+    }
 }
 
 #[derive(Default)]

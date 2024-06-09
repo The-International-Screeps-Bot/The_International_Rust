@@ -55,7 +55,7 @@ impl PathfinderOpenSetEntry {
         goals_set: &HashSet<Position>,
         open_dir: Option<Direction>,
     ) -> Self {
-        let heuristic_cost = PathfinderOps::get_heuristic_cost_to_closest_goal(pos, goals_set);
+        let heuristic_cost = get_heuristic_cost_to_closest_goal(pos, goals_set);
 
         PathfinderOpenSetEntry {
             pos,
@@ -66,100 +66,94 @@ impl PathfinderOpenSetEntry {
     }
 }
 
-pub struct PathfinderOps;
+pub fn find_path(
+    origin: Position,
+    goals: &PathGoals,
+    opts: Option<PathfinderOpts>,
+) -> Result<Vec<Position>, GeneralResult> {
+    let mut open_set = BinaryHeap::new();
+    let mut visited = HashMap::new();
 
-impl PathfinderOps {
-    pub fn find_path(
-        origin:   Position,
-        goals: &PathGoals,
-        opts: Option<PathfinderOpts>,
-    ) -> Result<Vec<Position>, GeneralResult> {
+    let goals_set: HashSet<Position> = goals.keys().copied().collect();
 
-        let mut open_set = BinaryHeap::new();
-        let mut visited = HashMap::new();
+    open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_set, None));
+    visited.insert(origin, None);
 
-        let goals_set: HashSet<Position> = goals.keys().copied().collect();
-
-        open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_set, None));
-        visited.insert(origin, None);
-
-        while let Some(open_set_entry) = open_set.pop() {
-            for direction in DIRECTIONS {
-                if Some(-direction) == open_set_entry.open_dir {
-                    continue;
-                }
-                let Ok(adj_pos) = open_set_entry.pos.checked_add((direction).into()) else {
-                    continue;
-                };
-
-                if visited.contains_key(&adj_pos) {
-                    continue;
-                }
-
-                visited.insert(adj_pos, Some(direction));
-
-                if goals_set.contains(&adj_pos) {
-                    let path = PathfinderOps::resolve_completed_path(adj_pos, &visited);
-                    return Ok(path.into_iter().collect());
-                }
-
-                let mut adj_traverse_cost: u8 = 0;
-                
-                if let Some(opts) = &opts {
-                    adj_traverse_cost = (opts.cost_callback)(&adj_pos);
-                };
-
-                if adj_traverse_cost == u8::MAX {
-                    continue;
-                }
-
-                open_set.push(PathfinderOpenSetEntry::new(
-                    adj_pos,
-                    open_set_entry.g_score + adj_traverse_cost as u32,
-                    &goals_set,
-                    Some(direction),
-                ));
+    while let Some(open_set_entry) = open_set.pop() {
+        for direction in DIRECTIONS {
+            if Some(-direction) == open_set_entry.open_dir {
+                continue;
             }
-        }
+            let Ok(adj_pos) = open_set_entry.pos.checked_add((direction).into()) else {
+                continue;
+            };
 
-        Err(GeneralResult::Fail)
-    }
-    
-    /// Find cost as the lowest manhattan distance to any goal
-    fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
-        let mut lowest_cost = u32::MAX;
-        for goal in goals {
-            let cost =
-                pos.world_x().abs_diff(goal.world_x()) + pos.world_y().abs_diff(goal.world_y());
-            if cost < lowest_cost {
-                lowest_cost = cost;
+            if visited.contains_key(&adj_pos) {
+                continue;
             }
+
+            visited.insert(adj_pos, Some(direction));
+
+            if goals_set.contains(&adj_pos) {
+                let path = resolve_completed_path(adj_pos, &visited);
+                return Ok(path.into_iter().collect());
+            }
+
+            let mut adj_traverse_cost: u8 = 0;
+
+            if let Some(opts) = &opts {
+                adj_traverse_cost = (opts.cost_callback)(&adj_pos);
+            };
+
+            if adj_traverse_cost == u8::MAX {
+                continue;
+            }
+
+            open_set.push(PathfinderOpenSetEntry::new(
+                adj_pos,
+                open_set_entry.g_score + adj_traverse_cost as u32,
+                &goals_set,
+                Some(direction),
+            ));
         }
-        lowest_cost
     }
 
-    /// navigate backwards across our map of where tiles came from to construct a path
-    fn resolve_completed_path(
-        pos: Position,
-        visited: &HashMap<Position, Option<Direction>>,
-    ) -> HashSet<Position> {
-        let mut path = HashSet::new();
-        path.insert(pos);
+    Err(GeneralResult::Fail)
+}
 
-        let mut cursor_pos = pos;
-
-        while let Some(optional_search_direction) = visited.get(&cursor_pos) {
-            match optional_search_direction {
-                Some(search_dir) => {
-                    if let Ok(next_pos) = cursor_pos.checked_add((-*search_dir).into()) {
-                        path.insert(next_pos);
-                        cursor_pos = next_pos;
-                    }
-                }
-                None => break,
-            }
+/// Find cost as the lowest manhattan distance to any goal
+fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
+    let mut lowest_cost = u32::MAX;
+    for goal in goals {
+        let cost = pos.world_x().abs_diff(goal.world_x()) + pos.world_y().abs_diff(goal.world_y());
+        if cost < lowest_cost {
+            lowest_cost = cost;
         }
-
-        path
     }
+    lowest_cost
+}
+
+/// navigate backwards across our map of where tiles came from to construct a path
+fn resolve_completed_path(
+    pos: Position,
+    visited: &HashMap<Position, Option<Direction>>,
+) -> HashSet<Position> {
+    let mut path = HashSet::new();
+    path.insert(pos);
+
+    let mut cursor_pos = pos;
+
+    while let Some(optional_search_direction) = visited.get(&cursor_pos) {
+        match optional_search_direction {
+            Some(search_dir) => {
+                if let Ok(next_pos) = cursor_pos.checked_add((-*search_dir).into()) {
+                    path.insert(next_pos);
+                    cursor_pos = next_pos;
+                }
+            }
+            None => break,
+        }
+    }
+
+    path
 }

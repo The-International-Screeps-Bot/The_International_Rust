@@ -1,7 +1,7 @@
 use std::{collections::HashMap, mem};
 
 use js_sys::JsString;
-use log::{error, warn};
+use log::{error, info, warn};
 use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
@@ -38,9 +38,10 @@ pub struct GameMemory {
     pub enemies: HashMap<String, EnemyMemory>
 }
 
-#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 impl GameMemory {
     pub fn new(breaking_version: Option<u32>) -> Self {
+
+        info!("constructing new GameMemory");
 
         GameMemory {
             breaking_version,
@@ -73,7 +74,7 @@ impl GameMemory {
         match serde_json::from_str::<GameMemory>(&stringified_memory) {
             Ok(memory) => memory,
             Err(err) => {
-                error!("memory parse error, using default {:?}", err);
+                error!("memory parse error on initial read {:?}", err);
 
                 // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
                 SETTINGS.with_borrow(|settings| {

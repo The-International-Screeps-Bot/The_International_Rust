@@ -7,7 +7,6 @@ use crate::{international::stat_services, logging, memory::game_memory::GameMemo
 #[wasm_bindgen]
 /// Runs every global reset
 pub fn init() {
-    logging::setup_logger(LevelFilter::Trace);
 
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow_mut(|settings| {
@@ -20,6 +19,8 @@ pub fn init() {
 }
 
 fn init_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &mut Settings) {
+
+    logging::setup_logger(settings.log_filter);
 
     stat_services::init_stats(game_state, memory);
     init_settings(settings);

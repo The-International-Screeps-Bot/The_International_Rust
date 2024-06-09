@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use enum_map::{Enum, EnumMap};
+use enum_map::{enum_map, Enum, EnumMap};
 use screeps::{BodyPart, Creep, Part};
 use serde::{Deserialize, Serialize};
 
@@ -68,6 +68,61 @@ impl CreepPart {
             Self::Claim => 600,
         }
     }
+
+    pub const fn part(&self) -> Part {
+        match self {
+            Self::Move => Part::Move,
+            Self::Work => Part::Work,
+            Self::Carry => Part::Carry,
+            Self::Attack => Part::Attack,
+            Self::RangedAttack => Part::RangedAttack,
+            Self::Tough => Part::Tough,
+            Self::Heal => Part::Heal,
+            Self::Claim => Part::Claim,
+        }
+    }
 }
 
 pub type BodypartCounts = EnumMap<CreepPart, u32>;
+
+#[derive(Debug, Enum, Copy, Clone, Eq, PartialEq)]
+pub enum PriorityCreepPart {
+    Tough,
+    Claim,
+    Attack,
+    RangedAttack,
+    SecondaryTough,
+    Work,
+    Carry,
+    Move,
+    SecondaryAttack,
+    Heal,
+}
+
+pub const PARTS_BY_PRIORITY: [PriorityCreepPart; 10] = [
+    PriorityCreepPart::Tough,
+    PriorityCreepPart::Claim,
+    PriorityCreepPart::Attack,
+    PriorityCreepPart::RangedAttack,
+    PriorityCreepPart::SecondaryTough,
+    PriorityCreepPart::Work,
+    PriorityCreepPart::Carry,
+    PriorityCreepPart::Move,
+    PriorityCreepPart::SecondaryAttack,
+    PriorityCreepPart::Heal,
+];
+
+thread_local! {
+    pub static PARTS_BY_PRIORITY_PART: EnumMap<PriorityCreepPart, CreepPart> = enum_map! {
+        PriorityCreepPart::Tough => CreepPart::Tough,
+        PriorityCreepPart::Claim => CreepPart::Claim,
+        PriorityCreepPart::Attack => CreepPart::Attack,
+        PriorityCreepPart::RangedAttack => CreepPart::RangedAttack,
+        PriorityCreepPart::SecondaryTough => CreepPart::Tough,
+        PriorityCreepPart::Work => CreepPart::Work,
+        PriorityCreepPart::Carry => CreepPart::Carry,
+        PriorityCreepPart::Move => CreepPart::Move,
+        PriorityCreepPart::SecondaryAttack => CreepPart::Attack,
+        PriorityCreepPart::Heal => CreepPart::Heal,
+    };
+}

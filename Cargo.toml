@@ -41,5 +41,5 @@ lto = true
 wasm-opt = ["-g", "--disable-sign-ext"]
 
 [features]
-default = ["profile"]
+# default = ["profile"]
 profile = ["screeps-timing", "screeps-timing-annotate"]
