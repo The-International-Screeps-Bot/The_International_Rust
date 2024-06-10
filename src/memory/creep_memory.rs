@@ -8,15 +8,17 @@ pub struct CreepMemory {
     #[serde(rename = "0")]
     pub role: CreepRole,
     pub room_from: RoomName,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_index: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scout_target: Option<RoomName>,
 }
 
 impl CreepMemory {
-    pub fn new(room_name: &RoomName) -> Self {
+    pub fn new(role: CreepRole, room_from: RoomName) -> Self {
         Self {
-            role: CreepRole::Unknown,
-            room_from: *room_name,
+            role,
+            room_from,
             source_index: None,
             scout_target: None,
         }

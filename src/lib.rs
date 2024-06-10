@@ -5,7 +5,7 @@
 use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
-use creep::{my_creep::MyCreep, role_services};
+use creep::{my_creep::MyCreep, my_creep_services, role_services};
 use international::{construction_site_services, global_request_ops, global_request_services};
 use log::*;
 use memory::game_memory::GameMemory;
@@ -104,6 +104,9 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     let mut my_room_names: Vec<RoomName> = Vec::new(); */
 
     game_state.tick_update(memory);
+    memory.tick_update(game_state, settings);
+    
+    my_creep_services::clean_creep_memories(game_state, memory);
 
     construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);

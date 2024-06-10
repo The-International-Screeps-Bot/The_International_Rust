@@ -3,9 +3,16 @@ use screeps::{Room, RoomName};
 use crate::{
     constants::{
         creep::{CreepPart, CreepRole},
-        spawning::{spawn_priority_bounds, GroupDiverseSpawnRequestArgs, GroupUniformSpawnRequestArgs, SpawnRequestArgs},
+        spawning::{
+            spawn_priority_bounds, GroupDiverseSpawnRequestArgs, GroupUniformSpawnRequestArgs,
+            SpawnRequestArgs,
+        },
     },
-    memory::{creep_memory::CreepMemory, game_memory::GameMemory, room_memory::RoomMemory},
+    memory::{
+        creep_memory::CreepMemory,
+        game_memory::GameMemory,
+        room_memory::{self, RoomMemory},
+    },
     state::{commune::CommuneState, game::GameState, room::RoomState},
 };
 
@@ -28,43 +35,60 @@ fn harvester_args(
     game_state: &GameState,
     memory: &mut GameMemory,
 ) {
-    let commune_state = game_state.commune_states.get(room_name).unwrap();
+    let commune_memory = memory.communes.get(room_name).unwrap();
+    let base_priority = spawn_priority_bounds::SOURCE_HARVESTER.0;
 
-    if commune_state.spawn_energy_capacity > 550 {
+    for source_index in 0..commune_memory.source_positions.len() {
+
+        let priority = base_priority + source_index as f32;
+
+        let role = CreepRole::SourceHarvester;
+        let commune_state = game_state.commune_states.get(room_name).unwrap();
+
+        if commune_state.spawn_energy_capacity > 550 {
+            spawn_request_args.push(SpawnRequestArgs::GroupUniform(
+                GroupUniformSpawnRequestArgs {
+                    role: CreepRole::SourceHarvester,
+                    default_parts: vec![CreepPart::Move],
+                    extra_parts: vec![CreepPart::Work],
+                    parts_quota: 20,
+                    min_cost_per_creep: 100,
+                    max_cost_per_creep: None,
+                    memory_additions: {
+                        let mut creep_memory = CreepMemory::new(role, *room_name);
+                        creep_memory.source_index = Some(source_index);
+                        creep_memory
+                    },
+                    priority,
+                    max_creeps: None,
+                    threshold: None,
+                    spawn_target: None,
+                },
+            ));
+
+            return;
+        };
+
         spawn_request_args.push(SpawnRequestArgs::GroupUniform(
             GroupUniformSpawnRequestArgs {
                 role: CreepRole::SourceHarvester,
-                default_parts: vec![CreepPart::Move],
-                extra_parts: vec![CreepPart::Work],
-                parts_quota: 20,
+                default_parts: vec![CreepPart::Carry],
+                extra_parts: vec![CreepPart::Move, CreepPart::Work, CreepPart::Work],
+                parts_quota: 4,
                 min_cost_per_creep: 100,
                 max_cost_per_creep: None,
-                memory_additions: CreepMemory::new(room_name),
-                priority: spawn_priority_bounds::SOURCE_HARVESTER.0,
+                memory_additions: {
+                    let mut creep_memory = CreepMemory::new(role, *room_name);
+                    creep_memory.source_index = Some(source_index);
+                    creep_memory
+                },
+                priority,
                 max_creeps: None,
                 threshold: None,
                 spawn_target: None,
             },
         ));
-
-        return;
-    };
-
-    spawn_request_args.push(SpawnRequestArgs::GroupUniform(
-        GroupUniformSpawnRequestArgs {
-            role: CreepRole::SourceHarvester,
-            default_parts: vec![CreepPart::Carry],
-            extra_parts: vec![CreepPart::Move, CreepPart::Work, CreepPart::Work],
-            parts_quota: 4,
-            min_cost_per_creep: 100,
-            max_cost_per_creep: None,
-            memory_additions: CreepMemory::new(room_name),
-            priority: spawn_priority_bounds::SOURCE_HARVESTER.0,
-            max_creeps: None,
-            threshold: None,
-            spawn_target: None,
-        },
-    ));
+    }
 }
 
 fn hauler_args(room: &Room, request_args: &mut Vec<SpawnRequestArgs>, game_state: &GameState) {

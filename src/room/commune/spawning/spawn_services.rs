@@ -63,7 +63,7 @@ fn try_use_inactive_spawns(
     debug!("spawn_requests_args: {:?}", spawn_requests_args);
 
     for spawn_request_args in spawn_requests_args {
-        let spawn_requests = match spawn_request_args {
+        let mut spawn_requests = match spawn_request_args {
             SpawnRequestArgs::IndividualUniform(args) => {
                 spawn_request_arg_ops::spawn_request_individual_uniform(
                     args, room_name, game_state, memory,
@@ -82,6 +82,10 @@ fn try_use_inactive_spawns(
         };
 
         println!("Spawn requests: {:?}", spawn_requests);
+
+        spawn_requests.sort_by(|a, b| {
+            a.priority.partial_cmp(&b.priority).unwrap()
+        });
 
         for spawn_request in spawn_requests {
 

@@ -154,7 +154,6 @@ impl GameState {
 
     // This should be moved elsewhere as it initializes commune memory as well as commune state
     fn try_update_commune(&mut self, room_name: &RoomName, memory: &mut GameMemory) {
-
         let room = self.rooms.get(room_name).unwrap();
 
         let Some(controller) = room.controller() else {
@@ -164,10 +163,6 @@ impl GameState {
         if !controller.my() {
             return;
         }
-
-        memory
-            .communes
-            .insert(*room_name, CommuneRoomMemory::new(room_name, self));
 
         self.communes.insert(*room_name);
 

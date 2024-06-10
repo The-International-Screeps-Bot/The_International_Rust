@@ -84,16 +84,6 @@ impl GameMemory {
         }
     }
 
-    pub fn try_apply_settings(&mut self, settings: &Settings) {
-        if let Some(breaking_version) = self.breaking_version {
-            if (breaking_version == settings.breaking_version) {
-                return;
-            }
-        }
-
-        self.breaking_version = Some(settings.breaking_version);
-    }
-
     pub fn write(&mut self) {
         match serde_json::to_string(self) {
             Ok(v) => raw_memory::set(&JsString::from(v)),
@@ -101,6 +91,12 @@ impl GameMemory {
                 warn!("Memory write error {:?}", e)
             }
         }
+    }
+
+    pub fn tick_update(&mut self, game_state: &mut GameState, settings: &Settings) {
+        
+        self.try_migrate(game_state, settings);
+        self.tick_update_commune_memory(game_state);
     }
 
     pub fn try_migrate(
@@ -128,7 +124,7 @@ impl GameMemory {
         settings: &Settings,
     ) -> GeneralResult {
         collective_ops::kill_all_creeps(game_state);
-        let _ = mem::replace(self, GameMemory::new(Some(settings.breaking_version)));
+        mem::swap(self, &mut GameMemory::new(Some(settings.breaking_version)));
 
         GeneralResult::Success
     }
@@ -136,5 +132,14 @@ impl GameMemory {
     /// Set raw memory to equal an empty string
     pub fn clear_memory(memory: &mut GameMemory) {
         raw_memory::set(&JsString::from(""));
+    }
+
+    pub fn tick_update_commune_memory(&mut self, game_state: &mut GameState) {
+
+        let commune_names = game_state.communes.clone();
+        for room_name in commune_names {
+
+            self.communes.entry(room_name).or_insert_with(|| CommuneRoomMemory::new(&room_name, game_state));
+        }
     }
 }

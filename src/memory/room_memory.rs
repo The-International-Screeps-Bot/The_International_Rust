@@ -1,6 +1,10 @@
 use std::{collections::HashSet, default};
 
-use screeps::{find, game::{self, map::RoomStatus}, FindConstant, HasPosition, ObjectId, Position, Room, RoomName, Source};
+use screeps::{
+    find,
+    game::{self, map::RoomStatus},
+    FindConstant, HasPosition, ObjectId, Position, Room, RoomName, Source,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{room::room_ops, state::game::GameState};
@@ -69,11 +73,14 @@ pub struct CommuneRoomMemory {
 
 impl CommuneRoomMemory {
     pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
+        let sources = room_ops::get_sources(room_name, game_state);
+        let source_positions: Vec<Position> = sources.iter().map(|source| source.pos()).collect();
+
 
         let room = game_state.rooms.get(room_name).unwrap();
 
         Self {
-            source_positions: Vec::new(),
+            source_positions,
             controller_pos: room.controller().unwrap().pos(),
         }
     }
@@ -90,8 +97,12 @@ pub struct RemoteRoomMemory {
 }
 
 impl RemoteRoomMemory {
-    pub fn new(room_name: &RoomName, game_state: &mut GameState, cost: u32, source_paths: Vec<Vec<Position>>,) -> Self {
-
+    pub fn new(
+        room_name: &RoomName,
+        game_state: &mut GameState,
+        cost: u32,
+        source_paths: Vec<Vec<Position>>,
+    ) -> Self {
         let room = game_state.rooms.get(room_name).unwrap();
 
         Self {
@@ -113,7 +124,6 @@ pub struct NeutralRoomMemory {
 
 impl NeutralRoomMemory {
     pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
-
         let room = game_state.rooms.get(room_name).unwrap();
 
         Self {
@@ -162,7 +172,6 @@ pub struct KeeperRoomMemory {
 
 impl KeeperRoomMemory {
     pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Self {
-
         let room = game_state.rooms.get(room_name).unwrap();
 
         // Keeper lair positions
