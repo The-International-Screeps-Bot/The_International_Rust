@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 
 use enum_map::EnumMap;
-use screeps::{HasPosition, Position};
+use screeps::{HasPosition, Part, Position};
 
-use crate::creep::my_creep::MyCreep;
+use crate::{constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType}, creep::my_creep::MyCreep};
+
+use super::game::GameState;
 
 pub type MyCreepStates = HashMap<String, MyCreepState>;
 
 #[derive(Debug)]
 /// State for creeps we necessarily own
 pub struct MyCreepState {
+    pub cost: Option<u32>,
     /// The next position the creep intends to move to
     pub move_request: Option<Position>,
     /// The position which the creep is registered to move to or stay at
@@ -19,14 +22,21 @@ pub struct MyCreepState {
     /// A invader core attacker's action_coord is the invader core's position
     /// An upgrader's action_coord is the controller's position
     pub action_coord: Option<Position>,
+    pub parts: Option<Vec<Part>>,
+    pub parts_by_type: Option<CreepPartsByType>,
+    pub active_parts_by_type: Option<ActiveCreepPartsByType>,
 }
 
 impl MyCreepState {
-    pub fn new(creep: &MyCreep, name: &str) -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
+            cost: None,
             move_request: None,
             move_target: None,
             action_coord: None,
+            parts: None,
+            parts_by_type: None,
+            active_parts_by_type: None,
         }
     }
 }

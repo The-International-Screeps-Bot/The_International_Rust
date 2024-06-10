@@ -13,7 +13,6 @@ use super::game::GameState;
 pub struct CreepState {
     pub name: String,
     pub pos: Option<Position>,
-    pub cost: Option<u32>,
     /// Cached part's of the creep, not accounting for health state
     pub parts: Option<CreepParts>,
     pub parts_by_type: Option<CreepPartsByType>,
@@ -25,7 +24,6 @@ impl CreepState {
         Self {
             name: name.to_string(),
             pos: None,
-            cost: None,
             parts: None,
             parts_by_type: None,
             active_parts_by_type: None,

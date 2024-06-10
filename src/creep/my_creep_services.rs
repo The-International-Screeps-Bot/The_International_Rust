@@ -17,19 +17,19 @@ pub fn track_creeps(game_state: &GameState) {
 }
 
 // Not part of design philosphy
-pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
-    let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
-    for creep_name in &creep_names {
+// pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+//     let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
+//     for creep_name in &creep_names {
 
-        let creep = game_state.creeps.get(creep_name).unwrap();
+//         let creep = game_state.creeps.get(creep_name).unwrap();
 
-        if creep.inner().spawning() {
-            continue;
-        }
+//         if creep.inner().spawning() {
+//             continue;
+//         }
 
-        my_creep_ops::run_role(creep_name, game_state, memory);
-    }
-}
+//         my_creep_ops::run_role(creep_name, game_state, memory);
+//     }
+// }
 
 pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
     info!("running memory cleanup");

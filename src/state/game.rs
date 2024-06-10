@@ -113,7 +113,7 @@ impl GameState {
 
             if !self.my_creep_states.contains_key(&creep_name) {
                 self.my_creep_states
-                    .insert(creep_name.clone(), MyCreepState::new(&creep, creep_name.as_str()));
+                    .insert(creep_name.clone(), MyCreepState::new(creep_name.as_str()));
             }
 
             if !self.creep_states.contains_key(&creep_name) {

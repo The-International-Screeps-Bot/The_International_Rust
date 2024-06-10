@@ -40,7 +40,7 @@ pub enum CreepOperationResult {
     Exception,
 }
 
-pub type CreepParts = Vec<Part>;
+pub type CreepParts = Vec<CreepPart>;
 pub type CreepPartsByType = EnumMap<CreepPart, u32>;
 
 thread_local! {

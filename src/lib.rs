@@ -112,9 +112,10 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     global_request_services::manage_requests(game_state, memory);
     commune_services::run_towers(game_state, memory);
 
-    commune_services::run_spawning(game_state, memory);
-
     role_services::try_register_scout_targets(game_state, memory);
+    role_services::register_commune_harvest_strength(game_state, memory);
+
+    commune_services::run_spawning(game_state, memory);
 
     role_services::try_scouts(game_state, memory);
 }
