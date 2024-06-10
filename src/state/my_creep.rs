@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use enum_map::EnumMap;
 use screeps::{HasPosition, Position};
 
 use crate::creep::my_creep::MyCreep;
@@ -21,7 +22,7 @@ pub struct MyCreepState {
 }
 
 impl MyCreepState {
-    pub fn new(creep: &MyCreep, name: String) -> Self {
+    pub fn new(creep: &MyCreep, name: &str) -> Self {
         Self {
             move_request: None,
             move_target: None,

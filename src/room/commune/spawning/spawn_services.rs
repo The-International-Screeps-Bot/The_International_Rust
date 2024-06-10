@@ -219,14 +219,14 @@ fn construct_body_for_spawn_request(spawn_request: &SpawnRequest) -> Vec<Part> {
             }
 
             for _ in 0..priority_parts_count {
-                body.push(part.part());
+                body.push(part.to_part());
             }
 
             if skip_end_part {
                 continue;
             }
 
-            end_parts.push(part.part());
+            end_parts.push(part.to_part());
         }
     });
 

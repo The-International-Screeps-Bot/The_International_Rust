@@ -1,9 +1,25 @@
-use screeps::{ObjectId, SharedCreepProperties};
+use screeps::{ObjectId, RoomName, SharedCreepProperties};
 
 use crate::{
-    creep::my_creep_ops, memory::game_memory::GameMemory, room::room_ops,
-    state::game::GameState,
+    constants::creep::CreepPart, creep::{any_creep_ops, my_creep_ops}, memory::game_memory::GameMemory, room::room_ops, state::game::GameState
 };
+
+pub fn register_harvest_strength(creep_name: &String, room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+
+    let creep_memory = memory.creeps.get(creep_name).unwrap();
+    let Some(source_index) = creep_memory.source_index else {
+        return
+    };
+
+    // let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+
+    let creep = game_state.creeps.get(creep_name).unwrap();
+    let work_parts = any_creep_ops::get_parts_by_type(&creep.inner().body(), creep_name, game_state)[CreepPart::Work];
+
+    let commune_state = game_state.commune_states.get_mut(room_name).unwrap();
+
+    commune_state.source_harvest_strengths[source_index] += work_parts;
+}
 
 pub fn harvest_steps(creep_name: &String, game_state: &mut GameState, memory: &mut GameMemory) {
 

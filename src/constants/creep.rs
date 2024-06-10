@@ -1,3 +1,4 @@
+use core::panic;
 use std::collections::HashMap;
 
 use enum_map::{enum_map, Enum, EnumMap};
@@ -40,8 +41,22 @@ pub enum CreepOperationResult {
 }
 
 pub type CreepParts = Vec<Part>;
-pub type CreepPartsByType = HashMap<Part, u32>;
-pub type ActiveCreepPartsByType = HashMap<Part, u32>;
+pub type CreepPartsByType = EnumMap<CreepPart, u32>;
+
+thread_local! {
+    pub static CREEP_PARTS_BY_TYPE: CreepPartsByType = enum_map! {
+        CreepPart::Move => 0,
+        CreepPart::Work => 0,
+        CreepPart::Carry => 0,
+        CreepPart::Attack => 0,
+        CreepPart::RangedAttack => 0,
+        CreepPart::Tough => 0,
+        CreepPart::Heal => 0,
+        CreepPart::Claim => 0,
+    };
+}
+
+pub type ActiveCreepPartsByType = HashMap<CreepPart, u32>;
 
 #[derive(Debug, Enum, Copy, Clone)]
 pub enum CreepPart {
@@ -69,7 +84,7 @@ impl CreepPart {
         }
     }
 
-    pub const fn part(&self) -> Part {
+    pub const fn to_part(&self) -> Part {
         match self {
             Self::Move => Part::Move,
             Self::Work => Part::Work,
@@ -79,6 +94,20 @@ impl CreepPart {
             Self::Tough => Part::Tough,
             Self::Heal => Part::Heal,
             Self::Claim => Part::Claim,
+        }
+    }
+
+    pub fn from_part(part: &Part) -> CreepPart {
+        match part {
+            Part::Move => CreepPart::Move,
+            Part::Work => CreepPart::Work,
+            Part::Carry => CreepPart::Carry,
+            Part::Attack => CreepPart::Attack,
+            Part::RangedAttack => CreepPart::RangedAttack,
+            Part::Tough => CreepPart::Tough,
+            Part::Heal => CreepPart::Heal,
+            Part::Claim => CreepPart::Claim,
+            _ => panic!("Unknown part: {:?}", part),
         }
     }
 }

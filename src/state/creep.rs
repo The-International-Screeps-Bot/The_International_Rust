@@ -21,7 +21,7 @@ pub struct CreepState {
 }
 
 impl CreepState {
-    pub fn new(creep: &Creep, name: &str) -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
             pos: None,
