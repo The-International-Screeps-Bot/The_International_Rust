@@ -19,7 +19,7 @@ impl<S: Serializer> Serializer for NonHumanReadable<S> {
 
     // disable human readable to save on memory usage from Positions, RoomXY, object ids, etc.
     fn is_human_readable(&self) -> bool {
-        false
+        true
     }
 
     // Bunch of fn foo(...) { self.0.foo(...) }

@@ -1,17 +1,33 @@
 use std::{collections::HashMap, mem};
 
 use js_sys::JsString;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
+use savefile::{self, save_file};
+use savefile_derive::Savefile;
 use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
-use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
-
-use super::{
-    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
+use crate::{
+    constants::general::GeneralResult,
+    international::collective_ops,
+    settings::Settings,
+    state::game::GameState,
+    utils::{self, general::GeneralUtils},
+    SETTINGS,
 };
 
-#[derive(Serialize, Deserialize)]
+use super::{
+    creep_memory::{CreepMemory, PowerCreepMemory},
+    global_requests::{ClaimRequests, WorkRequests},
+    player::{AllyMemory, EnemyMemory},
+    room_memory::{
+        CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory,
+        KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory,
+    },
+    stat_memory::StatsMemory,
+};
+
+#[derive(Serialize, Deserialize, Savefile, /* savefile::prelude::Savefile, */ Debug, Clone)]
 pub struct GameMemory {
     pub breaking_version: Option<u32>,
     pub me: String,
@@ -35,12 +51,11 @@ pub struct GameMemory {
     // Consider putting construction sites in a segment
     pub construction_sites: HashMap<ObjectId<ConstructionSite>, u32>,
     pub allies: HashMap<String, AllyMemory>,
-    pub enemies: HashMap<String, EnemyMemory>
+    pub enemies: HashMap<String, EnemyMemory>,
 }
 
 impl GameMemory {
     pub fn new(breaking_version: Option<u32>) -> Self {
-
         info!("constructing new GameMemory");
 
         GameMemory {
@@ -68,20 +83,29 @@ impl GameMemory {
         }
     }
 
+    fn new_using_settings() -> GameMemory {
+        // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
+        return SETTINGS.with_borrow(|settings| GameMemory::new(Some(settings.breaking_version)));
+    }
+
     pub fn load_from_memory_or_default() -> GameMemory {
         let stringified_memory = raw_memory::get().as_string().unwrap();
 
-        match serde_json::from_str::<GameMemory>(&stringified_memory) {
-            Ok(memory) => memory,
-            Err(err) => {
-                error!("memory parse error on initial read {:?}", err);
+        let mut decoded_memory = Vec::new();
+        if let Err(decode_result) = base32768::decode(&stringified_memory, &mut decoded_memory) {
+            debug!(
+                "Memory decode error on initial read (expected if on global reset) {:?}",
+                decode_result
+            );
 
-                // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
-                SETTINGS.with_borrow(|settings| {
-                    GameMemory::new(Some(settings.breaking_version))
-                })
-            }
-        }
+           return GameMemory::new_using_settings()
+        };
+
+        let Ok(memory) = savefile::load_noschema(&mut decoded_memory, 1) else {
+            error!("Memory load schema error {}", memory);
+        };
+
+        memory
     }
 
     pub fn try_apply_settings(&mut self, settings: &Settings) {
@@ -103,11 +127,7 @@ impl GameMemory {
         }
     }
 
-    pub fn try_migrate(
-        &mut self,
-        game_state: &GameState,
-        settings: &Settings,
-    ) -> GeneralResult {
+    pub fn try_migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
         if game_state.init_tick != game_state.tick {
             return GeneralResult::Fail;
         }
@@ -123,10 +143,7 @@ impl GameMemory {
         self.migrate(game_state, settings)
     }
 
-    fn migrate(&mut self,
-        game_state: &GameState,
-        settings: &Settings,
-    ) -> GeneralResult {
+    fn migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
         collective_ops::kill_all_creeps(game_state);
         let _ = mem::replace(self, GameMemory::new(Some(settings.breaking_version)));
 

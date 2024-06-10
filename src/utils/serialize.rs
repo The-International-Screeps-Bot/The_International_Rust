@@ -4,3 +4,11 @@
 
 
 // }
+
+// use savefile_derive;
+
+// use screeps::RoomName;
+
+// impl savefile::Serialize for RoomName {
+
+// }

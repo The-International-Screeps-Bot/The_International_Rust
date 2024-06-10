@@ -14,13 +14,11 @@ use screeps::{game, RoomName};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    settings::Settings,
-    state::game::{GameState},
-};
+use crate::{settings::Settings, state::game::GameState};
 
 mod constants;
 mod creep;
+mod init;
 mod international;
 mod logging;
 mod memory;
@@ -30,7 +28,6 @@ mod settings;
 mod state;
 mod structures;
 mod utils;
-mod init;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
@@ -72,9 +69,8 @@ pub fn game_loop() {
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow(|settings| {
             GAME_STATE.with_borrow_mut(|game_state| {
-
                 info!("Log filter: {}", settings.log_filter);
-                
+
                 loop_with_params(memory, game_state, settings);
             });
         });
@@ -96,7 +92,6 @@ pub fn game_loop() {
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
-
     /* let mut my_creeps: HashMap<String, MyCreep> = HashMap::new();
     let mut my_creep_names: Vec<String> = Vec::new();
 

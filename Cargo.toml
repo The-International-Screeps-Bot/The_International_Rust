@@ -25,6 +25,9 @@ room_visual_ext = "0.1.0"
 screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = true }
 screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
 enum-map = "2.7.3"
+base32768 = { git = "https://github.com/CarsonBurke/base32768-rs.git" }
+savefile = "0.17.4"
+savefile-derive = "0.17.4"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
