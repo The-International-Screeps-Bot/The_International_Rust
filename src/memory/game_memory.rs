@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
 
 use super::{
-    creep_memory::{CreepMemory, PowerCreepMemory}, global_requests::{ClaimRequests, WorkRequests}, player::{AllyMemory, EnemyMemory}, room_memory::{CenterRoomMemory, CommuneRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
+    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
 };
 
 #[derive(Serialize, Deserialize)]
@@ -22,8 +22,8 @@ pub struct GameMemory {
     pub intersection: HashMap<RoomName, IntersectionRoomMemory>,
     pub center: HashMap<RoomName, CenterRoomMemory>,
     pub keeper: HashMap<RoomName, KeeperRoomMemory>,
-    pub ally: HashMap<RoomName, AllyMemory>,
-    pub enemy: HashMap<RoomName, EnemyMemory>,
+    pub ally: HashMap<RoomName, AllyRoomMemory>,
+    pub enemy: HashMap<RoomName, EnemyRoomMemory>,
     pub neutral: HashMap<RoomName, NeutralRoomMemory>,
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
