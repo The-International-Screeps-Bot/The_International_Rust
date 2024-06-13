@@ -1,4 +1,4 @@
-use screeps::{Room, RoomName};
+use screeps::{Room, RoomName, ENERGY_REGEN_TIME, HARVEST_POWER, SOURCE_ENERGY_CAPACITY};
 
 use crate::{
     constants::{
@@ -40,18 +40,32 @@ fn harvester_args(
 
     for source_index in 0..commune_memory.source_positions.len() {
 
+        let commune_state = game_state.commune_states.get(room_name).unwrap();
+        
+        // source harvest need derived from how many work parts 
+        let work_need = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME / HARVEST_POWER + 1;
+        let work_have = commune_state.source_harvest_strengths[source_index];
+
+        let work_quota = work_need - work_have;
+        if work_quota <= 0 {
+            continue
+        }
+
         let priority = base_priority + source_index as f32;
 
         let role = CreepRole::SourceHarvester;
-        let commune_state = game_state.commune_states.get(room_name).unwrap();
 
         if commune_state.spawn_energy_capacity > 550 {
+
+            let default_parts = vec![CreepPart::Move];
+            let extra_parts = vec![CreepPart::Work];
+
             spawn_request_args.push(SpawnRequestArgs::GroupUniform(
                 GroupUniformSpawnRequestArgs {
                     role: CreepRole::SourceHarvester,
-                    default_parts: vec![CreepPart::Move],
-                    extra_parts: vec![CreepPart::Work],
-                    parts_quota: 20,
+                    default_parts,
+                    extra_parts,
+                    extra_parts_quota: work_quota,
                     min_cost_per_creep: 100,
                     max_cost_per_creep: None,
                     memory_additions: {
@@ -74,7 +88,7 @@ fn harvester_args(
                 role: CreepRole::SourceHarvester,
                 default_parts: vec![CreepPart::Carry],
                 extra_parts: vec![CreepPart::Move, CreepPart::Work, CreepPart::Work],
-                parts_quota: 4,
+                extra_parts_quota: work_quota / 2,
                 min_cost_per_creep: 100,
                 max_cost_per_creep: None,
                 memory_additions: {

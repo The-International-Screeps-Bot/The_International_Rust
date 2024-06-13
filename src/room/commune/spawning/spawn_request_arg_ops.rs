@@ -65,7 +65,7 @@ pub fn spawn_request_individual_uniform(
 
         if !args.extra_parts.is_empty() {
             let mut remaining_extra_parts =
-                args.parts_quota as i32 - args.default_parts.len() as i32;
+                args.extra_parts_quota as i32 - args.default_parts.len() as i32;
 
             while cost < max_cost_per_creep
                 && remaining_allowed_parts >= args.extra_parts.len() as u32
@@ -121,7 +121,7 @@ pub fn spawn_request_group_diverse(
         game_state,
     );
 
-    let total_extra_parts = args.extra_parts.len() as u32 * args.parts_quota;
+    let total_extra_parts = args.extra_parts.len() as u32 * args.extra_parts_quota;
 
     let max_parts_per_creep = u32::min(
         50 - args.default_parts.len() as u32,
@@ -143,8 +143,6 @@ pub fn spawn_request_group_diverse(
     for part in &args.extra_parts {
         extra_parts_cost += part.cost();
     }
-
-    let mut parts_quota = args.parts_quota;
 
     let mut spawn_requests = Vec::new();
 
@@ -248,11 +246,11 @@ pub fn spawn_request_group_uniform(
 
     let mut max_creeps: u32 = args.max_creeps.unwrap_or(u32::MAX);
 
-    let mut parts_quota = args.parts_quota;
+    let mut extra_parts_quota = args.extra_parts_quota;
 
     let mut spawn_requests = Vec::new();
 
-    while parts_quota > 0 && max_creeps > 0 {
+    while extra_parts_quota > 0 && max_creeps > 0 {
         let mut body_part_counts: BodypartCounts = enum_map! {
             CreepPart::Move => 0,
             CreepPart::Attack => 0,
@@ -277,8 +275,9 @@ pub fn spawn_request_group_uniform(
 
                 cost += part_cost;
                 body_part_counts[(*part)] += 1;
-                parts_count += 1;
             }
+
+            parts_count += args.default_parts.len() as u32;
         }
 
         let mut stop = false;
@@ -315,7 +314,7 @@ pub fn spawn_request_group_uniform(
             spawn_target: args.spawn_target,
         });
 
-        parts_quota -= parts_count;
+        extra_parts_quota -= parts_count;
         max_creeps -= 1;
     }
 

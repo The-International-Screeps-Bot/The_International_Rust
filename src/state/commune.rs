@@ -11,11 +11,14 @@ pub struct CommuneState {
     pub name: RoomName,
     pub spawn_energy_capacity: u32,
     pub rcl: u8,
+    /// Number of carry parts worth of hauling the commune wants
+    pub haul_need: u32,
     pub min_energy: Option<u32>,
     pub spawns_by_activity: Option<SpawnsByActivity>,
     pub upgrade_strength: u32,
     pub build_strength: u32,
     pub repair_strength: u32,
+    /// Number of carry parts worth of hauling the commune appears to have
     pub haul_strength: u32,
     pub mineral_harvest_strength: u32,
     pub used_mineral_positions: Vec<Position>,
@@ -46,6 +49,7 @@ impl CommuneState {
             name: room_name,
             spawn_energy_capacity: room.energy_capacity_available(),
             rcl,
+            haul_need: 0,
             min_energy: Some(0),
             spawns_by_activity: None,
             upgrade_strength: 0,
