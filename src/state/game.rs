@@ -15,7 +15,7 @@ use super::{
     market::MarketState,
     my_creep::{MyCreepState, MyCreepStateOps},
     room::RoomState,
-    structure::{self, StructuresState},
+    structure::{self, StructuresState}, tick_intervals::TickIntervals,
 };
 use crate::{
     constants::creep::CreepRole,
@@ -47,6 +47,7 @@ pub struct GameState {
     /// Current scout targets by scout creeps
     pub scout_targets: HashSet<RoomName>,
     pub highest_rcl: u8,
+    pub intervals: TickIntervals,
 }
 
 impl GameState {
@@ -68,6 +69,7 @@ impl GameState {
             my_creep_states: HashMap::new(),
             scout_targets: HashSet::new(),
             highest_rcl: 0,
+            intervals: TickIntervals::new(),
         }
     }
 

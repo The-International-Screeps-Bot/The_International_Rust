@@ -3,7 +3,10 @@ use std::collections::{HashMap, HashSet};
 use screeps::{game, ConstructionSite, MaybeHasId, ObjectId};
 
 use crate::{
-    constants::general::{CONSTRUCTION_PROGRESS_AGE_MULTIPLIER, MIN_CONSTRUCTION_SITE_AGE}, memory::game_memory::GameMemory, state::game::GameState, utils::{self, general::GeneralUtils}
+    constants::general::{CONSTRUCTION_PROGRESS_AGE_MULTIPLIER, MIN_CONSTRUCTION_SITE_AGE},
+    memory::game_memory::GameMemory,
+    state::game::GameState,
+    utils::{self, general::GeneralUtils},
 };
 
 /// Register new construction sites,
@@ -14,8 +17,10 @@ use crate::{
 pub fn manage_sites(game_state: &mut GameState, memory: &mut GameMemory) {
     // only run the following logic every so often
 
-    let interval = 100;
-    if !utils::general::is_tick_interval(game_state.tick, interval) {
+    if !utils::general::is_tick_interval(
+        game_state.tick,
+        game_state.intervals.construction_sites_update,
+    ) {
         return;
     }
 
@@ -53,7 +58,7 @@ pub fn manage_sites(game_state: &mut GameState, memory: &mut GameMemory) {
 
     for (id, age) in &mut memory.construction_sites {
         // times inveral because we only run the code every interval, but we cant to track how many ticks have passed
-        *age += interval;
+        *age += game_state.intervals.construction_sites_update;
     }
 }
 
