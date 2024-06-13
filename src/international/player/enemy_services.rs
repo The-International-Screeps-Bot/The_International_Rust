@@ -1,7 +1,7 @@
 use crate::{
     constants::general::DEFAULT_DATA_DECAY,
     memory::{enemy::EnemyMemory, game_memory::GameMemory},
-    state::game::GameState,
+    state::game::GameState, utils,
 };
 
 pub fn decay_metrics(game_state: &mut GameState, memory: &mut GameMemory) {
