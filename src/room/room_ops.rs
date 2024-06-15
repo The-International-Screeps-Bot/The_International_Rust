@@ -1,22 +1,28 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use enum_map::{enum_map, EnumMap};
 use screeps::{
     find,
     game::{self, map::RoomStatus},
-    look, structure, Creep, HasPosition, ObjectId, Position, Room, RoomName, SharedCreepProperties,
-    Source, Structure, StructureContainer, StructureController, StructureExtension,
-    StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink,
-    StructureNuker, StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn,
+    look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId, Position,
+    Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY, SharedCreepProperties, Source, Structure,
+    StructureContainer, StructureController, StructureExtension, StructureExtractor,
+    StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink, StructureNuker,
+    StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn,
     StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage,
     StructureTerminal, StructureTower, StructureType, StructureWall, Terrain,
+    CREEP_RANGED_ACTION_RANGE,
 };
+use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::{
         general::FlowResult,
+        move_costs::{DEFAULT_SWAMP_COST, DEFAULT_WALL_COST, MAX_COST},
         room::NotMyCreeps,
-        structure::{OldOrganizedStructures, OrganizedStructures, SpawnsByActivity},
+        structure::{
+            OldOrganizedStructures, OrganizedStructures, SpawnsByActivity, IMPASSIBLE_STRUCTURES,
+        },
     },
     memory::{
         game_memory::GameMemory,
@@ -26,9 +32,13 @@ use crate::{
     state::{
         game::GameState,
         market::MarketState,
-        room::{self, RoomState},
+        room::{self, NotMyConstructionSites, RoomState},
     },
-    utils::{self, general::GeneralUtils},
+    utils::{
+        self,
+        general::{for_adjacent_positions, GeneralUtils},
+        pos::{for_positions_in_range_in_room, get_positions_in_range_in_room},
+    },
     GAME_STATE,
 };
 
@@ -53,18 +63,114 @@ use crate::{
         new_organized_structures
     })
 } */
-#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+
+pub fn enemy_threat_positions<'state>(
+    room_name: &RoomName,
+    game_state: &'state mut GameState,
+    memory: &mut GameMemory,
+) -> SparseCostMatrix {
+    {
+        let room_state = game_state.room_states.get(room_name).unwrap();
+
+        if let Some(enemy_threat_positions) = &room_state.enemy_threat_positions {
+            return enemy_threat_positions.clone();
+        }
+    }
+
+    let mut threat_positions = SparseCostMatrix::new();
+    let enemy_creeps = not_my_creeps(room_name, game_state, memory).enemy.clone();
+
+    for creep in enemy_creeps {
+        let positions =
+            get_positions_in_range_in_room(&creep.pos(), CREEP_RANGED_ACTION_RANGE.into());
+
+        for pos in positions {
+            threat_positions.set(pos.xy(), MAX_COST);
+        }
+    }
+
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+    room_state.enemy_threat_positions = Some(threat_positions.clone());
+    threat_positions
+}
+
 pub fn structures<'state>(
     room_name: &RoomName,
     game_state: &'state mut GameState,
-) -> &'state mut OrganizedStructures {
-    let room = game_state.rooms.get(room_name).unwrap();
+) -> &'state Vec<StructureObject> {
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
 
-    let organized_structures = room_state.structures.get_or_insert_with(|| {
+    let structures = room_state.structures.get_or_insert_with(
+        (|| {
+            let room = game_state.rooms.get(room_name).unwrap();
+            room.find(find::STRUCTURES, None)
+        }),
+    );
+
+    structures
+}
+
+pub fn my_construction_sites<'state>(
+    room_name: &RoomName,
+    game_state: &'state mut GameState,
+) -> &'state Vec<ConstructionSite> {
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+    let c_sites = room_state.my_construction_sites.get_or_insert_with(
+        (|| {
+            let room = game_state.rooms.get(room_name).unwrap();
+            room.find(find::MY_CONSTRUCTION_SITES, None)
+        }),
+    );
+
+    c_sites
+}
+
+pub fn not_my_construction_sites<'state>(
+    room_name: &RoomName,
+    game_state: &'state mut GameState,
+    memory: &GameMemory,
+) -> &'state NotMyConstructionSites {
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+    let c_sites = room_state.not_my_construction_sites.get_or_insert_with(
+        (|| {
+            let mut not_my_construction_sites = NotMyConstructionSites::new();
+
+            let room = game_state.rooms.get(room_name).unwrap();
+            let hostile_c_sites = room.find(find::HOSTILE_CONSTRUCTION_SITES, None);
+
+            for c_site in hostile_c_sites {
+                if memory.allies.contains_key(&c_site.owner().username()) {
+                    not_my_construction_sites.ally.push(c_site);
+                    continue;
+                }
+
+                not_my_construction_sites.enemy.push(c_site);
+            }
+
+            not_my_construction_sites
+        }),
+    );
+
+    c_sites
+}
+
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+pub fn structures_by_type<'state>(
+    room_name: &RoomName,
+    game_state: &'state mut GameState,
+) -> &'state OrganizedStructures {
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+    let organized_structures = room_state.structures_by_type.get_or_insert_with(|| {
         let mut new_organized_structures = OrganizedStructures {
             ..Default::default()
         };
+
+        let room = game_state.rooms.get(room_name).unwrap();
+
         for structure in room.find(find::STRUCTURES, None) {
             match structure.structure_type() {
                 StructureType::Spawn => {
@@ -127,6 +233,7 @@ pub fn structures<'state>(
         }
         new_organized_structures
     });
+
     organized_structures
 }
 
@@ -382,7 +489,7 @@ pub fn try_add_remote(
 
     if let Some(remote_memory) = memory.remotes.get(room_name) {
         if cost >= remote_memory.cost {
-            return FlowResult::Continue
+            return FlowResult::Continue;
         }
 
         memory.remotes.remove(room_name);
@@ -392,7 +499,100 @@ pub fn try_add_remote(
             .insert(*room_name, NeutralRoomMemory::new(room_name, game_state));
     }
 
-    memory.remotes.insert(*room_name, RemoteRoomMemory::new(room_name, game_state, cost, source_paths));
+    memory.remotes.insert(
+        *room_name,
+        RemoteRoomMemory::new(room_name, game_state, cost, source_paths),
+    );
 
     FlowResult::Stop
+}
+
+pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTerrain {
+    {
+        let room_state = game_state.room_states.get(room_name).unwrap();
+
+        if let Some(terrain) = &room_state.terrain {
+            return terrain.clone();
+        }
+    }
+
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+
+    let js_terrain = game::map::get_room_terrain(*room_name).unwrap();
+    let terrain = LocalRoomTerrain::from(js_terrain);
+
+    room_state.terrain = Some(terrain.clone());
+    terrain
+}
+
+pub fn default_move_costs(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &GameMemory,
+) -> SparseCostMatrix {
+    {
+        let room_state = game_state.room_states.get(room_name).unwrap();
+
+        if let Some(default_move_ops) = &room_state.default_move_ops {
+            return default_move_ops.clone();
+        }
+    }
+
+    let mut default_move_ops = SparseCostMatrix::new();
+
+    // Avoid terrain
+
+    let terrain = terrain(room_name, game_state);
+    for x in 0..50 {
+        for y in 0..50 {
+            let room_xy = RoomXY {
+                x: RoomCoordinate::new(x).unwrap(),
+                y: RoomCoordinate::new(y).unwrap(),
+            };
+
+            let terrain_type = terrain.get_xy(room_xy);
+            match terrain_type {
+                Terrain::Swamp => {
+                    default_move_ops.set(room_xy, DEFAULT_SWAMP_COST);
+                }
+                Terrain::Wall => {
+                    default_move_ops.set(room_xy, DEFAULT_WALL_COST);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // Avoid impassible structures
+
+    let structures = structures(room_name, game_state);
+    for structure in structures {
+        if !IMPASSIBLE_STRUCTURES.contains(&structure.structure_type()) {
+            continue;
+        }
+
+        default_move_ops.set(structure.pos().xy(), 255);
+    }
+
+    // Avoid construction sites we own that are impassible
+
+    let my_construction_sites = my_construction_sites(room_name, game_state);
+    for construction_site in my_construction_sites {
+        if !IMPASSIBLE_STRUCTURES.contains(&construction_site.structure_type()) {
+            continue;
+        }
+
+        default_move_ops.set(construction_site.pos().xy(), 255);
+    }
+
+    // Avoid all ally construction sites
+
+    let consturction_sites = &not_my_construction_sites(room_name, game_state, memory).ally;
+    for construction_site in consturction_sites {
+        default_move_ops.set(construction_site.pos().xy(), 255);
+    }
+
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    room_state.default_move_ops = Some(default_move_ops.clone());
+    default_move_ops
 }

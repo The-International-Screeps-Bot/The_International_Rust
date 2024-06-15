@@ -12,8 +12,7 @@ use crate::{
 };
 
 use super::{
-    creep_move_ops::CreepMoveOps,
-    roles::source_harvester_ops::{self},
+    creep_move_ops, roles::source_harvester_ops
 };
 
 // Transfer these over to MyCreep, if we are commiting to the types decrepancy
@@ -59,7 +58,7 @@ pub fn drop_harvest(
         };
     } else {
         // The creep needs to move to the source to harvest it.
-        CreepMoveOps::create_move_request(creep_name, &source_pos, game_state, memory);
+        creep_move_ops::create_move_request(creep_name, &source_pos, game_state, memory);
         CreepOperationResult::InProgress
     }
 }

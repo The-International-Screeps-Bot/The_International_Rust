@@ -1,10 +1,15 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use log::{debug, info};
-use screeps::{Creep, SharedCreepProperties};
+use screeps::{Creep, Position, RoomName, SharedCreepProperties};
 
-use super::{creep_move_ops::CreepMoveOps, my_creep_ops};
-use crate::{memory::game_memory::GameMemory, state::game::GameState};
+use super::{
+    creep_move_ops::{self, assign_move_target_as_pos},
+    my_creep_ops,
+};
+use crate::{
+    constants::creep::MoveTargets, memory::game_memory::GameMemory, state::game::GameState,
+};
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn track_creeps(game_state: &GameState) {
@@ -39,19 +44,46 @@ pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
         .retain(|creep_name, _creep| game_state.creeps.contains_key(creep_name));
 }
 
-pub fn move_creeps(game_state: &GameState) {
-    let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();
-    for creep_name in &creep_names {
-        CreepMoveOps::try_run_move_request(creep_name, game_state, &mut HashSet::new());
+pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
+    for room_name in room_names {
+        let mut move_targets: HashMap<Position, String> = HashMap::new();
+
+        register_move_targets(game_state, &room_name, &mut move_targets);
+
+        run_move_requests(game_state, memory, &room_name, &mut move_targets);
     }
+}
 
-    // for creep_name in game_state.creeps.keys().into_iter().collect::<Vec<String>>() {
+fn register_move_targets(
+    game_state: &mut GameState,
+    room_name: &RoomName,
+    move_targets: &mut MoveTargets,
+) {
+    let room_state = game_state.room_states.get(&room_name).unwrap();
+    let creep_names: Vec<String> = room_state.my_creeps.clone();
 
-    // }
+    for creep_name in creep_names {
+        assign_move_target_as_pos(creep_name.as_str(), game_state, move_targets)
+    }
+}
 
-    let creeps = game_state.creeps.values();
-    for creep/* (creep_name, creep) */ in creeps {
+fn run_move_requests(
+    game_state: &mut GameState,
+    memory: &GameMemory,
+    room_name: &RoomName,
+    move_targets: &mut MoveTargets,
+) {
+    let room_state = game_state.room_states.get(&room_name).unwrap();
+    let creep_names: Vec<String> = room_state.my_creeps.clone();
 
-            CreepMoveOps::try_run_move_request(&creep.inner().name(), game_state, &mut HashSet::new());
-        }
+    for creep_name in creep_names {
+        creep_move_ops::try_run_move_request(
+            creep_name.as_str(),
+            room_name,
+            game_state,
+            memory,
+            move_targets,
+        );
+    }
 }

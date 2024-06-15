@@ -9,11 +9,6 @@ pub fn is_tick_interval(tick: u32, interval: u32) -> bool {
     tick % interval == 0
 }
 
-pub fn is_exit(pos: Position) -> bool {
-    // TODO
-    false
-}
-
 pub fn pos_range(pos1: &Position, pos2: &Position) -> u32 {
     pos1.world_x().abs_diff(pos2.world_x()) + pos1.world_y().abs_diff(pos2.world_y())
 }

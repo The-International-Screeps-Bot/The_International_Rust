@@ -177,7 +177,7 @@ impl KeeperRoomMemory {
         // Keeper lair positions
 
         let mut keeper_lair_positions = Vec::new();
-        let keeper_lairs = &room_ops::structures(room_name, game_state).keeper_lair;
+        let keeper_lairs = &room_ops::structures_by_type(room_name, game_state).keeper_lair;
 
         for keeper_lair in keeper_lairs {
             keeper_lair_positions.push(keeper_lair.pos());

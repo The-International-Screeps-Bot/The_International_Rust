@@ -21,7 +21,7 @@ pub struct MyCreepState {
     /// A harvester's action_coord is where it wants to harvest at
     /// A invader core attacker's action_coord is the invader core's position
     /// An upgrader's action_coord is the controller's position
-    pub action_coord: Option<Position>,
+    pub action_pos: Option<Position>,
     pub parts: Option<Vec<Part>>,
     pub parts_by_type: Option<CreepPartsByType>,
     pub active_parts_by_type: Option<ActiveCreepPartsByType>,
@@ -33,7 +33,7 @@ impl MyCreepState {
             cost: None,
             move_request: None,
             move_target: None,
-            action_coord: None,
+            action_pos: None,
             parts: None,
             parts_by_type: None,
             active_parts_by_type: None,
@@ -46,7 +46,7 @@ pub struct MyCreepStateOps;
 impl MyCreepStateOps {
     pub fn update_state(state: &mut MyCreepState) {
         state.move_request = None;
-        state.action_coord = None;
+        state.action_pos = None;
         state.move_target = None;
     }
 }

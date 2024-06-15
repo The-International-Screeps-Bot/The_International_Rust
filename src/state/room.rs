@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use enum_map::{enum_map, EnumMap};
 use screeps::{
-    find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source,
-    StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject,
-    StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType,
+    find, game::map::RoomStatus, ConstructionSite, LocalRoomTerrain, ObjectId, Path, Position, Room, RoomName, Source, Structure, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
 };
+use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::{
@@ -24,15 +23,22 @@ pub type RoomStates = HashMap<RoomName, RoomState>;
 pub struct RoomState {
     pub name: RoomName,
     pub status: Option<RoomStatus>,
+    pub terrain: Option<LocalRoomTerrain>,
+    pub default_move_ops: Option<SparseCostMatrix>,
+    pub enemy_threat_positions: Option<SparseCostMatrix>,
 
     // Structures
-    pub structures: Option<OrganizedStructures>,
+    pub structures: Option<Vec<StructureObject>>,
+    pub structures_by_type: Option<OrganizedStructures>,
     pub storage: Option<StructureStorage>,
     pub terminal: Option<StructureTerminal>,
     pub power_spawn: Option<StructurePowerSpawn>,
     pub controller: Option<StructureController>,
     pub nuker: Option<StructureNuker>,
     pub factory: Option<StructureFactory>,
+
+    pub my_construction_sites: Option<Vec<ConstructionSite>>,
+    pub not_my_construction_sites: Option<NotMyConstructionSites>,
     pub commune_plan: Option<CommunePlan>,
 
     // Sources
@@ -50,13 +56,19 @@ impl RoomState {
         Self {
             name: room_name,
             status: None,
+            terrain: None,
+            default_move_ops: None,
+            enemy_threat_positions: None,
             structures: None,
+            structures_by_type: None,
             storage: None,
             terminal: None,
             power_spawn: None,
             controller: None,
             nuker: None,
             factory: None,
+            my_construction_sites: None,
+            not_my_construction_sites: None,
             commune_plan: None,
             sources: None,
             harvest_positions: None,
@@ -67,7 +79,12 @@ impl RoomState {
     }
 
     pub fn tick_update(&mut self, room_name: &RoomName) {
+        self.terrain = None;
+        self.default_move_ops = None;
+        self.enemy_threat_positions = None;
+
         self.structures = None;
+        self.structures_by_type = None;
         self.storage = None;
         self.terminal = None;
         self.power_spawn = None;
@@ -75,19 +92,37 @@ impl RoomState {
         self.nuker = None;
         self.factory = None;
 
+        self.my_construction_sites = None;
+        self.not_my_construction_sites = None;
+
         self.my_creeps = Vec::new();
         self.creeps_by_role = creeps_by_role();
         self.not_my_creeps = None;
     }
 }
 
+#[derive(Debug)]
+pub struct NotMyConstructionSites {
+    pub ally: Vec<ConstructionSite>,
+    pub enemy: Vec<ConstructionSite>,
+}
+
+impl NotMyConstructionSites {
+    pub fn new() -> Self {
+        Self {
+            ally: Vec::new(),
+            enemy: Vec::new(),
+        }
+    }
+}
+
 // All of the data associated with a commune's base plan
 #[derive(Debug)]
 pub struct CommunePlan {
-    pub grid_map: [u8; 2500],
+    pub grid_map: SparseCostMatrix,
     pub terrain_map: [u8; 2500],
-    pub road_map: [u8; 2500],
-    pub plan_map: [u8; 2500],
+    pub road_map: SparseCostMatrix,
+    pub plan_map: SparseCostMatrix,
     pub plan_attempts: Vec<CommunePlanAttemptSummary>,
     pub current_attempt: CommunePlanAttemptData,
     /// FastFiller
@@ -97,10 +132,10 @@ pub struct CommunePlan {
 impl CommunePlan {
     pub fn new() -> Self {
         Self {
-            grid_map: [0; 2500],
+            grid_map: SparseCostMatrix::new(),
             terrain_map: [0; 2500],
-            road_map: [0; 2500],
-            plan_map: [0; 2500],
+            road_map: SparseCostMatrix::new(),
+            plan_map: SparseCostMatrix::new(),
             plan_attempts: Vec::new(),
             current_attempt: CommunePlanAttemptData::new(),
             fast_filler_start_positions: None,

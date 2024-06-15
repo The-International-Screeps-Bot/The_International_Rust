@@ -12,6 +12,7 @@ pub struct CreepMemory {
     pub source_index: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scout_target: Option<RoomName>,
+    pub rampart_only_shoving: Option<bool>,
 }
 
 impl CreepMemory {
@@ -21,6 +22,7 @@ impl CreepMemory {
             room_from,
             source_index: None,
             scout_target: None,
+            rampart_only_shoving: None,
         }
     }
 }

@@ -15,7 +15,7 @@ pub fn spawns_by_activity<'state>(
 ) -> &'state Option<SpawnsByActivity> {
     let mut spawns_by_activity = SpawnsByActivity::new();
 
-    let structures = room_ops::structures(room_name, game_state);
+    let structures = room_ops::structures_by_type(room_name, game_state);
 
     for spawn in &structures.spawn {
         match spawn.spawning() {

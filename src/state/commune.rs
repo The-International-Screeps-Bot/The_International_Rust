@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use screeps::{source, Position, Room, RoomName};
+use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{constants::structure::SpawnsByActivity, memory::game_memory::GameMemory};
 
@@ -24,6 +25,9 @@ pub struct CommuneState {
     pub used_mineral_positions: Vec<Position>,
     pub source_harvest_strengths: Vec<u32>,
     pub used_source_harvest_positions: Vec<Vec<Position>>,
+    pub structure_plans: SparseCostMatrix,
+    pub rampart_plans: SparseCostMatrix,
+    pub planning_completed: bool,
 }
 
 impl CommuneState {
@@ -60,6 +64,13 @@ impl CommuneState {
             used_mineral_positions: Vec::new(),
             source_harvest_strengths,
             used_source_harvest_positions: Vec::new(),
+            // Derive from pre-existing plans if they exist 
+
+            structure_plans: SparseCostMatrix::new(),
+            rampart_plans: SparseCostMatrix::new(),
+            planning_completed: false,
+
+            
         }
     }
 

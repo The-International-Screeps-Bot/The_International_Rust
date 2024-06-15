@@ -1,88 +1,274 @@
 use std::collections::{HashMap, HashSet};
 
-use screeps::{Creep, HasPosition, Position};
+use log::error;
+use screeps::{game, Creep, HasPosition, LocalRoomTerrain, Part, Position, RoomName, Terrain};
 
-use crate::{constants::general::{GeneralError, GeneralResult}, memory::game_memory::GameMemory, state::game::GameState, utils::{self, general::GeneralUtils}};
+use crate::{
+    constants::{
+        creep::MoveTargets,
+        general::{GeneralError, GeneralResult},
+        move_costs::MAX_COST,
+    },
+    memory::{creep_memory, game_memory::GameMemory},
+    room::room_ops::{self, default_move_costs},
+    state::game::GameState,
+    utils::{
+        self,
+        general::{pos_range, GeneralUtils},
+        pos::{get_adjacent_positions_conditional, is_xy_exit},
+    },
+};
 
-pub struct CreepMoveOps;
+use super::my_creep_ops;
 
-impl CreepMoveOps {
-    pub fn create_move_request(creep_name: &String, origin: &Position, game_state: &GameState, memory: &GameMemory) {
+pub fn create_move_request(
+    creep_name: &str,
+    origin: &Position,
+    game_state: &GameState,
+    memory: &GameMemory,
+) {
+}
 
+fn assign_move_request(creep_name: &str) {}
+
+pub fn assign_move_target_as_pos(
+    creep_name: &str,
+    game_state: &mut GameState,
+    move_targets: &mut MoveTargets,
+) {
+    let creep = game_state.creeps.get(creep_name).unwrap();
+    let pos = creep.inner().pos();
+
+    move_targets.insert(pos, creep_name.to_string());
+
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    creep_state.move_target = Some(pos);
+}
+
+pub fn assign_move_target(
+    creep_name: &str,
+    position: Position,
+    game_state: &mut GameState,
+    move_targets: &mut MoveTargets,
+) {
+    move_targets.insert(position, creep_name.to_string());
+
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    creep_state.move_target = Some(position);
+}
+
+pub fn try_run_move_request(
+    creep_name: &str,
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &GameMemory,
+    move_targets: &mut MoveTargets,
+) {
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+
+    let Some(move_request) = creep_state.move_request else {
+        return;
+    };
+
+    if let Some(move_target) = creep_state.move_target {
+        if move_request == move_target {
+            return;
+        }
+
+        move_targets.remove(&move_request);
+        creep_state.move_request = None;
+
+        return;
+    };
+
+    let cost = run_move_request(
+        creep_name,
+        room_name,
+        game_state,
+        memory,
+        move_targets,
+        &mut HashSet::new(),
+        0,
+    );
+    if cost < 0 {
+        return;
     }
 
-    fn assign_move_request(creep_name: &String) {
-        
+    assign_move_target_as_pos(creep_name, game_state, move_targets)
+}
+
+// Use a sparse cost matrix to optimize cost calculations
+fn run_move_request(
+    creep_name: &str,
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &GameMemory,
+    move_targets: &mut MoveTargets,
+    visited_creeps: &mut HashSet<String>,
+    cost: i32,
+) -> i32 {
+    let creep_memory = memory.creeps.get(creep_name).unwrap();
+
+    let target_coord = {
+        let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+        creep_state.move_request
+    };
+    let move_options = get_move_options(creep_name, room_name, game_state, memory, target_coord);
+
+    // TODO: Many of these conditionals should be moved to get_move_options so they can be cached
+    for pos in move_options {
+        let creep_in_way_name = move_targets.get(&pos);
+
+        if let Some(creep_in_way_name) = creep_in_way_name {
+            if visited_creeps.contains(creep_in_way_name) {
+                continue;
+            }
+
+            // Could be a power creep
+            let creep_in_way = game_state.creeps.get(creep_in_way_name);
+
+            if let Some(creep_in_way) = creep_in_way {
+                if creep_in_way.inner().get_active_bodyparts(Part::Move) == 0 {
+                    continue;
+                }
+            }
+        }
+        {
+            let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+
+            // Don't allow exits unless we are actively trying to move onto one
+            match creep_state.move_request {
+                Some(move_request) => {
+                    if move_request != pos && pos.is_room_edge() {
+                        continue;
+                    }
+                }
+                None => {
+                    if pos.is_room_edge() {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        let mut potential_cost = cost;
+        {
+            let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+
+            if let Some(move_request) = creep_state.move_request {
+                if move_request == pos {
+                    potential_cost -= 1;
+                }
+            }
+        }
+
+        if let Some(creep_in_way_name) = creep_in_way_name {
+            // Could be a power creep
+            let creep_in_way = game_state.creeps.get(creep_in_way_name);
+
+            if let Some(creep_in_way) = creep_in_way {
+                let creep_in_way_state = game_state.my_creep_states.get(creep_in_way_name).unwrap();
+
+                if creep_in_way_state.move_request == Some(pos) {
+                    potential_cost += 1;
+                }
+
+                let creep_in_way_cost = run_move_request(
+                    creep_name,
+                    room_name,
+                    game_state,
+                    memory,
+                    move_targets,
+                    visited_creeps,
+                    potential_cost,
+                );
+                if creep_in_way_cost >= 0 {
+                    continue;
+                }
+
+                assign_move_target(&creep_name, pos, game_state, move_targets);
+                return creep_in_way_cost;
+            }
+        }
+
+        if potential_cost < 0 {
+            assign_move_target(&creep_name, pos, game_state, move_targets);
+        }
+        return potential_cost;
     }
 
-    pub fn try_run_move_request(creep_name: &String, game_state: &GameState, avoid_positions: &mut HashSet<Position>) -> GeneralResult {
+    return i32::MAX;
+}
 
-        let creep = game_state.creeps.get(creep_name).unwrap();
+pub fn get_move_options(
+    creep_name: &str,
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &GameMemory,
+    target_coord: Option<Position>,
+) -> Vec<Position> {
+    let mut move_options: Vec<Position> = Vec::new();
 
-        let creep_positions: HashMap<Position, String> = HashMap::new();
+    let creep = game_state.creeps.get(creep_name).unwrap();
+    // Would be nice to cache move options on creep state
+    // let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
 
-        let target_pos = creep.inner().pos();
+    if creep.inner().fatigue() > 0 {
+        return move_options;
+    }
 
-        let move_pos = Self::find_move_coord(creep_name, game_state, avoid_positions, Some(&target_pos));
-        let Some(move_pos) = move_pos else {
-            return GeneralResult::Fail
+    let creep_pos = creep.inner().pos();
+
+    if let Some(target_coord) = target_coord {
+        if creep_pos == target_coord {
+            return move_options;
         };
 
-        let creep_at_pos_name = creep_positions.get(&move_pos);
-        if let Some(creep_at_pos_name) = creep_at_pos_name {
-            let creep_at_pos = game_state.creeps.get(creep_at_pos_name);
-            if let Some(creep_at_pos) = creep_at_pos {
-                avoid_positions.insert(creep.inner().pos());
-                avoid_positions.insert(move_pos);
-
-                let move_result = Self::try_run_move_request(creep_name, game_state, avoid_positions);
-                if move_result != GeneralResult::Success {
-                    return move_result
-                }
-            }
-        }
-
-        Self::run_move_request(creep_name);
-        GeneralResult::Success
+        move_options.insert(0, target_coord);
+        return move_options;
     }
 
-    fn find_move_coord(creep_name: &String, game_state: &GameState, avoid_positions: &HashSet<Position>, target_pos: Option<&Position>) -> Option<Position> {
+    // Add adjacent positions that are not exits or market to avoid
 
-        let creep = game_state.creeps.get(creep_name).unwrap();
+    let move_costs = default_move_costs(room_name, game_state, memory);
 
-        let mut move_pos: Option<Position> = None;
-        let mut lowest_score = u32::MAX;
+    move_options.extend(get_adjacent_positions_conditional(&creep_pos, &|pos| {
+        move_costs.get(pos.xy()) != MAX_COST && !is_xy_exit(pos.x().0 as i32, pos.y().0 as i32)
+    }));
 
-        let creep_positions: HashMap<Position, String> = HashMap::new();
-        let adjacent_positions: Vec<Position> = Vec::new();
+    // Sort by range to an action pos if there is one. Otherwise, shuffle randomly
 
-        for pos in adjacent_positions {
-            let creep_at_pos_name = creep_positions.get(&pos);
-            if let Some(creep_at_pos_name) = creep_at_pos_name {
-                let creep_at_pos = game_state.creeps.get(creep_at_pos_name);
-                if let Some(creep_at_pos) = creep_at_pos {
-                    // if fatigued, has no move parts, has already moved
-                }
-            }
+    let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
 
-            if avoid_positions.contains(&pos) { continue }
-            if utils::general::is_exit(pos) { continue }
-
-            let mut score: u32 = 0;
-            if let Some(target_pos) = target_pos {
-                score += utils::general::pos_range_euc(target_pos, &pos);
-            }
-
-            if score >= lowest_score { continue }
-
-            lowest_score = score;
-            move_pos = Some(pos);
-        }
-
-        move_pos
+    if let Some(action_pos) = creep_state.action_pos {
+        move_options.sort_by(|a, b| {
+            pos_range(a, &action_pos)
+                .partial_cmp(&pos_range(b, &action_pos))
+                .unwrap()
+        })
+    } else {
+        fastrand::shuffle(&mut move_options)
     }
 
-    pub fn run_move_request(creep_name: &String) {
+    move_options
+}
 
+pub fn try_run_move_target(creep_name: &str, game_state: &GameState) {
+    let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+    let Some(move_target) = creep_state.move_target else {
+        return;
+    };
+
+    let creep = game_state.creeps.get(creep_name).unwrap();
+    let creep_pos = creep.inner().pos();
+
+    if creep_pos == move_target {
+        return;
     }
+
+    let Some(direction) = creep_pos.get_direction_to(move_target) else {
+        error!("Failed to get direction to move target");
+        return;
+    };
+    creep.inner().move_direction(direction);
 }

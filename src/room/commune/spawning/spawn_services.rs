@@ -24,7 +24,7 @@ use super::{
 };
 
 pub fn try_spawn_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    let spawns = room_ops::structures(room_name, game_state).spawn.clone();
+    let spawns = room_ops::structures_by_type(room_name, game_state).spawn.clone();
 
     let mut active_spawns: Vec<&StructureSpawn> = Vec::new();
     let mut inactive_spawns: Vec<&StructureSpawn> = Vec::new();

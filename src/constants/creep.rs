@@ -2,7 +2,7 @@ use core::panic;
 use std::collections::HashMap;
 
 use enum_map::{enum_map, Enum, EnumMap};
-use screeps::{BodyPart, Creep, Part};
+use screeps::{BodyPart, Creep, Part, Position};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Enum, Debug)]
@@ -155,3 +155,5 @@ thread_local! {
         PriorityCreepPart::Heal => CreepPart::Heal,
     };
 }
+
+pub type MoveTargets = HashMap<Position, String>;

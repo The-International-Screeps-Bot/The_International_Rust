@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub fn run_towers(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    let mut towers = room_ops::structures(room_name, game_state).tower.clone();
+    let mut towers = room_ops::structures_by_type(room_name, game_state).tower.clone();
 
     if towers_creep_actions(room_name, game_state, memory, &mut towers) == TowersResult::Stop {
         return;
@@ -198,7 +198,7 @@ fn towers_repair_ramparts(
     memory: &GameMemory,
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
-    let mut ramparts = &mut room_ops::structures(room_name, game_state).rampart;
+    let mut ramparts = room_ops::structures_by_type(room_name, game_state).rampart.clone();
 
     if ramparts.is_empty() {
         return TowersResult::Continue;
