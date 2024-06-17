@@ -5,7 +5,7 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    game, AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName,
+    game::{self, shard}, AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName,
     SharedCreepProperties, StructureType,
 };
 
@@ -27,6 +27,7 @@ use crate::{
 pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,
+    pub shard: String,
     pub creeps: HashMap<String, MyCreep>,
     pub account_power_creeps: HashMap<String, AccountPowerCreep>,
     pub rooms: HashMap<RoomName, Room>,
@@ -51,6 +52,7 @@ impl GameState {
         Self {
             init_tick: game::time(),
             tick: game::time(),
+            shard: shard::name(),
             creeps: HashMap::new(),
             account_power_creeps: HashMap::new(),
             rooms: HashMap::new(),

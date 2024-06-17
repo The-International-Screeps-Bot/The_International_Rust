@@ -26,6 +26,7 @@ screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = 
 screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
 enum-map = "2.7.3"
 fastrand = "2.1.0"
+base64_light = "0.1.5"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

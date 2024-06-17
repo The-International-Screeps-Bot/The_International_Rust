@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+
+use crate::constants::segments::Command;
 
 #[derive(Debug)]
 pub struct SimpleAlliesSegment {
@@ -51,6 +55,7 @@ impl EconInfo {
 pub struct SegmentData {
     pub requests: Requests,
     pub econ_info: Option<EconInfo>,
+    pub commands: Option<HashMap<String, Command>>,
 }
 
 impl SegmentData {
@@ -58,6 +63,7 @@ impl SegmentData {
         Self {
             requests: Requests::new(),
             econ_info: None,
+            commands: None,
         }
     }
 }

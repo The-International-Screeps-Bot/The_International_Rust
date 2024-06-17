@@ -24,6 +24,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
+name = "base64_light"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c6aca08f76b8485947a20a1b3096e5a8cd6edbcecc6d2a8932df9b41d36aadf"
+
+[[package]]
 name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -416,6 +422,7 @@ dependencies = [
 name = "the_international_rust"
 version = "0.0.1"
 dependencies = [
+ "base64_light",
  "enum-map",
  "fastrand",
  "html-escape",

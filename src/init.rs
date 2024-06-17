@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use log::{info, LevelFilter};
 use screeps::game;
 
-use crate::{international::stat_services, logging, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, GAME_STATE, MEMORY, SETTINGS};
+use crate::{init_setting::init_settings, international::stat_services, logging, memory::game_memory::GameMemory, settings::Settings, state::game::GameState, GAME_STATE, MEMORY, SETTINGS};
 
 #[wasm_bindgen]
 /// Runs every global reset
@@ -23,9 +23,5 @@ fn init_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     logging::setup_logger(settings.log_filter);
 
     stat_services::init_stats(game_state, memory);
-    init_settings(settings);
-}
-
-fn init_settings(settings: &mut Settings) {
-    settings.allies.insert(String::from("PandaMaster"));
+    init_settings(settings, game_state);
 }

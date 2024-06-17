@@ -14,10 +14,15 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Self {
+        // These are default settings. Do not modify them for personal use
+
+        let mut allies = HashSet::new();
+        allies.insert("MarvinTMB".to_string());
+
         Settings {
-            allies: HashSet::new(),
+            allies,
             breaking_version: 0,
-            log_filter: LevelFilter::Trace,
+            log_filter: LevelFilter::Info,
         }
     }
 }
