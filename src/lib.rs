@@ -6,7 +6,7 @@ use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use creep::{my_creep::MyCreep, my_creep_services, role_services};
-use international::{construction_site_services, global_request_ops, global_request_services};
+use international::{construction_site_services, global_request_ops, global_request_services, stat_services};
 use log::*;
 use memory::game_memory::GameMemory;
 use room::commune::{commune_services, my_room::MyRoom, spawning::spawn_services};
@@ -106,6 +106,7 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
+    stat_services::tick_update(game_state, memory);
     
     my_creep_services::clean_creep_memories(game_state, memory);
 

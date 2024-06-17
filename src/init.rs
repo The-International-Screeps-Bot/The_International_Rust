@@ -22,6 +22,6 @@ fn init_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     logging::setup_logger(settings.log_filter);
 
-    stat_services::init_stats(game_state, memory);
+    stat_services::tick_update(game_state, memory);
     init_settings(settings, game_state);
 }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
 
 use super::{
-    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory}, stat_memory::StatsMemory
+    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -27,8 +27,6 @@ pub struct GameMemory {
     pub neutral: HashMap<RoomName, NeutralRoomMemory>,
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
-    // Consider putting stats in a segment instead
-    pub stats: StatsMemory,
     pub work_requests: WorkRequests,
     pub claim_requests: ClaimRequests,
     pub combat_stats: HashMap<String, u32>,
@@ -58,7 +56,6 @@ impl GameMemory {
             neutral: HashMap::new(),
             creeps: HashMap::new(),
             power_creeps: HashMap::new(),
-            stats: StatsMemory::new(),
             work_requests: WorkRequests::new(),
             claim_requests: ClaimRequests::new(),
             combat_stats: HashMap::new(),

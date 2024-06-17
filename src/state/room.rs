@@ -32,10 +32,7 @@ pub struct RoomState {
     pub structures_by_type: Option<OrganizedStructures>,
     pub storage: Option<StructureStorage>,
     pub terminal: Option<StructureTerminal>,
-    pub power_spawn: Option<StructurePowerSpawn>,
     pub controller: Option<StructureController>,
-    pub nuker: Option<StructureNuker>,
-    pub factory: Option<StructureFactory>,
 
     pub my_construction_sites: Option<Vec<ConstructionSite>>,
     pub not_my_construction_sites: Option<NotMyConstructionSites>,
@@ -63,10 +60,7 @@ impl RoomState {
             structures_by_type: None,
             storage: None,
             terminal: None,
-            power_spawn: None,
             controller: None,
-            nuker: None,
-            factory: None,
             my_construction_sites: None,
             not_my_construction_sites: None,
             commune_plan: None,
@@ -87,10 +81,7 @@ impl RoomState {
         self.structures_by_type = None;
         self.storage = None;
         self.terminal = None;
-        self.power_spawn = None;
         self.controller = None;
-        self.nuker = None;
-        self.factory = None;
 
         self.my_construction_sites = None;
         self.not_my_construction_sites = None;

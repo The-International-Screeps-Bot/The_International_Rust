@@ -2,7 +2,13 @@ use std::collections::HashMap;
 
 use enum_map::Enum;
 use log::error;
-use screeps::{StructureContainer, StructureController, StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLab, StructureLink, StructureNuker, StructureObject, StructureObserver, StructurePortal, StructurePowerBank, StructurePowerSpawn, StructureRampart, StructureRoad, StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType, StructureWall};
+use screeps::{
+    HasStore, StructureContainer, StructureController, StructureExtension, StructureExtractor,
+    StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLab, StructureLink,
+    StructureNuker, StructureObject, StructureObserver, StructurePortal, StructurePowerBank,
+    StructurePowerSpawn, StructureRampart, StructureRoad, StructureSpawn, StructureStorage,
+    StructureTerminal, StructureTower, StructureType, StructureWall,
+};
 
 pub type OldOrganizedStructures = HashMap<StructureType, Vec<StructureObject>>;
 
@@ -114,6 +120,9 @@ pub struct OrganizedStructures {
     pub lab: Vec<StructureLab>,
     pub container: Vec<StructureContainer>,
     pub invader_core: Vec<StructureInvaderCore>,
+    pub power_spawn: Vec<StructurePowerSpawn>,
+    pub factory: Vec<StructureFactory>,
+    pub nuker: Vec<StructureNuker>,
 }
 
 #[derive(Debug, Clone)]
@@ -129,4 +138,9 @@ impl SpawnsByActivity {
             inactive: Vec::new(),
         }
     }
+}
+
+pub enum SpawningStructure {
+    StructureSpawn,
+    StructureExtension,
 }

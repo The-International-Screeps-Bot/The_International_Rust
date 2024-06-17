@@ -4,6 +4,7 @@ use screeps::RoomName;
 use serde::{Deserialize, Serialize};
 /// Tampering with this value will break the bot.
 pub const ALLIES_SEGMENT: u8 = 90;
+pub const STATS_SEGMENT: u8 = 1;
 
 #[derive(Debug, Serialize, Deserialize)]
 /// A list of commands the collective can exact on collaborators
