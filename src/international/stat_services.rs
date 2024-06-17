@@ -1,6 +1,6 @@
-use screeps::{control, game, RoomName};
+use screeps::{control, game, raw_memory, RoomName};
 
-use crate::{memory::game_memory::GameMemory, state::game::GameState};
+use crate::{constants::segments::STATS_SEGMENT, memory::game_memory::GameMemory, state::game::GameState, utils::general::is_tick_interval};
 
 use super::stat_ops;
 
@@ -30,3 +30,15 @@ fn update_rooms_stats(memory: &mut GameMemory) {}
 fn update_room_stats(room_name: RoomName, memory: &mut GameMemory) {}
 
 fn update_global_stats(memory: &mut GameMemory) {}
+
+pub fn read_stats() {
+
+}
+
+pub fn try_write_stats(game_state: &mut GameState, memory: &mut GameMemory) {
+    if !is_tick_interval(game_state.tick, game_state.intervals.write_stats) {
+        return;
+    };
+
+    raw_memory::segments().set(STATS_SEGMENT, serde_json::to_string(&game_state.segments.stats).unwrap());
+} 

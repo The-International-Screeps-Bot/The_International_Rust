@@ -120,4 +120,6 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     commune_services::run_spawning(game_state, memory);
 
     role_services::try_scouts(game_state, memory);
+
+    stat_services::try_write_stats(game_state, memory);
 }
