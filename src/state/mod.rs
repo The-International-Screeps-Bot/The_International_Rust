@@ -6,3 +6,5 @@ pub mod structure;
 pub mod commune;
 pub mod my_creep;
 pub mod tick_intervals;
+pub mod simple_allies;
+pub mod segments;

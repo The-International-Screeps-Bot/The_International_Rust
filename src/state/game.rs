@@ -10,12 +10,7 @@ use screeps::{
 };
 
 use super::{
-    commune::{self, CommuneState},
-    creep::CreepStateOps,
-    market::MarketState,
-    my_creep::{MyCreepState, MyCreepStateOps},
-    room::RoomState,
-    structure::{self, StructuresState}, tick_intervals::TickIntervals,
+    commune::{self, CommuneState}, creep::CreepStateOps, market::MarketState, my_creep::{MyCreepState, MyCreepStateOps}, room::RoomState, segments::Segments, structure::{self, StructuresState}, tick_intervals::TickIntervals
 };
 use crate::{
     constants::creep::CreepRole,
@@ -48,6 +43,7 @@ pub struct GameState {
     pub scout_targets: HashSet<RoomName>,
     pub highest_rcl: u8,
     pub intervals: TickIntervals,
+    pub segments: Segments,
 }
 
 impl GameState {
@@ -70,6 +66,7 @@ impl GameState {
             scout_targets: HashSet::new(),
             highest_rcl: 0,
             intervals: TickIntervals::new(),
+            segments: Segments::new(),
         }
     }
 

@@ -1,0 +1,1 @@
+pub const ALLIES_SEGMENT: u8 = 90;

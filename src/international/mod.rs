@@ -6,3 +6,4 @@ pub mod global_request_ops;
 pub mod market;
 pub mod construction_site_services;
 pub mod player;
+pub mod communication;

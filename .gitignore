@@ -2,3 +2,5 @@
 /pkg/
 /screeps.toml
 profile.json
+collectivizer.rs
+collaborator.rs

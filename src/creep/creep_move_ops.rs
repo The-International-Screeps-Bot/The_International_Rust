@@ -207,6 +207,12 @@ pub fn get_move_options(
     memory: &GameMemory,
     target_coord: Option<Position>,
 ) -> Vec<Position> {
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+
+    if let Some(move_options) = &creep_state.move_options {
+        return move_options.clone();
+    };
+
     let mut move_options: Vec<Position> = Vec::new();
 
     let creep = game_state.creeps.get(creep_name).unwrap();
