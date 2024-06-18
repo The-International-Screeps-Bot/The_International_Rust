@@ -10,6 +10,7 @@ use super::global_request_ops;
 /// Updates and assigns inter-room requests
 /// assigning work, combat, etc. to communes
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn manage_requests(game_state: &mut GameState, memory: &mut GameMemory) {
     update_requests(game_state, memory);
 
@@ -52,6 +53,7 @@ fn update_combat_requests(game_state: &GameState, memory: &mut GameMemory) {
     // TODO: implement
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn try_assign_requests(game_state: &GameState, memory: &mut GameMemory) {
     try_assign_claim_requests(game_state, memory);
     try_assign_work_requests(game_state, memory);

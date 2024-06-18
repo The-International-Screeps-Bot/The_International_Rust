@@ -12,6 +12,7 @@ use super::{
 };
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub struct GameMemory {
     pub breaking_version: Option<u32>,
     pub me: String,

@@ -36,6 +36,7 @@ pub fn track_creeps(game_state: &GameState) {
 //     }
 // }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
     info!("running memory cleanup");
 
@@ -44,6 +45,7 @@ pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
         .retain(|creep_name, _creep| game_state.creeps.contains_key(creep_name));
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
     for room_name in room_names {
@@ -55,6 +57,7 @@ pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn register_move_targets(
     game_state: &mut GameState,
     room_name: &RoomName,
@@ -68,6 +71,7 @@ fn register_move_targets(
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn run_move_requests(
     game_state: &mut GameState,
     memory: &GameMemory,

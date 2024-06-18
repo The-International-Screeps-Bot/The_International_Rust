@@ -5,6 +5,7 @@ use crate::{creep::my_creep_services, memory::game_memory::GameMemory, state::ga
 
 use super::{defense_ops, spawning::spawn_services};
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn run_towers(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names = game_state.communes.clone();
 
@@ -13,6 +14,7 @@ pub fn run_towers(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn run_spawning(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names = game_state.communes.clone();
 
@@ -21,6 +23,7 @@ pub fn run_spawning(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
 
     let room_names = game_state.communes.clone();
@@ -30,6 +33,7 @@ pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_active_safe_mode(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names = game_state.communes.clone();
 

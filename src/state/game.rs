@@ -24,6 +24,7 @@ use crate::{
 
 #[derive(Debug)]
 /// Contains important information about the game
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,

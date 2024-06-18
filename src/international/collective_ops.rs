@@ -11,6 +11,7 @@ pub fn kill_all_creeps(game_state: &GameState) {
 }
 
 /// Generate a new unique creep id and increment the tracker
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn new_creep_id(game_state: &mut GameState, memory: &mut GameMemory) -> Result<u32, GeneralResult> {
 
     // increase the id index until it doesn't match an existing creep's name,

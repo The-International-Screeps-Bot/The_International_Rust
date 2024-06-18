@@ -5,6 +5,7 @@ use crate::{constants::segments::STATS_SEGMENT, memory::game_memory::GameMemory,
 use super::stat_ops;
 
 // functions for statistics to track
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn tick_update(game_state: &mut GameState, memory: &mut GameMemory) {
     {
         let stats = &mut game_state.segments.stats;
@@ -35,6 +36,7 @@ pub fn read_stats() {
 
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_write_stats(game_state: &mut GameState, memory: &mut GameMemory) {
     if !is_tick_interval(game_state.tick, game_state.intervals.write_stats) {
         return;
