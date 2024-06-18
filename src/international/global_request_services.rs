@@ -57,8 +57,11 @@ fn update_combat_requests(game_state: &GameState, memory: &mut GameMemory) {
 fn try_assign_requests(game_state: &GameState, memory: &mut GameMemory) {
     try_assign_claim_requests(game_state, memory);
     try_assign_work_requests(game_state, memory);
-    try_assign_combat_requests(game_state, memory);
+    try_assign_attack_requests(game_state, memory);
+    try_assign_defense_requests(game_state, memory);
 }
+
+// Use portal router to pathfindg to the closest commune
 
 fn try_assign_claim_requests(game_state: &GameState, memory: &mut GameMemory) {
     let gcl_level = game::gcl::level();
@@ -85,6 +88,30 @@ fn try_assign_work_requests(game_state: &GameState, memory: &mut GameMemory) {
     }
 }
 
-fn try_assign_combat_requests(game_state: &GameState, memory: &mut GameMemory) {
+fn try_assign_attack_requests(game_state: &GameState, memory: &mut GameMemory) {
     // TODO: implement
+
+    let combat_requests = &memory.attack_requests;
+
+    for (room_name, request) in combat_requests {
+        if request.is_abandoned() {
+            continue;
+        }
+
+        // Find a commune in range
+    }
+}
+
+fn try_assign_defense_requests(game_state: &GameState, memory: &mut GameMemory) {
+    // TODO: implement
+
+    let defense_requests = &memory.defense_requests;
+
+    for (room_name, request) in defense_requests {
+        if request.is_abandoned() {
+            continue;
+        }
+
+        // Find a commune in range
+    }
 }

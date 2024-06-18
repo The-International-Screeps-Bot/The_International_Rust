@@ -1,23 +1,14 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, io::Error, str::FromStr};
 
 use enum_map::{enum_map, EnumMap};
 use screeps::{
-    find,
-    game::{self, map::RoomStatus},
-    look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId, Position,
-    Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY, SharedCreepProperties, Source, Structure,
-    StructureContainer, StructureController, StructureExtension, StructureExtractor,
-    StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink, StructureNuker,
-    StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn,
-    StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage,
-    StructureTerminal, StructureTower, StructureType, StructureWall, Terrain,
-    CREEP_RANGED_ACTION_RANGE,
+    find, game::{self, map::RoomStatus}, look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId, OwnedStructureProperties, Position, Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY, SharedCreepProperties, Source, Structure, StructureContainer, StructureController, StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink, StructureNuker, StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn, StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType, StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE
 };
 use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::{
-        general::FlowResult,
+        general::{FlowResult, GeneralError},
         move_costs::{DEFAULT_SWAMP_COST, DEFAULT_WALL_COST, MAX_COST},
         room::NotMyCreeps,
         structure::{
@@ -26,7 +17,7 @@ use crate::{
     },
     memory::{
         game_memory::GameMemory,
-        room_memory::{NeutralRoomMemory, RemoteRoomMemory, RoomMemory},
+        room_memory::{NeutralRoomMemory, RemoteRoomMemory, RoomMemory, RoomType},
     },
     settings::Settings,
     state::{
@@ -597,4 +588,66 @@ pub fn default_move_costs(
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
     room_state.default_move_ops = Some(default_move_ops.clone());
     default_move_ops
+}
+
+pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+
+    if let Some(room_memory) = memory.rooms.get(room_name) {
+        return
+    };
+
+    // Otherwise the room has no memory
+
+    let mut room_memory = RoomMemory::new(game_state);
+    room_memory.room_type = find_room_type(room_name, game_state, memory);
+
+}
+
+pub fn find_room_type(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) -> RoomType {
+
+    // Stop if we already have a room type
+    if let Ok(room_type) = find_static_room_type(room_name) {
+        return room_type
+    };
+
+    let controller = controller(room_name, game_state);
+    let Some(controller) = controller else {
+        return RoomType::Neutral
+    };
+
+    let Some(owner) = controller.owner() else {
+        return RoomType::Neutral
+    };
+    let owner_name = owner.username();
+
+    if owner_name == memory.me {
+        return RoomType::Commune
+    }
+    if memory.allies.contains_key(&owner_name) {
+        return RoomType::Ally
+    }
+
+    RoomType::Enemy
+}
+
+/// Attempt to deduce a static room type using some cheap math
+pub fn find_static_room_type(room_name: &RoomName) -> Result<RoomType, GeneralError> {
+
+    let ew = room_name.x_coord() % 10;
+    let ns = room_name.y_coord() % 10;
+
+    if ew == 0 && ns == 0 {
+        return Ok(RoomType::Intersection)
+    }
+    if ew == 0 || ns == 0 {
+        return Ok(RoomType::Highway)
+    }
+    if ew % 5 == 0 && ns % 5 == 0 {
+        return Ok(RoomType::Center)
+    }
+    if (5 - ew).abs() <= 1 && (5 - ns).abs() <= 1 {
+        return Ok(RoomType::Keeper)
+    }
+
+    Err(GeneralError::Fail)
 }

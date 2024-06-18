@@ -14,6 +14,13 @@ pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+pub fn try_scout_rooms(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
+    for room_name in &room_names {
+        room_ops::try_scout_room(room_name, game_state, memory);
+    }
+}
+
 /* pub fn test_state(game_state: &mut GameState, memory: &mut GameMemory) {
     for (room_name, room) in &game_state.rooms {
 

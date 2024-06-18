@@ -5,10 +5,10 @@ use log::{error, info, warn};
 use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
 use serde::{Deserialize, Serialize};
 
-use crate::{constants::general::GeneralResult, international::collective_ops, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
+use crate::{constants::general::GeneralResult, international::collective_ops, memory::global_requests::DefenseRequests, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
 
 use super::{
-    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory},
+    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, AttackRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -30,6 +30,8 @@ pub struct GameMemory {
     pub power_creeps: HashMap<String, PowerCreepMemory>,
     pub work_requests: WorkRequests,
     pub claim_requests: ClaimRequests,
+    pub attack_requests: AttackRequests,
+    pub defense_requests: DefenseRequests,
     pub combat_stats: HashMap<String, u32>,
     // Consider putting construction sites in a segment
     pub construction_sites: HashMap<ObjectId<ConstructionSite>, u32>,
@@ -59,6 +61,8 @@ impl GameMemory {
             power_creeps: HashMap::new(),
             work_requests: WorkRequests::new(),
             claim_requests: ClaimRequests::new(),
+            attack_requests: AttackRequests::new(),
+            defense_requests: DefenseRequests::new(),
             combat_stats: HashMap::new(),
             construction_sites: HashMap::new(),
             allies: HashMap::new(),

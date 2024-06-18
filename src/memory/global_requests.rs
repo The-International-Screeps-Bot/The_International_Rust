@@ -72,12 +72,12 @@ impl ClaimRequest {
 pub type ClaimRequests = HashMap<RoomName, ClaimRequest>;
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct CombatRequest {
+pub struct AttackRequest {
     pub responders: Option<RoomName>,
     pub abandon: Option<u32>,
 }
 
-impl CombatRequest {
+impl AttackRequest {
     pub fn new() -> Self {
         Self {
             responders: None,
@@ -99,4 +99,34 @@ impl CombatRequest {
     }
 }
 
-pub type CombatRequests = HashMap<RoomName, CombatRequest>;
+pub type AttackRequests = HashMap<RoomName, AttackRequest>;
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct DefenseRequest {
+    pub responders: Option<RoomName>,
+    pub abandon: Option<u32>,
+}
+
+impl DefenseRequest {
+    pub fn new() -> Self {
+        Self {
+            responders: None,
+            abandon: None,
+        }
+    }
+
+    pub fn is_abandoned(&self) -> bool {
+        match self.abandon {
+            None => true,
+            Some(abandon) => {
+                if abandon > 0 {
+                    return true;
+                }
+    
+                false
+            }
+        }
+    }
+}
+
+pub type DefenseRequests = HashMap<RoomName, DefenseRequest>;

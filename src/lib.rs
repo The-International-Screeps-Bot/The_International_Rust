@@ -9,7 +9,7 @@ use creep::{my_creep::MyCreep, my_creep_services, role_services};
 use international::{construction_site_services, global_request_ops, global_request_services, stat_services};
 use log::*;
 use memory::game_memory::GameMemory;
-use room::commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services};
+use room::{commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services}, room_services};
 use screeps::{game, RoomName};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
@@ -109,6 +109,7 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     stat_services::tick_update(game_state, memory);
     
     my_creep_services::clean_creep_memories(game_state, memory);
+    room_services::try_scout_rooms(game_state, memory);
     
     commune_services::try_active_safe_mode(game_state, memory);
     construction_site_services::manage_sites(game_state, memory);
