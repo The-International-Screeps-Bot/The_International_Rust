@@ -21,6 +21,19 @@ impl WorkRequest {
             abandon: None,
         }
     }
+
+    pub fn is_abandoned(&self) -> bool {
+        match self.abandon {
+            None => true,
+            Some(abandon) => {
+                if abandon > 0 {
+                    return true;
+                }
+    
+                false
+            }
+        }
+    }
 }
 
 pub type WorkRequests = HashMap<RoomName, WorkRequest>;
@@ -41,6 +54,19 @@ impl ClaimRequest {
             claimer: None,
         }
     }
+
+    pub fn is_abandoned(&self) -> bool {
+        match self.abandon {
+            None => true,
+            Some(abandon) => {
+                if abandon > 0 {
+                    return true;
+                }
+    
+                false
+            }
+        }
+    }
 }
 
 pub type ClaimRequests = HashMap<RoomName, ClaimRequest>;
@@ -56,6 +82,19 @@ impl CombatRequest {
         Self {
             responders: None,
             abandon: None,
+        }
+    }
+
+    pub fn is_abandoned(&self) -> bool {
+        match self.abandon {
+            None => true,
+            Some(abandon) => {
+                if abandon > 0 {
+                    return true;
+                }
+    
+                false
+            }
         }
     }
 }
