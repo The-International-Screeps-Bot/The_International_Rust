@@ -499,9 +499,11 @@ pub fn try_add_remote(
             .insert(*room_name, NeutralRoomMemory::new(room_name, game_state));
     }
 
+    let mut remote_memory = RemoteRoomMemory::new(room_name, game_state, cost, source_paths); 
+
     memory.remotes.insert(
         *room_name,
-        RemoteRoomMemory::new(room_name, game_state, cost, source_paths),
+        remote_memory,
     );
 
     FlowResult::Stop

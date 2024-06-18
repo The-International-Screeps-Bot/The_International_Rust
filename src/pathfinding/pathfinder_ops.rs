@@ -3,7 +3,7 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet},
 };
 
-use screeps::{pathfinder::SearchGoal, Direction, Position};
+use screeps::{pathfinder::SearchGoal, Direction, Position, RoomName};
 
 use crate::{
     constants::general::{GeneralResult, DIRECTIONS},
@@ -69,6 +69,7 @@ impl PathfinderOpenSetEntry {
 pub fn find_path(
     origin: Position,
     goals: &PathGoals,
+    allowed_rooms: HashSet<RoomName>,
     opts: Option<PathfinderOpts>,
 ) -> Result<Vec<Position>, GeneralResult> {
     let mut open_set = BinaryHeap::new();
@@ -124,8 +125,11 @@ pub fn find_path(
 /// Find cost as the lowest manhattan distance to any goal
 fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
     let mut lowest_cost = u32::MAX;
+    let pos_world_x = pos.world_x();
+    let pos_world_y = pos.world_y();
+
     for goal in goals {
-        let cost = pos.world_x().abs_diff(goal.world_x()) + pos.world_y().abs_diff(goal.world_y());
+        let cost = pos_world_x.abs_diff(goal.world_x()) + pos_world_y.abs_diff(goal.world_y());
         if cost < lowest_cost {
             lowest_cost = cost;
         }

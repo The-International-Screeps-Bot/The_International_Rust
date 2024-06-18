@@ -1,4 +1,4 @@
-use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory, state::game::GameState};
+use crate::{constants::general::{GeneralResult, NON_COMMUNE_SIGNS}, memory::game_memory::GameMemory, state::game::GameState};
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn funnel_order(game_state: &GameState) {}
@@ -26,4 +26,12 @@ pub fn new_creep_id(game_state: &mut GameState, memory: &mut GameMemory) -> Resu
     }
 
     Err(GeneralResult::Fail)
+}
+
+pub fn commune_sign(game_state: &mut GameState, memory: &mut GameMemory) -> String {
+    format!("A commune of the working creeps: No Capitalists allowed! Collectivized v3{:?}", memory.breaking_version)
+}
+
+pub fn non_commune_sign(game_state: &mut GameState, memory: &mut GameMemory) -> String {
+    fastrand::choice(NON_COMMUNE_SIGNS).unwrap().to_string()
 }

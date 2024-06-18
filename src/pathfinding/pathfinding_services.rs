@@ -15,18 +15,21 @@ pub struct PathfindingOpts {
     pub avoid_enemy_creeps: bool,
 }
 
-pub fn try_find_path(origin: &Position, goals: &PathGoals) -> Result<Vec<Position>, GeneralResult> {
+pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts) -> Result<Vec<Position>, GeneralResult> {
     let mut allowed_rooms = find_allowed_rooms(origin, goals);
 
-    let path = generate_path(origin, goals);
+    let path = generate_path(origin, allowed_rooms, goals);
     path
 }
 
-fn find_allowed_rooms(origin: &Position, goals: &PathGoals) {
+fn find_allowed_rooms(origin: &Position, goals: &PathGoals) -> HashSet<RoomName> {
     let mut allowed_rooms: HashSet<RoomName> = HashSet::new();
     allowed_rooms.insert(origin.room_name());
+
+    allowed_rooms
 }
 
-fn generate_path(origin: &Position, goals: &PathGoals) -> Result<Vec<Position>, GeneralResult> {
-    pathfinder_ops::find_path(*origin, goals, None)
+fn generate_path(origin: &Position, allowed_rooms: HashSet<RoomName>, goals: &PathGoals) -> Result<Vec<Position>, GeneralResult> {
+
+    pathfinder_ops::find_path(*origin, goals, allowed_rooms, None)
 }
