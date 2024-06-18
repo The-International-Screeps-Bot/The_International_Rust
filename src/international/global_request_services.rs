@@ -77,7 +77,7 @@ fn try_assign_work_requests(game_state: &GameState, memory: &mut GameMemory) {
     let work_requests = &memory.work_requests;
 
     for (room_name, request) in work_requests {
-        if global_request_ops::is_abandoned(request) {
+        if request.is_abandoned() {
             continue;
         }
 
