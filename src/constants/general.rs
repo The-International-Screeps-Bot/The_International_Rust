@@ -64,3 +64,26 @@ pub const NON_COMMUNE_SIGNS: [&str; 3] = [
     "COLLECTIVIZATION IMMINENT: OWNERSHIP WILL BE FAIRLY DISTRIBUTED",
     "COLLECTIVIZATION IMMINENT: REAL DEMOCRACY REQUIRES A DEMOCRATIC ECONOMY",
 ];
+pub const CARDINAL_DIRECTIONS: [Direction; 4] = [
+    Direction::Top,
+    Direction::Right,
+    Direction::Bottom,
+    Direction::Left,
+];
+pub const DIAGONAL_DIRECTIONS: [Direction; 4] = [
+    Direction::TopRight,
+    Direction::BottomRight,
+    Direction::BottomLeft,
+    Direction::TopLeft,
+];
+/// Directions in order of: diagonal then cardinal
+pub const DIAGONAL_CARDINAL_DIRECTIONS: [Direction; 8] = [
+    Direction::Top,
+    Direction::Right,
+    Direction::Bottom,
+    Direction::Left,
+    Direction::TopRight,
+    Direction::BottomRight,
+    Direction::BottomLeft,
+    Direction::TopLeft,
+];

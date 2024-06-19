@@ -97,4 +97,11 @@ fn try_config_plan(
     memory: &mut GameMemory,
     plan: &mut CommunePlan,
 ) {
+
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    let Some(commune_plan) = &room_state.commune_plan else {
+        return
+    };
+
+    room_state.commune_plan = Some(CommunePlan::new());
 }

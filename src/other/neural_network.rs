@@ -4,6 +4,10 @@ use std::sync::Mutex;
 
 extern crate fastrand;
 
+// Use this for tower logic and base planning
+// Create a gym, a virtual simulation of a room with relevant objects
+// TODO: Implement backpropagation, deepQ learning
+
 pub struct NeuralNetworkManager {
     id_index: i32,
     pub networks: HashMap<i32, NeuralNetwork>,

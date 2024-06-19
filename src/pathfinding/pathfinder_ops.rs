@@ -6,7 +6,7 @@ use std::{
 use screeps::{pathfinder::SearchGoal, Direction, Position, RoomName};
 
 use crate::{
-    constants::general::{GeneralResult, DIRECTIONS},
+    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS},
     utils::general::GeneralUtils,
 };
 
@@ -81,7 +81,8 @@ pub fn find_path(
     visited.insert(origin, None);
 
     while let Some(open_set_entry) = open_set.pop() {
-        for direction in DIRECTIONS {
+        // Traverse diagonals before cardinals? Might not do what I think it will
+        for direction in DIAGONAL_CARDINAL_DIRECTIONS {
             if Some(-direction) == open_set_entry.open_dir {
                 continue;
             }
