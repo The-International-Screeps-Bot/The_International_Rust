@@ -14,3 +14,5 @@ impl NotMyCreeps {
         }
     }
 }
+
+pub const MAX_REMOTE_ROOM_DISTANCE: u8 = 5;

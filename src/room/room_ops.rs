@@ -1,8 +1,22 @@
-use std::{collections::HashMap, io::Error, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    str::FromStr,
+};
 
 use enum_map::{enum_map, EnumMap};
+use log::{debug, warn};
 use screeps::{
-    find, game::{self, map::RoomStatus}, look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId, OwnedStructureProperties, Position, Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY, SharedCreepProperties, Source, Structure, StructureContainer, StructureController, StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink, StructureNuker, StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn, StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType, StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE
+    find,
+    game::{self, map::RoomStatus},
+    look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId,
+    OwnedStructureProperties, Position, Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY,
+    SharedCreepProperties, Source, Structure, StructureContainer, StructureController,
+    StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore,
+    StructureKeeperLair, StructureLink, StructureNuker, StructureObject, StructureObserver,
+    StructurePowerBank, StructurePowerSpawn, StructureProperties, StructureRampart, StructureRoad,
+    StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType,
+    StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE,
 };
 use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
@@ -10,15 +24,18 @@ use crate::{
     constants::{
         general::{FlowResult, GeneralError},
         move_costs::{DEFAULT_SWAMP_COST, DEFAULT_WALL_COST, MAX_COST},
-        room::NotMyCreeps,
+        room::{NotMyCreeps, MAX_REMOTE_ROOM_DISTANCE},
         structure::{
             OldOrganizedStructures, OrganizedStructures, SpawnsByActivity, IMPASSIBLE_STRUCTURES,
         },
     },
     memory::{
         game_memory::GameMemory,
-        room_memory::{NeutralRoomMemory, RemoteRoomMemory, RoomMemory, RoomType},
+        room_memory::{
+            AllyRoomMemory, CenterRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory, RoomType
+        },
     },
+    pathfinding::{portal_router, route_costs},
     settings::Settings,
     state::{
         game::GameState,
@@ -464,6 +481,57 @@ pub fn try_add_remote(
         }
     }
 
+    // Check if the commune is blacklisted
+    {
+        let neutral_memory = memory.neutral.get(room_name).unwrap();
+        if neutral_memory.remote_blacklist.contains(room_name) {
+            return FlowResult::Continue;
+        }
+    }
+
+    // Check the linear distance
+    let distance = range(room_name, scouting_room_name);
+    if distance > MAX_REMOTE_ROOM_DISTANCE.into() {
+        debug!("Room {} too far from {}", room_name, scouting_room_name);
+        return FlowResult::Continue;
+    }
+
+    // Check the route distance
+
+    let mut goals = HashSet::new();
+    goals.insert(*scouting_room_name);
+
+    let route = portal_router::find_route(
+        *room_name,
+        goals,
+        route_costs::weight_room_types(
+            {
+                let mut room_type_weights = HashMap::new();
+
+                room_type_weights.insert(RoomType::Enemy, u8::MAX);
+
+                room_type_weights
+            },
+            memory,
+        ),
+    );
+
+    let Ok(route) = route else {
+        warn!("Unable to find route for room {}", room_name);
+        return FlowResult::Continue;
+    };
+
+    if route.len() as u8 > MAX_REMOTE_ROOM_DISTANCE {
+        debug!("Route too long for room {}", room_name);
+
+        let neutral_memory = memory.neutral.get_mut(room_name).unwrap();
+        neutral_memory.remote_blacklist.insert(*room_name);
+
+        return FlowResult::Continue;
+    }
+
+    // Cost and source info
+
     let mut cost: u32 = 0;
 
     let sources = get_sources(room_name, game_state);
@@ -490,12 +558,9 @@ pub fn try_add_remote(
             .insert(*room_name, NeutralRoomMemory::new(room_name, game_state));
     }
 
-    let mut remote_memory = RemoteRoomMemory::new(room_name, game_state, cost, source_paths); 
+    let mut remote_memory = RemoteRoomMemory::new(room_name, game_state, cost, source_paths);
 
-    memory.remotes.insert(
-        *room_name,
-        remote_memory,
-    );
+    memory.remotes.insert(*room_name, remote_memory);
 
     FlowResult::Stop
 }
@@ -591,9 +656,8 @@ pub fn default_move_costs(
 }
 
 pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-
     if let Some(room_memory) = memory.rooms.get(room_name) {
-        return
+        return;
     };
 
     // Otherwise the room has no memory
@@ -601,30 +665,62 @@ pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: 
     let mut room_memory = RoomMemory::new(game_state);
     room_memory.room_type = find_room_type(room_name, game_state, memory);
 
+    match room_memory.room_type {
+        RoomType::Ally => {
+            let ally_memory = AllyRoomMemory::new();
+            memory.ally.insert(*room_name, ally_memory);
+        }
+        RoomType::Enemy => {
+            let enemy_memory = EnemyRoomMemory::new();
+            memory.enemy.insert(*room_name, enemy_memory);
+        }
+        RoomType::Center => {
+          let center_memory = CenterRoomMemory::new();
+            memory.center.insert(*room_name, center_memory);
+        }
+        RoomType::Highway => {
+            let highway_memory = HighwayRoomMemory::new();
+            memory.highway.insert(*room_name, highway_memory);
+        }
+        RoomType::Keeper => {
+            let keeper_memory = KeeperRoomMemory::new(room_name, game_state);
+            memory.keeper.insert(*room_name, keeper_memory);
+        }
+        RoomType::Intersection => {
+            let intersection_memory = IntersectionRoomMemory::new();
+            memory.intersection.insert(*room_name, intersection_memory);
+        }
+        _ => {}
+    }
+
+    memory.rooms.insert(*room_name, room_memory);
 }
 
-pub fn find_room_type(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) -> RoomType {
-
+pub fn find_room_type(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+) -> RoomType {
     // Stop if we already have a room type
     if let Ok(room_type) = find_static_room_type(room_name) {
-        return room_type
+        return room_type;
     };
 
     let controller = controller(room_name, game_state);
     let Some(controller) = controller else {
-        return RoomType::Neutral
+        return RoomType::Neutral;
     };
 
     let Some(owner) = controller.owner() else {
-        return RoomType::Neutral
+        return RoomType::Neutral;
     };
     let owner_name = owner.username();
 
     if owner_name == memory.me {
-        return RoomType::Commune
+        return RoomType::Commune;
     }
     if memory.allies.contains_key(&owner_name) {
-        return RoomType::Ally
+        return RoomType::Ally;
     }
 
     RoomType::Enemy
@@ -632,22 +728,33 @@ pub fn find_room_type(room_name: &RoomName, game_state: &mut GameState, memory: 
 
 /// Attempt to deduce a static room type using some cheap math
 pub fn find_static_room_type(room_name: &RoomName) -> Result<RoomType, GeneralError> {
+    let room_x = room_name.x_coord();
+    let room_y = room_name.y_coord();
 
-    let ew = room_name.x_coord() % 10;
-    let ns = room_name.y_coord() % 10;
+    let ew = room_x % 10;
+    let ns = room_y % 10;
 
     if ew == 0 && ns == 0 {
-        return Ok(RoomType::Intersection)
+        return Ok(RoomType::Intersection);
     }
     if ew == 0 || ns == 0 {
-        return Ok(RoomType::Highway)
+        return Ok(RoomType::Highway);
     }
-    if ew % 5 == 0 && ns % 5 == 0 {
-        return Ok(RoomType::Center)
+    if room_x % 5 == 0 && room_y % 5 == 0 {
+        return Ok(RoomType::Center);
     }
     if (5 - ew).abs() <= 1 && (5 - ns).abs() <= 1 {
-        return Ok(RoomType::Keeper)
+        return Ok(RoomType::Keeper);
     }
 
     Err(GeneralError::Fail)
+}
+
+pub fn range(room_name1: &RoomName, room_name2: &RoomName) -> u32 {
+    let x1 = room_name1.x_coord();
+    let y1 = room_name1.y_coord();
+    let x2 = room_name2.x_coord();
+    let y2 = room_name2.y_coord();
+
+    utils::general::xy_range(x1, y1, x2, y2)
 }

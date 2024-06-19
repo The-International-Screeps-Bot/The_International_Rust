@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{room::room_ops, state::game::GameState};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RoomMemory {
     pub room_type: RoomType,
     pub danger: u32,
@@ -26,7 +26,7 @@ impl RoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum RoomType {
     /// Rooms we control the controller of
     Commune,
@@ -120,6 +120,8 @@ impl RemoteRoomMemory {
 pub struct NeutralRoomMemory {
     pub source_positions: Vec<Position>,
     pub controller_pos: Position,
+    /// Communes which are blacklisted from potentially making this room a remote, likely because of too far of distance
+    pub remote_blacklist: HashSet<RoomName>,
 }
 
 impl NeutralRoomMemory {
@@ -129,6 +131,7 @@ impl NeutralRoomMemory {
         Self {
             source_positions: Vec::new(),
             controller_pos: room.controller().unwrap().pos(),
+            remote_blacklist: Vec::new(),
         }
     }
 }
