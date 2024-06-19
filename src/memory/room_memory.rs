@@ -131,7 +131,7 @@ impl NeutralRoomMemory {
         Self {
             source_positions: Vec::new(),
             controller_pos: room.controller().unwrap().pos(),
-            remote_blacklist: Vec::new(),
+            remote_blacklist: HashSet::new(),
         }
     }
 }
