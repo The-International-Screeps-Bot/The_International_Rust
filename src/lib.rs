@@ -32,6 +32,7 @@ mod structures;
 mod utils;
 mod init;
 mod init_setting;
+mod other;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
