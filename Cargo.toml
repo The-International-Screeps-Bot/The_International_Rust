@@ -4,44 +4,57 @@ cargo-features = ["edition2024"]
 name = "the_international_rust"
 version = "0.0.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-screeps-game-api = "0.21.0"
-screeps-game-utils = "0.21.1"
-# If you'd like to use a locally-cloned out version of the game API crate
-# (for testing PRs, etc), you can use a local path (replacing the above line):
-# screeps-game-api = { git = "https://github.com/The-International-Screeps-Bot/screeps-game-api.git" }
-wasm-bindgen = "0.2.92"
-js-sys = "0.3.69"
-web-sys = { version = "0.3.69", features = ["console"] }
-log = { version = "0.4.21", features = ["serde"] }
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-regex = "1.10.3"
-html-escape = "0.2.13"
-room_visual_ext = "0.1.0"
-screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = true }
-screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
-enum-map = "2.7.3"
-fastrand = "2.1.0"
-base64_light = "0.1.5"
+description = "Rust bot for The International"
+repository = "https://github.com/The-International-Screeps-Bot/The_International_Rust"
+license = "GPL-3.0"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[dependencies]
+screeps-game-api = "0.22.0"
+screeps-game-utils = "0.22.1"
+# If you'd like to use a locally-cloned out version of the game API crate
+# (for testing PRs, etc), you can use a local path (replacing the above line):
+# screeps-game-api = { git = "https://github.com/The-International-Screeps-Bot/screeps-game-api.git" }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["console"] }
+log = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+regex = "1.11.1"
+fern = "0.6"
+html-escape = "0.2.13"
+room_visual_ext = "0.1.1"
+screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = true }
+screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
+enum-map = "2.7.3"
+fastrand = "2.3.0"
+base64_light = "0.1.5"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
 [profile.release]
 panic = "abort"
 opt-level = 3
+# link time optimization (try to inline everything)
 lto = true
 
 [package.metadata.wasm-pack.profile.release]
+# See wasm-opt for full available options; handy examples:
+# -O4 - optimize aggressively for performance
+# -Oz - optimize aggressively for code size
 # -g - leave debug info in place, allowing for more descriptive stack traces on panic
-# --disable-sign-ext - prevents opcodes that the screeps servers can't load (see 
+# --signext-lowering - removes opcodes that the screeps servers can't load (see
 # https://github.com/rustyscreeps/screeps-game-api/issues/391)
-wasm-opt = ["-g", "--disable-sign-ext"]
+wasm-opt = ["-O4", "--signext-lowering"]
 
 [features]
-# default = ["profile"]
+default = []
+
+debug = []
+sim = ["screeps-game-api/sim"]
+mmo = ["screeps-game-api/mmo"]
 profile = ["screeps-timing", "screeps-timing-annotate"]

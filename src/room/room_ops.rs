@@ -32,10 +32,12 @@ use crate::{
     memory::{
         game_memory::GameMemory,
         room_memory::{
-            AllyRoomMemory, CenterRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory, RoomType
+            AllyRoomMemory, CenterRoomMemory, EnemyRoomMemory, HighwayRoomMemory,
+            IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory,
+            RoomMemory, StaticRo,omType
         },
     },
-    pathfinding::{portal_router, route_costs},
+    pathfinding::{pathfinding_services::PathfindingOpts, portal_router, room_costs, route_costs},
     settings::Settings,
     state::{
         game::GameState,
@@ -501,20 +503,7 @@ pub fn try_add_remote(
     let mut goals = HashSet::new();
     goals.insert(*scouting_room_name);
 
-    let route = portal_router::find_route(
-        *room_name,
-        goals,
-        route_costs::weight_room_types(
-            {
-                let mut room_type_weights = HashMap::new();
-
-                room_type_weights.insert(RoomType::Enemy, u8::MAX);
-
-                room_type_weights
-            },
-            memory,
-        ),
-    );
+    let route = portal_router::find_route(*room_name, goals, &PathfindingOpts::new(), &memory);
 
     let Ok(route) = route else {
         warn!("Unable to find route for room {}", room_name);
@@ -666,27 +655,27 @@ pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: 
     room_memory.room_type = find_room_type(room_name, game_state, memory);
 
     match room_memory.room_type {
-        RoomType::Ally => {
+        StaticRoomType::Ally => {
             let ally_memory = AllyRoomMemory::new();
             memory.ally.insert(*room_name, ally_memory);
         }
-        RoomType::Enemy => {
+        StaticRoomType::Enemy => {
             let enemy_memory = EnemyRoomMemory::new();
             memory.enemy.insert(*room_name, enemy_memory);
         }
-        RoomType::Center => {
-          let center_memory = CenterRoomMemory::new();
+        StaticRoomType::Center => {
+            let center_memory = CenterRoomMemory::new();
             memory.center.insert(*room_name, center_memory);
         }
-        RoomType::Highway => {
+        StaticRoomType::Highway => {
             let highway_memory = HighwayRoomMemory::new();
             memory.highway.insert(*room_name, highway_memory);
         }
-        RoomType::Keeper => {
+        StaticRoomType::Keeper => {
             let keeper_memory = KeeperRoomMemory::new(room_name, game_state);
             memory.keeper.insert(*room_name, keeper_memory);
         }
-        RoomType::Intersection => {
+        StaticRoomType::Intersection => {
             let intersection_memory = IntersectionRoomMemory::new();
             memory.intersection.insert(*room_name, intersection_memory);
         }
@@ -700,7 +689,7 @@ pub fn find_room_type(
     room_name: &RoomName,
     game_state: &mut GameState,
     memory: &mut GameMemory,
-) -> RoomType {
+) -> StaticRoomType {
     // Stop if we already have a room type
     if let Ok(room_type) = find_static_room_type(room_name) {
         return room_type;
@@ -708,26 +697,26 @@ pub fn find_room_type(
 
     let controller = controller(room_name, game_state);
     let Some(controller) = controller else {
-        return RoomType::Neutral;
+        return StaticRoomType::Neutral;
     };
 
     let Some(owner) = controller.owner() else {
-        return RoomType::Neutral;
+        return StaticRoomType::Neutral;
     };
     let owner_name = owner.username();
 
     if owner_name == memory.me {
-        return RoomType::Commune;
+        return StaticRoomType::Commune;
     }
     if memory.allies.contains_key(&owner_name) {
-        return RoomType::Ally;
+        return StaticRoomType::Ally;
     }
 
-    RoomType::Enemy
+    StaticRoomType::Enemy
 }
 
 /// Attempt to deduce a static room type using some cheap math
-pub fn find_static_room_type(room_name: &RoomName) -> Result<RoomType, GeneralError> {
+pub fn find_static_room_type(room_name: &RoomName) -> Result<StaticRoomType, GeneralError> {
     let room_x = room_name.x_coord();
     let room_y = room_name.y_coord();
 
@@ -735,16 +724,16 @@ pub fn find_static_room_type(room_name: &RoomName) -> Result<RoomType, GeneralEr
     let ns = room_y % 10;
 
     if ew == 0 && ns == 0 {
-        return Ok(RoomType::Intersection);
+        return Ok(StaticRoomType::Intersection);
     }
     if ew == 0 || ns == 0 {
-        return Ok(RoomType::Highway);
+        return Ok(StaticRoomType::Highway);
     }
     if room_x % 5 == 0 && room_y % 5 == 0 {
-        return Ok(RoomType::Center);
+        return Ok(StaticRoomType::Center);
     }
     if (5 - ew).abs() <= 1 && (5 - ns).abs() <= 1 {
-        return Ok(RoomType::Keeper);
+        return Ok(StaticRoomType::Keeper);
     }
 
     Err(GeneralError::Fail)

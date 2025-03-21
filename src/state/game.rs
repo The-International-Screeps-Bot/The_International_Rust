@@ -5,12 +5,20 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    game::{self, shard}, AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName,
-    SharedCreepProperties, StructureType,
+    game::{self, shard},
+    AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName, SharedCreepProperties,
+    StructureType,
 };
 
 use super::{
-    commune::{self, CommuneState}, creep::CreepStateOps, market::MarketState, my_creep::{MyCreepState, MyCreepStateOps}, room::RoomState, segments::Segments, structure::{self, StructuresState}, tick_intervals::TickIntervals
+    commune::{self, CommuneState},
+    creep::CreepStateOps,
+    market::MarketState,
+    my_creep::{MyCreepState, MyCreepStateOps},
+    room::RoomState,
+    segments::Segments,
+    structure::{self, StructuresState},
+    tick_intervals::TickIntervals,
 };
 use crate::{
     constants::creep::CreepRole,
@@ -77,11 +85,11 @@ impl GameState {
     pub fn tick_update(&mut self, memory: &mut GameMemory) {
         self.tick = game::time();
 
-        Self::update_my_creeps(self);
+        self.update_my_creeps();
         // TODO
         // GameStateOps::update_account_power_creeps(self);
-        Self::update_rooms(self, memory);
-        Self::update_creep_id_index(self);
+        self.update_rooms(memory);
+        self.update_creep_id_index();
 
         // state type updating
 

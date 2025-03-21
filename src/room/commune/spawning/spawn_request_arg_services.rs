@@ -39,16 +39,17 @@ fn harvester_args(
     let base_priority = spawn_priority_bounds::SOURCE_HARVESTER.0;
 
     for source_index in 0..commune_memory.source_positions.len() {
-
         let commune_state = game_state.commune_states.get(room_name).unwrap();
-        
-        // source harvest need derived from how many work parts 
+
+        // source harvest need derived from how many work parts
         let work_need = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME / HARVEST_POWER + 1;
-        let work_have = commune_state.source_harvest_strengths[source_index];
+        let Some(work_have) = commune_state.source_harvest_strengths.get(source_index) else {
+            continue;
+        };
 
         let work_quota = work_need - work_have;
         if work_quota <= 0 {
-            continue
+            continue;
         }
 
         let priority = base_priority + source_index as f32;
@@ -56,7 +57,6 @@ fn harvester_args(
         let role = CreepRole::SourceHarvester;
 
         if commune_state.spawn_energy_capacity > 550 {
-
             let default_parts = vec![CreepPart::Move];
             let extra_parts = vec![CreepPart::Work];
 

@@ -4,20 +4,31 @@ use std::{
 };
 
 use screeps::{pathfinder::SearchGoal, Direction, Position, RoomName};
+use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS},
     utils::general::GeneralUtils,
 };
 
-pub struct PathfinderOpts {
-    pub cost_callback: fn(&Position) -> u8,
+use super::room_costs::economy_room_costs;
+
+pub struct RoomPathfinderOpts {
+    pub cost_callback: fn(&RoomName) -> SparseCostMatrix,
+    pub allow_outside_origin_room: bool,
+    pub avoid_enemy_attackers: bool,
 }
 
-pub struct PathGoal {
-    pos: Position,
-    range: u32,
+impl RoomPathfinderOpts {
+    pub fn new() -> Self {
+        Self {
+            cost_callback: economy_room_costs,
+            allow_outside_origin_room: true,
+            avoid_enemy_attackers: false,
+        }
+    }
 }
+
 /// Position -> range map
 pub type PathGoals = HashMap<Position, u32>;
 
@@ -70,12 +81,15 @@ pub fn find_path(
     origin: Position,
     goals: &PathGoals,
     allowed_rooms: HashSet<RoomName>,
-    opts: Option<PathfinderOpts>,
+    opts: &RoomPathfinderOpts,
 ) -> Result<Vec<Position>, GeneralResult> {
+    let origin_room_name = origin.room_name();
+
     let mut open_set = BinaryHeap::new();
     let mut visited = HashMap::new();
 
     let goals_set: HashSet<Position> = goals.keys().copied().collect();
+    let mut rooms_costs: HashMap<RoomName, SparseCostMatrix> = HashMap::new();
 
     open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_set, None));
     visited.insert(origin, None);
@@ -86,34 +100,38 @@ pub fn find_path(
             if Some(-direction) == open_set_entry.open_dir {
                 continue;
             }
-            let Ok(adj_pos) = open_set_entry.pos.checked_add((direction).into()) else {
+            let Ok(pos) = open_set_entry.pos.checked_add((direction).into()) else {
                 continue;
             };
 
-            if visited.contains_key(&adj_pos) {
+            if visited.contains_key(&pos) {
                 continue;
             }
 
-            visited.insert(adj_pos, Some(direction));
+            visited.insert(pos, Some(direction));
 
-            if goals_set.contains(&adj_pos) {
-                let path = resolve_completed_path(adj_pos, &visited);
+            // Need to check if it's sufficiently in range to any of the goals
+            if goals_set.contains(&pos) {
+                let path = resolve_completed_path(pos, &visited);
                 return Ok(path.into_iter().collect());
             }
 
-            let mut adj_traverse_cost: u8 = 0;
+            let room_name = pos.room_name();
+            if !opts.allow_outside_origin_room && room_name != origin_room_name {
+                continue;
+            }
 
-            if let Some(opts) = &opts {
-                adj_traverse_cost = (opts.cost_callback)(&adj_pos);
-            };
+            let room_costs = rooms_costs.entry(room_name).or_insert((opts.cost_callback)(&room_name));
 
-            if adj_traverse_cost == u8::MAX {
+            let traverse_cost = room_costs.get(pos.xy());
+
+            if traverse_cost == u8::MAX {
                 continue;
             }
 
             open_set.push(PathfinderOpenSetEntry::new(
-                adj_pos,
-                open_set_entry.g_score + adj_traverse_cost as u32,
+                pos,
+                open_set_entry.g_score + traverse_cost as u32,
                 &goals_set,
                 Some(direction),
             ));

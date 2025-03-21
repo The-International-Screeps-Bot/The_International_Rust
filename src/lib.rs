@@ -6,33 +6,35 @@ use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use creep::{my_creep::MyCreep, my_creep_services, role_services};
-use international::{construction_site_services, global_request_ops, global_request_services, stat_services};
+use international::{
+    construction_site_services, global_request_ops, global_request_services, stat_services,
+};
 use log::*;
 use memory::game_memory::GameMemory;
-use room::{commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services}, room_services};
+use room::{
+    commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services},
+    room_services,
+};
 use screeps::{game, RoomName};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    settings::Settings,
-    state::game::{GameState},
-};
+use crate::{settings::Settings, state::game::GameState};
 
 mod constants;
 mod creep;
+mod init;
+mod init_settings;
 mod international;
 mod logging;
 mod memory;
+mod other;
 mod pathfinding;
 mod room;
 mod settings;
 mod state;
 mod structures;
 mod utils;
-mod init;
-mod init_setting;
-mod other;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
@@ -45,20 +47,9 @@ thread_local! {
     static MY_CREEP_STATES: RefCell<HashMap<String, MyCreep>> = RefCell::new(HashMap::new());
 }
 
-// #[wasm_bindgen]
-// pub fn init() {
-//     logging::setup_logger(LevelFilter::Trace);
-//     info!("Initializing...");
-//     GAME_STATE.with_borrow_mut(|game_state| {
-//         game_state.init_tick = game::time();
-//     });
+static INIT: std::sync::Once = std::sync::Once::new();
 
-//     SETTINGS.with_borrow_mut(|settings| {
-//         settings.allies.insert(String::from("PandaMaster"));
-//     });
-// }
-
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = loop)]
 pub fn game_loop() {
     #[cfg(feature = "profile")]
     {
@@ -71,12 +62,15 @@ pub fn game_loop() {
     let bucket = game::cpu::bucket();
     info!("Starting game tick {} with {} bucket", tick, bucket);
 
+    INIT.call_once(|| {
+        init::init();
+    });
+
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow(|settings| {
             GAME_STATE.with_borrow_mut(|game_state| {
-
                 info!("Log filter: {}", settings.log_filter);
-                
+
                 loop_with_params(memory, game_state, settings);
             });
         });
@@ -98,7 +92,6 @@ pub fn game_loop() {
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
-
     /* let mut my_creeps: HashMap<String, MyCreep> = HashMap::new();
     let mut my_creep_names: Vec<String> = Vec::new();
 
@@ -108,10 +101,10 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
     stat_services::tick_update(game_state, memory);
-    
+
     my_creep_services::clean_creep_memories(game_state, memory);
     room_services::try_scout_rooms(game_state, memory);
-    
+
     commune_services::try_active_safe_mode(game_state, memory);
     construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);

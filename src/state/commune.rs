@@ -32,16 +32,15 @@ pub struct CommuneState {
 
 impl CommuneState {
     pub fn new(room_name: RoomName, game_state: &GameState, memory: &GameMemory) -> Self {
-
-        let commune_memory = memory.communes.get(&room_name).unwrap();
-
         // source harvest positions are found by the commune planner
         // mineral harvest positions are found by the commune planner
 
         let mut source_harvest_strengths: Vec<u32> = Vec::new();
 
-        for i in 0..commune_memory.source_positions.len() {
-            source_harvest_strengths.push(0);
+        if let Some(commune_memory) = memory.communes.get(&room_name) {
+            for i in 0..commune_memory.source_positions.len() {
+                source_harvest_strengths.push(0);
+            }
         }
 
         let room = game_state.rooms.get(&room_name).unwrap();
@@ -64,18 +63,14 @@ impl CommuneState {
             used_mineral_positions: Vec::new(),
             source_harvest_strengths,
             used_source_harvest_positions: Vec::new(),
-            // Derive from pre-existing plans if they exist 
-
+            // Derive from pre-existing plans if they exist
             structure_plans: SparseCostMatrix::new(),
             rampart_plans: SparseCostMatrix::new(),
             planning_completed: false,
-
-            
         }
     }
 
     pub fn tick_update(&mut self, room_name: &RoomName) {
-
         self.min_energy = None;
         self.spawns_by_activity = None;
     }

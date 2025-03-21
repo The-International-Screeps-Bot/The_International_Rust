@@ -2,12 +2,15 @@ use std::collections::{HashMap, HashSet};
 
 use screeps::{game, RoomName};
 
-use crate::constants::general::GeneralResult;
+use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory};
 
-pub fn find_route<F: Fn(&RoomName) -> u8>(
+use super::pathfinding_services::{PathfindingOpts, RouteCallback};
+
+pub fn find_route(
     origin: RoomName,
     goals: HashSet<RoomName>,
-    cost_callback: F,
+    opts: &PathfindingOpts,
+    memory: &GameMemory,
 ) -> Result<HashSet<RoomName>, GeneralResult> {
     let mut current_generation = HashSet::new();
     current_generation.insert(origin);
@@ -37,7 +40,7 @@ pub fn find_route<F: Fn(&RoomName) -> u8>(
                 }
                 visited.insert(adj_room_name);
 
-                let adj_traverse_cost = cost_callback(&adj_room_name);
+                let adj_traverse_cost = (opts.route_callback)(&adj_room_name, memory);
                 // If the tile is marked as impassible, skip it
                 if adj_traverse_cost == u8::MAX {
                     continue;

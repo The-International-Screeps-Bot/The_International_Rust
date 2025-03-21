@@ -12,6 +12,7 @@ pub struct CreepMemory {
     pub source_index: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scout_target: Option<RoomName>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rampart_only_shoving: Option<bool>,
 }
 
@@ -28,6 +29,4 @@ impl CreepMemory {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct PowerCreepMemory {
-
-}
+pub struct PowerCreepMemory {}
