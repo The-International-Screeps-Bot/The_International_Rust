@@ -85,7 +85,7 @@ impl GameMemory {
 
     pub fn load_from_memory_or_default() -> GameMemory {
         let stringified_memory = raw_memory::get().as_string().unwrap();
-
+        info!("TRYING TO LOAD MEMORY");
         match serde_json::from_str::<GameMemory>(&stringified_memory) {
             Ok(memory) => memory,
             Err(err) => {

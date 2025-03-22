@@ -68,6 +68,13 @@ module.exports.loop = function() {
         console.log(`startup deferred; ${Game.cpu.bucket} / ${BUCKET_BOOT_THRESHOLD} required bucket`);
         return;
     }
+    
+    // Decouple `Memory` from `RawMemory`, but give it `TempMemory` to persist to so that
+    // `moveTo` can cache. This avoids issues where the game tries to insert data into `Memory`
+    // that is not expected.
+    // delete global.Memory;
+    // global.TempMemory = global.TempMemory || Object.create(null);
+    // global.Memory = global.TempMemory;
 
     // run each step of the load process, saving each result so that this can happen over multiple ticks
     if (!wasm_bytes) wasm_bytes = require(MODULE_NAME);

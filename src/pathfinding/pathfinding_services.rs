@@ -4,7 +4,7 @@ use screeps::{
     memory, pathfinder::{self, SearchGoal}, Position, RoomName
 };
 
-use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory};
+use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory, state::game::GameState};
 
 use super::{portal_router, room_pather::{self, PathGoals, RoomPathfinderOpts}, route_costs::{self, economy_creep_costs}};
 
@@ -27,9 +27,9 @@ impl PathfindingOpts {
 pub type RoomCallback = fn(&RoomName) -> u8;
 pub type RouteCallback = fn(&RoomName, &GameMemory) -> u8;
 
-pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
+pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts, game_state: &mut GameState, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
     let mut allowed_rooms: HashSet<RoomName> = find_allowed_rooms(origin, goals, &opts, memory);
-    let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts);
+    let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state);
 
     path
 }

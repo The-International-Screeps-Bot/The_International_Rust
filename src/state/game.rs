@@ -107,7 +107,7 @@ impl GameState {
 
         let js_creeps = screeps::game::creeps();
 
-        for (creep_name, any_creep) in js_creeps.entries() {
+        for (creep_name, any_creep) in js_creeps.keys().zip(js_creeps.values()) {
             let Some(creep) = MyCreep::new(&any_creep).ok() else {
                 continue;
             };
@@ -142,7 +142,9 @@ impl GameState {
 
         let js_rooms = screeps::game::rooms();
 
-        for (room_name, room) in js_rooms.entries() {
+        for (room_name, room) in js_rooms.keys().zip(js_rooms.values()) {
+            log::info!("Processing room: {} {:?}", room_name, room);
+            
             self.room_states
                 .entry(room_name)
                 .or_insert_with(|| RoomState::new(&room, room_name));

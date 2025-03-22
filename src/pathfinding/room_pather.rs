@@ -4,17 +4,16 @@ use std::{
 };
 
 use screeps::{pathfinder::SearchGoal, Direction, Position, RoomName};
-use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
+use screeps_utils::sparse_cost_matrix::{self, SparseCostMatrix};
 
 use crate::{
-    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS},
-    utils::general::GeneralUtils,
+    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS}, room::room_ops::{sparse_terrain, terrain}, state::game::GameState, utils::general::GeneralUtils
 };
 
 use super::room_costs::economy_room_costs;
 
 pub struct RoomPathfinderOpts {
-    pub cost_callback: fn(&RoomName) -> SparseCostMatrix,
+    pub cost_callback: fn(&RoomName, &mut GameState) -> SparseCostMatrix,
     pub allow_outside_origin_room: bool,
     pub avoid_enemy_attackers: bool,
 }
@@ -94,8 +93,9 @@ pub fn find_path(
     goals: &PathGoals,
     allowed_rooms: HashSet<RoomName>,
     opts: &RoomPathfinderOpts,
+    game_state: &mut GameState,
 ) -> Result<Vec<Position>, GeneralResult> {
-    log::info!("Tried to find a path");
+    log::info!("Trying to find a path");
     let origin_room_name = origin.room_name();
 
     let mut open_set = BinaryHeap::new();
@@ -126,7 +126,10 @@ pub fn find_path(
             // Need to check if it's sufficiently in range to any of the goals
             if goals_set.contains(&pos) {
                 let path = resolve_completed_path(pos, &visited);
-                return Ok(path.into_iter().collect());
+                let mut path_vec = path.into_iter().collect::<Vec<Position>>();
+                path_vec.reverse();
+                
+                return Ok(path_vec);
             }
 
             let room_name = pos.room_name();
@@ -134,10 +137,14 @@ pub fn find_path(
                 continue;
             }
 
-            let room_costs = rooms_costs.entry(room_name).or_insert((opts.cost_callback)(&room_name));
+            let room_costs = rooms_costs.entry(room_name).or_insert((opts.cost_callback)(&room_name, game_state));
 
+            // let room_costs = match rooms_costs.get(&room_name) {
+            //     Some(costs) => costs,
+            //     None => &rooms_costs.insert(room_name, (opts.cost_callback)(&room_name, game_state)).unwrap(),
+            // };
+            
             let traverse_cost = room_costs.get(pos.xy());
-
             if traverse_cost == u8::MAX {
                 continue;
             }

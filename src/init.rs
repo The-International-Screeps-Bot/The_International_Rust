@@ -10,7 +10,7 @@ use crate::{
 
 /// Runs every global reset
 pub fn init() {
-    debug!("Running init");
+    info!("Running init");
 
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow_mut(|settings| {

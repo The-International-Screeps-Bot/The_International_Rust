@@ -28,7 +28,7 @@ pub fn create_move_request(
     let creep_memory = memory.creeps.get(creep_name).unwrap();
     let creep = game_state.creeps.get(creep_name).unwrap();
     
-    let Ok(path) = try_find_path(&creep.inner().pos(), goals, opts, memory) else {
+    let Ok(path) = try_find_path(&creep.inner().pos(), goals, opts, game_state, memory) else {
         return;
     };
     

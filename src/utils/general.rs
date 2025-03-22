@@ -68,10 +68,7 @@ pub fn for_adjacent_positions(position: Position, operation: &dyn Fn(&Position))
 pub fn me() -> Result<String, ()> {
     let js_rooms = screeps::game::rooms();
 
-    for room_name in js_rooms.keys() {
-        let Some(room) = js_rooms.get(room_name) else {
-            continue;
-        };
+    for (room_name, room) in js_rooms.keys().zip(js_rooms.values()) {
 
         let Some(controller) = room.controller() else {
             continue;

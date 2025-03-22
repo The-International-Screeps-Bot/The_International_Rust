@@ -24,6 +24,7 @@ pub struct RoomState {
     pub name: RoomName,
     pub status: Option<RoomStatus>,
     pub terrain: Option<LocalRoomTerrain>,
+    pub sparse_terrain: Option<SparseCostMatrix>,
     pub default_move_ops: Option<SparseCostMatrix>,
     pub enemy_threat_positions: Option<SparseCostMatrix>,
 
@@ -54,6 +55,7 @@ impl RoomState {
             name: room_name,
             status: None,
             terrain: None,
+            sparse_terrain: None,
             default_move_ops: None,
             enemy_threat_positions: None,
             structures: None,
@@ -74,6 +76,7 @@ impl RoomState {
 
     pub fn tick_update(&mut self, room_name: &RoomName) {
         self.terrain = None;
+        self.sparse_terrain = None;
         self.default_move_ops = None;
         self.enemy_threat_positions = None;
 

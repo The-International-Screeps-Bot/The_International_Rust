@@ -114,7 +114,7 @@ fn find_fast_filler_start_positions(
         start_positions.push(source_pos);
 
         if let Ok(path) =
-            pathfinding_services::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), memory)
+            pathfinding_services::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), game_state, memory)
         {
             let shortest_len = {
                 if let Some(shortest_path) = &shortest_path {

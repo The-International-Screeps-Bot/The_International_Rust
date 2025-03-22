@@ -21,6 +21,25 @@ pub fn track_creeps(game_state: &GameState) {
     for (creep_name, creep) in creeps {}
 }
 
+pub fn organize_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+    
+    let creep_names = game_state.creeps.keys().cloned().collect::<Vec<_>>();
+    
+    for creep_name in creep_names {
+        let creep = game_state.creeps.get_mut(&creep_name).unwrap();
+        let room_state = game_state.room_states.get_mut(&creep.inner().room().unwrap().name()).unwrap();
+        log::info!("Organizing creep {}", creep_name);
+        
+        log::info!("Memory {:?} {:?} {:?}", memory.creeps, memory.rooms, memory.me);
+        
+        let Some(creep_memory) = memory.creeps.get(&creep_name) else {
+            continue;
+        };
+        
+        room_state.creeps_by_role[creep_memory.role].push(creep_name);
+    }
+}
+
 // Not part of design philosphy
 // pub fn run_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
 //     let creep_names: Vec<String> = game_state.creeps.keys().cloned().collect();

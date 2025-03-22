@@ -78,8 +78,6 @@ pub fn game_loop() {
                 loop_with_params(memory, game_state, settings);
             });
         });
-
-        memory.write_json();
     });
 
     #[cfg(feature = "profile")]
@@ -110,12 +108,12 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
     stat_services::tick_update(game_state, memory);
-    
-    room_services::organize_creeps(game_state, memory);
 
     my_creep_services::clean_creep_memories(game_state, memory);
     room_services::try_scout_rooms(game_state, memory);
 
+    my_creep_services::organize_creeps(game_state, memory);
+    
     commune_services::try_active_safe_mode(game_state, memory);
     construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);
@@ -130,4 +128,5 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     role_services::try_harvest_commune_sources(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
+    memory.write_json();
 }

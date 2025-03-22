@@ -21,20 +21,6 @@ pub fn try_scout_rooms(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
-pub fn organize_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
-    
-    let creep_names = game_state.my_creep_states.keys().cloned().collect::<Vec<_>>();
-    
-    for creep_name in creep_names {
-        let creep = game_state.creeps.get_mut(&creep_name).unwrap();
-        let room_state = game_state.room_states.get_mut(&creep.inner().room().unwrap().name()).unwrap();
-
-        let creep_memory = memory.creeps.get(&creep_name).unwrap();
-        
-        room_state.creeps_by_role[creep_memory.role].push(creep_name);
-    }
-}
-
 /* pub fn test_state(game_state: &mut GameState, memory: &mut GameMemory) {
     for (room_name, room) in &game_state.rooms {
 

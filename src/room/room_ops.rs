@@ -18,13 +18,13 @@ use screeps::{
     StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType,
     StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE,
 };
-use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
+use screeps_utils::sparse_cost_matrix::{SparseCostMatrix, ROOM_AREA};
 
 use crate::{
     constants::{
         general::{FlowResult, GeneralError, GeneralResult},
         move_costs::{DEFAULT_SWAMP_COST, DEFAULT_WALL_COST, MAX_COST},
-        room::{NotMyCreeps, MAX_REMOTE_ROOM_DISTANCE},
+        room::{NotMyCreeps, MAX_REMOTE_ROOM_DISTANCE, ROOM_DIMENSIONS},
         structure::{
             OldOrganizedStructures, OrganizedStructures, SpawnsByActivity, IMPASSIBLE_STRUCTURES,
         },
@@ -565,6 +565,41 @@ pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTer
     terrain
 }
 
+pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> SparseCostMatrix {
+    {
+        let room_state = game_state.room_states.get(room_name).unwrap();
+
+        if let Some(terrain) = &room_state.sparse_terrain {
+            return terrain.clone();
+        }
+    }
+    
+    let terrain = terrain(room_name, game_state);
+    let mut sparse_terrain = SparseCostMatrix::new();
+
+    for x in 0..ROOM_DIMENSIONS {
+        for y in 0..ROOM_DIMENSIONS {
+            let room_xy = RoomXY {
+                x: RoomCoordinate::new(x).unwrap(),
+                y: RoomCoordinate::new(y).unwrap(),
+            };
+
+            let terrain_type = terrain.get_xy(room_xy);
+            match terrain_type {
+                Terrain::Wall => sparse_terrain.set(room_xy, 255),
+                Terrain::Swamp => sparse_terrain.set(room_xy, 5),
+                Terrain::Plain => sparse_terrain.set(room_xy, 2),
+                _ => sparse_terrain.set(room_xy, 1),
+            }
+        }
+    }
+    
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    room_state.sparse_terrain = Some(sparse_terrain.clone());
+    
+    sparse_terrain
+}
+
 pub fn default_move_costs(
     room_name: &RoomName,
     game_state: &mut GameState,
@@ -583,8 +618,8 @@ pub fn default_move_costs(
     // Avoid terrain
 
     let terrain = terrain(room_name, game_state);
-    for x in 0..50 {
-        for y in 0..50 {
+    for x in 0..ROOM_DIMENSIONS {
+        for y in 0..ROOM_DIMENSIONS {
             let room_xy = RoomXY {
                 x: RoomCoordinate::new(x).unwrap(),
                 y: RoomCoordinate::new(y).unwrap(),
