@@ -23,11 +23,11 @@ pub fn register_harvest_strength(creep_name: &str, room_name: &RoomName, game_st
 
 pub fn try_harvest(creep_name: &str, game_state: &mut GameState, memory: &mut GameMemory) {
 
-    /* let creep = game_state.creeps.get(creep_name).unwrap();
+    let creep = game_state.creeps.get(creep_name).unwrap();
     let creep_memory = memory.creeps.get(creep_name).unwrap();
 
     let room = game_state.rooms.get(&creep.inner().room().unwrap().name().clone()).unwrap();
-    let sources = RoomOps::get_sources(room, game_state);
+    let sources = room_ops::get_sources(&room.name(), game_state);
 
     let Some(source_index) = creep_memory.source_index else {
         return;
@@ -35,5 +35,5 @@ pub fn try_harvest(creep_name: &str, game_state: &mut GameState, memory: &mut Ga
 
     let source = sources.get(source_index).unwrap();
 
-    MyCreepOps::drop_harvest(creep_name, &source, game_state, memory); */
+    my_creep_ops::drop_harvest(&creep_name.to_string(), &source, game_state, memory);
 }

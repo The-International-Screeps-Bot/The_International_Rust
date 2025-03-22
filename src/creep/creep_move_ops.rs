@@ -8,25 +8,34 @@ use crate::{
         creep::MoveTargets,
         general::{GeneralError, GeneralResult},
         move_costs::MAX_COST,
-    },
-    memory::{creep_memory, game_memory::GameMemory},
-    room::room_ops::{self, default_move_costs},
-    state::game::GameState,
-    utils::{
+    }, memory::{creep_memory, game_memory::GameMemory}, pathfinding::{pathfinding_services::{try_find_path, PathfindingOpts}, room_pather::PathGoals}, room::room_ops::{self, default_move_costs}, state::game::GameState, utils::{
         self,
         general::{pos_range, GeneralUtils},
         pos::{get_adjacent_positions_conditional, is_xy_exit},
-    },
+    }
 };
 
 use super::my_creep_ops;
 
 pub fn create_move_request(
     creep_name: &str,
-    origin: &Position,
-    game_state: &GameState,
+    goals: &PathGoals,
+    opts: PathfindingOpts,
+    game_state: &mut GameState,
     memory: &GameMemory,
 ) {
+    
+    let creep_memory = memory.creeps.get(creep_name).unwrap();
+    let creep = game_state.creeps.get(creep_name).unwrap();
+    
+    let Ok(path) = try_find_path(&creep.inner().pos(), goals, opts, memory) else {
+        return;
+    };
+    
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    creep_state.move_request = Some(path[0]);
+    
+    log::info!("Created move request for creep {} to {}", creep_name, path[0]);
 }
 
 fn assign_move_request(creep_name: &str) {}

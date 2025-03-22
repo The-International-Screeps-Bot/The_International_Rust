@@ -38,7 +38,7 @@ fn find_allowed_rooms(origin: &Position, goals: &PathGoals, opts: &PathfindingOp
     let mut allowed_rooms: HashSet<RoomName> = HashSet::new();
     allowed_rooms.insert(origin.room_name());
 
-    let goal_room_names = HashSet::from_iter(goals.iter().map(|pos| {
+    let goal_room_names = HashSet::from_iter(goals.0.iter().map(|pos| {
         pos.0.room_name()
     }));
     let Ok(route) = portal_router::find_route(origin.room_name(), goal_room_names, opts, memory) else {

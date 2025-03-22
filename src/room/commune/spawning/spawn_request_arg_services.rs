@@ -35,11 +35,13 @@ fn harvester_args(
     game_state: &GameState,
     memory: &mut GameMemory,
 ) {
-    let commune_memory = memory.communes.get(room_name).unwrap();
+    let Some(harvestable_room_memory) = memory.harvestable_rooms.get(room_name) else {
+        return;
+    };
     let base_priority = spawn_priority_bounds::SOURCE_HARVESTER.0;
+    let commune_state = game_state.commune_states.get(room_name).unwrap();
 
-    for source_index in 0..commune_memory.source_positions.len() {
-        let commune_state = game_state.commune_states.get(room_name).unwrap();
+    for (source_index, source_position) in harvestable_room_memory.source_positions.iter().enumerate() {
 
         // source harvest need derived from how many work parts
         let work_need = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME / HARVEST_POWER + 1;
@@ -47,8 +49,8 @@ fn harvester_args(
             continue;
         };
 
-        let work_quota = work_need - work_have;
-        if work_quota <= 0 {
+        let work_quota = work_need.saturating_sub(*work_have);
+        if work_quota == 0 {
             continue;
         }
 
@@ -76,11 +78,11 @@ fn harvester_args(
                     priority,
                     max_creeps: None,
                     threshold: None,
-                    spawn_target: None,
+                    spawn_target: Some(*source_position),
                 },
             ));
 
-            return;
+            continue;
         };
 
         spawn_request_args.push(SpawnRequestArgs::GroupUniform(
@@ -99,7 +101,7 @@ fn harvester_args(
                 priority,
                 max_creeps: None,
                 threshold: None,
-                spawn_target: None,
+                spawn_target: Some(*source_position),
             },
         ));
     }

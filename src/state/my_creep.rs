@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use enum_map::EnumMap;
 use screeps::{HasPosition, Part, Position};
 
-use crate::{constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType}, creep::my_creep::MyCreep};
+use crate::{
+    constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType},
+    creep::my_creep::MyCreep,
+};
 
 use super::game::GameState;
 
@@ -41,19 +44,15 @@ impl MyCreepState {
             active_parts_by_type: None,
         }
     }
-}
 
-pub struct MyCreepStateOps;
+    pub fn tick_update(&mut self) {
+        self.move_request = None;
+        self.action_pos = None;
+        self.move_target = None;
+        self.move_options = None;
 
-impl MyCreepStateOps {
-    pub fn update_state(state: &mut MyCreepState) {
-        state.move_request = None;
-        state.action_pos = None;
-        state.move_target = None;
-        state.move_options = None;
-        
-        state.parts = None;
-        state.parts_by_type = None;
-        state.active_parts_by_type = None;
+        self.parts = None;
+        self.parts_by_type = None;
+        self.active_parts_by_type = None;
     }
 }

@@ -1,6 +1,6 @@
 use std::{
     default,
-    fmt::{self, Debug},
+    fmt::{self, Debug}, u32,
 };
 
 use enum_map::{Enum, EnumMap};
@@ -10,6 +10,7 @@ use crate::memory::creep_memory::CreepMemory;
 
 use super::creep::{CreepPart, CreepRole};
 
+#[derive(Debug)]
 pub struct IndividualUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
@@ -23,6 +24,7 @@ pub struct IndividualUniformSpawnRequestArgs {
     pub spawn_target: Option<Position>,
 }
 
+#[derive(Debug)]
 pub struct GroupUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
@@ -37,6 +39,7 @@ pub struct GroupUniformSpawnRequestArgs {
     pub spawn_target: Option<Position>,
 }
 
+#[derive(Debug)]
 pub struct GroupDiverseSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
@@ -68,8 +71,38 @@ impl Debug for SpawnRequestArgs {
 
         write!(
             f,
-            "{:?}",
+            "role: {:?} default parts: {:?} extra parts: {:?} extra parts quota {:?} min cost: {:?} priority: {:?} request type: {:?}",
             role,
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.default_parts,
+                SpawnRequestArgs::GroupUniform(args) => &args.default_parts,
+                SpawnRequestArgs::GroupDiverse(args) => &args.default_parts,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.extra_parts,
+                SpawnRequestArgs::GroupUniform(args) => &args.extra_parts,
+                SpawnRequestArgs::GroupDiverse(args) => &args.extra_parts,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.extra_parts_quota,
+                SpawnRequestArgs::GroupUniform(args) => &args.extra_parts_quota,
+                SpawnRequestArgs::GroupDiverse(args) => &args.extra_parts_quota,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => args.min_cost_per_creep,
+                SpawnRequestArgs::GroupUniform(args) => args.min_cost_per_creep,
+                SpawnRequestArgs::GroupDiverse(args) => args.min_cost_per_creep,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => args.priority,
+                SpawnRequestArgs::GroupUniform(args) => args.priority,
+                SpawnRequestArgs::GroupDiverse(args) => args.priority,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => "IndividualUniform",
+                SpawnRequestArgs::GroupUniform(args) => "GroupUniform",
+                SpawnRequestArgs::GroupDiverse(args) => "GroupDiverse",
+            },
         )
     }
 }
@@ -160,3 +193,6 @@ pub mod spawn_priority_bounds {
     pub const ANTIFA: (f32, f32) = (0.0, 1000.0);
     pub const SCOUT: (f32, f32) = (0.0, 1000.0);
 }
+
+/// The minimum cost to spawn a creep (say, with 1 MOVE part)
+pub const MIN_SPAWN_COST: u32 = 50;

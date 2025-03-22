@@ -127,7 +127,7 @@ fn scout(
     };
 
     match room_memory.room_type {
-        StaticRoomType::Neutral => match memory.remotes.get(room_name) {
+        StaticRoomType::Claimable => match memory.remotes.get(room_name) {
             Some(remote_memory) => {}
             // If there is no remote memory, try to construct one
             None => {

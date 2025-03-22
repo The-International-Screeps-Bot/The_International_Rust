@@ -10,7 +10,7 @@ use crate::{
             PARTS_BY_PRIORITY_PART,
         },
         general::{FlowResult, GeneralError, GeneralResult},
-        spawning::{SpawnRequest, SpawnRequestArgs},
+        spawning::{SpawnRequest, SpawnRequestArgs, MIN_SPAWN_COST},
     },
     international::collective_ops::new_creep_id,
     memory::{game_memory::GameMemory, room_memory::RoomMemory},
@@ -24,6 +24,13 @@ use super::{
 };
 
 pub fn try_spawn_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+    let commune_state = game_state.commune_states.get(room_name).unwrap();
+    if commune_state.spawn_energy_capacity < MIN_SPAWN_COST {
+        return;
+    }
+    
+    // Organize spawns by spawning status
+    
     let spawns = room_ops::structures_by_type(room_name, game_state).spawn.clone();
 
     let mut active_spawns: Vec<&StructureSpawn> = Vec::new();
@@ -36,8 +43,6 @@ pub fn try_spawn_creeps(room_name: &RoomName, game_state: &mut GameState, memory
         }
     }
 
-    info!("A");
-
     try_use_inactive_spawns(room_name, game_state, memory, &mut inactive_spawns);
 }
 
@@ -47,7 +52,6 @@ fn try_use_inactive_spawns(
     memory: &mut GameMemory,
     inactive_spawns: &mut Vec<&StructureSpawn>,
 ) {
-    
     if inactive_spawns.is_empty() {
         return;
     }
@@ -56,11 +60,9 @@ fn try_use_inactive_spawns(
         spawn_request_arg_services::create_spawn_request_args(room_name, game_state, memory);
 
     let room = game_state.rooms.get(room_name).unwrap();
-
     let mut spawn_energy_remaining = room.energy_available();
 
-    info!("B");
-    debug!("spawn_requests_args: {:?}", spawn_requests_args);
+    info!("spawn_requests_args: {:?}", spawn_requests_args);
 
     for spawn_request_args in spawn_requests_args {
         let mut spawn_requests = match spawn_request_args {

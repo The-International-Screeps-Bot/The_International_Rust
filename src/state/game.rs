@@ -12,9 +12,8 @@ use screeps::{
 
 use super::{
     commune::{self, CommuneState},
-    creep::CreepStateOps,
     market::MarketState,
-    my_creep::{MyCreepState, MyCreepStateOps},
+    my_creep::{MyCreepState},
     room::RoomState,
     segments::Segments,
     structure::{self, StructuresState},
@@ -51,7 +50,6 @@ pub struct GameState {
     pub my_creep_states: HashMap<String, MyCreepState>,
     /// Current scout targets by scout creeps
     pub scout_targets: HashSet<RoomName>,
-    pub highest_rcl: u8,
     pub intervals: TickIntervals,
     pub segments: Segments,
 }
@@ -75,7 +73,6 @@ impl GameState {
             creep_states: HashMap::new(),
             my_creep_states: HashMap::new(),
             scout_targets: HashSet::new(),
-            highest_rcl: 0,
             intervals: TickIntervals::new(),
             segments: Segments::new(),
         }
@@ -88,7 +85,8 @@ impl GameState {
         self.update_my_creeps();
         // TODO
         // GameStateOps::update_account_power_creeps(self);
-        self.update_rooms(memory);
+        self.update_rooms();
+        self.update_communes(memory);
         self.update_creep_id_index();
 
         // state type updating
@@ -102,7 +100,6 @@ impl GameState {
         //
 
         self.update_terminal_communes();
-        self.find_highest_rcl();
     }
 
     fn update_my_creeps(&mut self) {
@@ -110,13 +107,7 @@ impl GameState {
 
         let js_creeps = screeps::game::creeps();
 
-        for creep_name in js_creeps.keys() {
-            let Some(any_creep) = js_creeps.get(creep_name.clone())
-            /* .and_then(|creep| OwnedCreep::new(&creep).ok()) */
-            else {
-                continue;
-            };
-
+        for (creep_name, any_creep) in js_creeps.entries() {
             let Some(creep) = MyCreep::new(&any_creep).ok() else {
                 continue;
             };
@@ -131,7 +122,7 @@ impl GameState {
                     .insert(creep_name.clone(), CreepState::new(creep_name.as_str()));
             }
 
-            self.creeps.insert(creep.inner().name(), creep);
+            self.creeps.insert(creep_name, creep);
         }
     }
 
@@ -146,23 +137,25 @@ impl GameState {
     //     }
     // }
 
-    fn update_rooms(&mut self, memory: &mut GameMemory) {
+    fn update_rooms(&mut self) {
         self.rooms.clear();
-        self.communes.clear();
 
         let js_rooms = screeps::game::rooms();
 
-        for room_name in js_rooms.keys() {
-            let Some(room) = js_rooms.get(room_name) else {
-                continue;
-            };
-
+        for (room_name, room) in js_rooms.entries() {
             self.room_states
                 .entry(room_name)
                 .or_insert_with(|| RoomState::new(&room, room_name));
 
             self.rooms.insert(room_name, room);
+        }
+    }
+    
+    fn update_communes(&mut self, memory: &mut GameMemory) {
+        self.communes.clear();
 
+        let room_names = self.rooms.keys().cloned().collect::<Vec<RoomName>>();
+        for room_name in room_names {
             self.try_update_commune(&room_name, memory);
         }
     }
@@ -227,7 +220,7 @@ impl GameState {
             .retain(|creep_name, _| self.creeps.contains_key(creep_name));
 
         for (creep_name, my_creep_state) in &mut self.my_creep_states {
-            MyCreepStateOps::update_state(my_creep_state);
+            my_creep_state.tick_update();
         }
     }
 
@@ -237,7 +230,7 @@ impl GameState {
         }
 
         for (creep_name, creep_state) in &mut self.creep_states {
-            CreepStateOps::update_state(creep_state);
+            creep_state.tick_update();
         }
     }
 
@@ -249,19 +242,19 @@ impl GameState {
         self.structures_state.active_statuses.clear()
     }
 
-    fn find_highest_rcl(&mut self) {
-        let mut highest_rcl = 0;
+    // fn find_highest_rcl(&mut self) {
+    //     let mut highest_rcl = 0;
 
-        for (room_name, commune_state) in &self.commune_states {
-            if commune_state.rcl <= highest_rcl {
-                continue;
-            }
+    //     for (room_name, commune_state) in &self.commune_states {
+    //         if commune_state.rcl <= highest_rcl {
+    //             continue;
+    //         }
 
-            highest_rcl = commune_state.rcl;
-        }
+    //         highest_rcl = commune_state.rcl;
+    //     }
 
-        self.highest_rcl = highest_rcl
-    }
+    //     self.highest_rcl = highest_rcl
+    // }
 
     fn update_terminal_communes(&mut self) {
         let mut terminal_communes: HashSet<RoomName> = HashSet::new();

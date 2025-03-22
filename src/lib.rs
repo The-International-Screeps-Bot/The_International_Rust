@@ -34,6 +34,7 @@ mod room;
 mod settings;
 mod state;
 mod structures;
+mod tick_init;
 mod utils;
 
 thread_local! {
@@ -51,16 +52,19 @@ static INIT: std::sync::Once = std::sync::Once::new();
 
 #[wasm_bindgen(js_name = loop)]
 pub fn game_loop() {
+    let start_cpu = game::cpu::get_used();
+
     #[cfg(feature = "profile")]
     {
-        screeps_timing::start_trace(Box::new(|| {
-            (screeps::game::cpu::get_used() * 1000.0) as u64
-        }));
+        screeps_timing::start_trace(Box::new(|| (start_cpu * 1000.0) as u64));
     }
 
     let tick = game::time();
     let bucket = game::cpu::bucket();
-    info!("Starting game tick {} with {} bucket", tick, bucket);
+    info!(
+        "Starting game tick {} with {} bucket starting at used CPU: {}",
+        tick, bucket, start_cpu
+    );
 
     INIT.call_once(|| {
         init::init();
@@ -75,7 +79,7 @@ pub fn game_loop() {
             });
         });
 
-        memory.write();
+        memory.write_json();
     });
 
     #[cfg(feature = "profile")]
@@ -87,7 +91,12 @@ pub fn game_loop() {
         }
     }
 
-    info!("Ending tick {}: {:.3} CPU", tick, game::cpu::get_used());
+    info!(
+        "Ending tick: {} lost CPU: {:.3} used CPU: {:.3}",
+        tick,
+        game::cpu::get_used(),
+        game::cpu::get_used() - start_cpu
+    );
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
@@ -101,6 +110,8 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
     stat_services::tick_update(game_state, memory);
+    
+    room_services::organize_creeps(game_state, memory);
 
     my_creep_services::clean_creep_memories(game_state, memory);
     room_services::try_scout_rooms(game_state, memory);
@@ -116,6 +127,7 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     commune_services::run_spawning(game_state, memory);
 
     role_services::try_scouts(game_state, memory);
+    role_services::try_harvest_commune_sources(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
 }

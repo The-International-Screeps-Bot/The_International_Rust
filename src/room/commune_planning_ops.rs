@@ -6,7 +6,7 @@ use crate::{
     memory::game_memory::GameMemory,
     pathfinding::{
         pathfinding_services::{self, PathfindingOpts},
-        room_pather,
+        room_pather::{self, PathGoals},
     },
     state::{game::GameState, room::CommunePlan},
 };
@@ -113,11 +113,8 @@ fn find_fast_filler_start_positions(
 
         start_positions.push(source_pos);
 
-        let mut goals: HashMap<Position, u32> = HashMap::new();
-        goals.insert(controller_pos, 1);
-
         if let Ok(path) =
-            pathfinding_services::try_find_path(&source_pos, &goals, PathfindingOpts::new(), memory)
+            pathfinding_services::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), memory)
         {
             let shortest_len = {
                 if let Some(shortest_path) = &shortest_path {

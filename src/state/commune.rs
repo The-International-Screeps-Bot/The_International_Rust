@@ -37,8 +37,8 @@ impl CommuneState {
 
         let mut source_harvest_strengths: Vec<u32> = Vec::new();
 
-        if let Some(commune_memory) = memory.communes.get(&room_name) {
-            for i in 0..commune_memory.source_positions.len() {
+        if let Some(harvestable_room_memory) = memory.harvestable_rooms.get(&room_name) {
+            for i in 0..harvestable_room_memory.source_positions.len() {
                 source_harvest_strengths.push(0);
             }
         }

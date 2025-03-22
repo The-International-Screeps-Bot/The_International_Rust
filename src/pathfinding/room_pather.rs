@@ -30,7 +30,19 @@ impl RoomPathfinderOpts {
 }
 
 /// Position -> range map
-pub type PathGoals = HashMap<Position, u32>;
+pub struct PathGoals(pub HashMap<Position, u8>);
+
+impl PathGoals {
+    pub fn new() -> Self {
+        Self (HashMap::new())
+    }
+    
+    pub fn new_from_pos(pos: Position, range: u8) -> Self {
+        let mut goals = HashMap::new();
+        goals.insert(pos, range);
+        Self(goals)
+    }
+}
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 struct PathfinderOpenSetEntry {
@@ -83,12 +95,13 @@ pub fn find_path(
     allowed_rooms: HashSet<RoomName>,
     opts: &RoomPathfinderOpts,
 ) -> Result<Vec<Position>, GeneralResult> {
+    log::info!("Tried to find a path");
     let origin_room_name = origin.room_name();
 
     let mut open_set = BinaryHeap::new();
     let mut visited = HashMap::new();
 
-    let goals_set: HashSet<Position> = goals.keys().copied().collect();
+    let goals_set: HashSet<Position> = goals.0.keys().copied().collect();
     let mut rooms_costs: HashMap<RoomName, SparseCostMatrix> = HashMap::new();
 
     open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_set, None));

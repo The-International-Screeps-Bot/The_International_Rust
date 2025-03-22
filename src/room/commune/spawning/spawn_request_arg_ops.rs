@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::f64;
 
 use enum_map::{enum_map, EnumMap};
+use log::debug;
 use screeps::{
     constants::creep::Part, BodyPart, Room, RoomName, SpawnOptions, Spawning, MAX_CREEP_SIZE,
 };
@@ -13,9 +14,7 @@ use crate::{
             GroupDiverseSpawnRequestArgs, GroupUniformSpawnRequestArgs,
             IndividualUniformSpawnRequestArgs, SpawnRequest, SpawnRequestArgs,
         },
-    },
-    memory::game_memory::GameMemory,
-    state::{commune::CommuneState, game::GameState, room::RoomState},
+    }, logging, memory::game_memory::GameMemory, state::{commune::CommuneState, game::GameState, room::RoomState}
 };
 
 pub fn spawn_request_individual_uniform(
@@ -102,7 +101,7 @@ pub fn spawn_request_individual_uniform(
             spawn_target: args.spawn_target,
         });
 
-        creeps_quota -= 1;
+        creeps_quota = creeps_quota.saturating_sub(1);
     }
 
     spawn_requests
@@ -221,7 +220,7 @@ pub fn spawn_request_group_diverse(
             spawn_target: args.spawn_target,
         });
 
-        max_creeps -= 1;
+        max_creeps = max_creeps.saturating_sub(1);
     }
 
     spawn_requests
@@ -244,7 +243,7 @@ pub fn spawn_request_group_uniform(
         game_state,
     );
 
-    let mut max_creeps: u32 = args.max_creeps.unwrap_or(u32::MAX);
+    let mut max_creeps = args.max_creeps.unwrap_or(u32::MAX);
 
     let mut extra_parts_quota = args.extra_parts_quota;
 
@@ -275,9 +274,8 @@ pub fn spawn_request_group_uniform(
 
                 cost += part_cost;
                 body_part_counts[(*part)] += 1;
+                parts_count += 1;
             }
-
-            parts_count += args.default_parts.len() as u32;
         }
 
         let mut stop = false;
@@ -314,8 +312,8 @@ pub fn spawn_request_group_uniform(
             spawn_target: args.spawn_target,
         });
 
-        extra_parts_quota -= parts_count;
-        max_creeps -= 1;
+        extra_parts_quota = extra_parts_quota.saturating_sub(parts_count);
+        max_creeps = max_creeps.saturating_sub(1);
     }
 
     spawn_requests

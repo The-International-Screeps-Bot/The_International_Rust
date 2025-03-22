@@ -22,7 +22,7 @@ use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::{
-        general::{FlowResult, GeneralError},
+        general::{FlowResult, GeneralError, GeneralResult},
         move_costs::{DEFAULT_SWAMP_COST, DEFAULT_WALL_COST, MAX_COST},
         room::{NotMyCreeps, MAX_REMOTE_ROOM_DISTANCE},
         structure::{
@@ -32,10 +32,8 @@ use crate::{
     memory::{
         game_memory::GameMemory,
         room_memory::{
-            AllyRoomMemory, CenterRoomMemory, EnemyRoomMemory, HighwayRoomMemory,
-            IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory,
-            RoomMemory, StaticRo,omType
-        },
+            AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
+        }, static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
     },
     pathfinding::{pathfinding_services::PathfindingOpts, portal_router, room_costs, route_costs},
     settings::Settings,
@@ -476,19 +474,17 @@ pub fn try_add_remote(
         // If the remote no longer has a valid commune, remove it's remote_memory
         if !game_state.communes.contains(&remote_memory.commune) {
             memory.remotes.remove(room_name);
-
-            memory
-                .neutral
-                .insert(*room_name, NeutralRoomMemory::new(room_name, game_state));
         }
     }
 
     // Check if the commune is blacklisted
     {
-        let neutral_memory = memory.neutral.get(room_name).unwrap();
-        if neutral_memory.remote_blacklist.contains(room_name) {
-            return FlowResult::Continue;
-        }
+        let claimable_room_memory = memory.harvestable_rooms.get_mut(room_name).unwrap();
+        if let Some(remote_blacklist) = &mut claimable_room_memory.remote_blacklist {
+            if remote_blacklist.contains(room_name) {
+                return FlowResult::Continue;
+            }
+        }   
     }
 
     // Check the linear distance
@@ -513,8 +509,10 @@ pub fn try_add_remote(
     if route.len() as u8 > MAX_REMOTE_ROOM_DISTANCE {
         debug!("Route too long for room {}", room_name);
 
-        let neutral_memory = memory.neutral.get_mut(room_name).unwrap();
-        neutral_memory.remote_blacklist.insert(*room_name);
+        let harvestable_room_memory = memory.harvestable_rooms.get_mut(room_name).unwrap();
+        if let Some(remote_blacklist) = &mut harvestable_room_memory.remote_blacklist {
+            remote_blacklist.insert(*room_name);
+        }
 
         return FlowResult::Continue;
     }
@@ -541,14 +539,9 @@ pub fn try_add_remote(
         }
 
         memory.remotes.remove(room_name);
-
-        memory
-            .neutral
-            .insert(*room_name, NeutralRoomMemory::new(room_name, game_state));
     }
 
     let mut remote_memory = RemoteRoomMemory::new(room_name, game_state, cost, source_paths);
-
     memory.remotes.insert(*room_name, remote_memory);
 
     FlowResult::Stop
@@ -644,75 +637,89 @@ pub fn default_move_costs(
     default_move_ops
 }
 
-pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+pub fn try_scout_room(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) -> Result<GeneralResult, GeneralError> {
+    // If we already have memory of this room
     if let Some(room_memory) = memory.rooms.get(room_name) {
-        return;
+        return Err(GeneralError::Fail);
     };
 
     // Otherwise the room has no memory
-
-    let mut room_memory = RoomMemory::new(game_state);
-    room_memory.room_type = find_room_type(room_name, game_state, memory);
+    
+    // Stop if we fail to construct memory for the room
+    let Ok(room_memory) = RoomMemory::new(room_name, game_state, memory) else {
+        return Err(GeneralError::Fail);
+    };
 
     match room_memory.room_type {
-        StaticRoomType::Ally => {
-            let ally_memory = AllyRoomMemory::new();
-            memory.ally.insert(*room_name, ally_memory);
+        StaticRoomType::Claimable => {
+            // Claimable
+            let Ok(claimable_memory) = ClaimableRoomMemory::new(room_name, game_state, memory) else {
+                return Err(GeneralError::Fail);
+            };
+            memory.claimable_rooms.insert(*room_name, claimable_memory);
+
+            // Harvestable
+            let Ok(harvestable_memory) = HarvestableRoomMemory::new(room_name, game_state) else {
+                return Err(GeneralError::Fail);
+            };
+            memory.harvestable_rooms.insert(*room_name, harvestable_memory);
         }
-        StaticRoomType::Enemy => {
-            let enemy_memory = EnemyRoomMemory::new();
-            memory.enemy.insert(*room_name, enemy_memory);
-        }
-        StaticRoomType::Center => {
-            let center_memory = CenterRoomMemory::new();
-            memory.center.insert(*room_name, center_memory);
-        }
-        StaticRoomType::Highway => {
+        StaticRoomType::CardinalHighway => {
+            // Highway
             let highway_memory = HighwayRoomMemory::new();
             memory.highway.insert(*room_name, highway_memory);
         }
+        StaticRoomType::Center => {
+            // Harvestable
+            let Ok(harvestable_memory) = HarvestableRoomMemory::new(room_name, game_state) else {
+                return Err(GeneralError::Fail);
+            };
+            memory.harvestable_rooms.insert(*room_name, harvestable_memory);
+        }
         StaticRoomType::Keeper => {
+            // Keeper room
             let keeper_memory = KeeperRoomMemory::new(room_name, game_state);
             memory.keeper.insert(*room_name, keeper_memory);
+
+            // Harvestable
+            let Ok(harvestable_memory) = HarvestableRoomMemory::new(room_name, game_state) else {
+                return Err(GeneralError::Fail);
+            };
+            memory.harvestable_rooms.insert(*room_name, harvestable_memory);
         }
         StaticRoomType::Intersection => {
-            let intersection_memory = IntersectionRoomMemory::new();
-            memory.intersection.insert(*room_name, intersection_memory);
+            // Highway
+            let highway_room_memory = HighwayRoomMemory::new();
+            memory.highway.insert(*room_name, highway_room_memory);
+
+            // Portal
+            let Ok(portal_memory) = PortalRoomMemory::new(room_name, game_state) else {
+                return Err(GeneralError::Fail);
+            };
+            memory.portal_rooms.insert(*room_name, portal_memory);
         }
-        _ => {}
     }
 
     memory.rooms.insert(*room_name, room_memory);
+    Ok(GeneralResult::Success)
 }
 
 pub fn find_room_type(
     room_name: &RoomName,
     game_state: &mut GameState,
     memory: &mut GameMemory,
-) -> StaticRoomType {
+) -> Result<StaticRoomType, GeneralError> {
     // Stop if we already have a room type
     if let Ok(room_type) = find_static_room_type(room_name) {
-        return room_type;
+        return Ok(room_type);
     };
 
     let controller = controller(room_name, game_state);
-    let Some(controller) = controller else {
-        return StaticRoomType::Neutral;
+    if let Some(controller) = controller {
+        return Ok(StaticRoomType::Claimable);
     };
 
-    let Some(owner) = controller.owner() else {
-        return StaticRoomType::Neutral;
-    };
-    let owner_name = owner.username();
-
-    if owner_name == memory.me {
-        return StaticRoomType::Commune;
-    }
-    if memory.allies.contains_key(&owner_name) {
-        return StaticRoomType::Ally;
-    }
-
-    StaticRoomType::Enemy
+    Err(GeneralError::Fail)
 }
 
 /// Attempt to deduce a static room type using some cheap math
@@ -727,7 +734,7 @@ pub fn find_static_room_type(room_name: &RoomName) -> Result<StaticRoomType, Gen
         return Ok(StaticRoomType::Intersection);
     }
     if ew == 0 || ns == 0 {
-        return Ok(StaticRoomType::Highway);
+        return Ok(StaticRoomType::CardinalHighway);
     }
     if room_x % 5 == 0 && room_y % 5 == 0 {
         return Ok(StaticRoomType::Center);

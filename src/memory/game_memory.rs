@@ -2,30 +2,44 @@ use std::{collections::HashMap, mem};
 
 use js_sys::JsString;
 use log::{error, info, warn};
-use screeps::{raw_memory, ConstructionSite, ObjectId, RoomName};
+use screeps::{ConstructionSite, ObjectId, RoomName, raw_memory};
 use serde::{Deserialize, Serialize};
 
-use crate::{constants::general::GeneralResult, international::collective_ops, memory::global_requests::DefenseRequests, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS};
+use crate::{
+    constants::general::GeneralResult, international::collective_ops, memory::global_requests::DefenseRequests, room::room_ops::try_scout_room, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS
+};
 
 use super::{
-    ally::AllyMemory, creep_memory::{CreepMemory, PowerCreepMemory}, enemy::EnemyMemory, global_requests::{ClaimRequests, AttackRequests, WorkRequests}, room_memory::{AllyRoomMemory, CenterRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HighwayRoomMemory, IntersectionRoomMemory, KeeperRoomMemory, NeutralRoomMemory, RemoteRoomMemory, RoomMemory},
+    ally::AllyMemory,
+    creep_memory::{CreepMemory, PowerCreepMemory},
+    enemy::EnemyMemory,
+    global_requests::{AttackRequests, ClaimRequests, WorkRequests},
+    room_memory::{
+        AllyRoomMemory, CommuneRoomMemory, EnemyRoomMemory, HarvestableRoomMemory,
+        HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory,
+    },
+    static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
 };
 
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub struct GameMemory {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "0")]
     pub breaking_version: Option<u32>,
+    #[serde(rename = "1")]
     pub me: String,
+    #[serde(rename = "2")]
     pub rooms: HashMap<RoomName, RoomMemory>,
     pub remotes: HashMap<RoomName, RemoteRoomMemory>,
     pub communes: HashMap<RoomName, CommuneRoomMemory>,
+    pub claimable_rooms: HashMap<RoomName, ClaimableRoomMemory>,
     pub highway: HashMap<RoomName, HighwayRoomMemory>,
-    pub intersection: HashMap<RoomName, IntersectionRoomMemory>,
-    pub center: HashMap<RoomName, CenterRoomMemory>,
+    pub portal_rooms: HashMap<RoomName, PortalRoomMemory>,
+    pub harvestable_rooms: HashMap<RoomName, HarvestableRoomMemory>,
     pub keeper: HashMap<RoomName, KeeperRoomMemory>,
     pub ally: HashMap<RoomName, AllyRoomMemory>,
     pub enemy: HashMap<RoomName, EnemyRoomMemory>,
-    pub neutral: HashMap<RoomName, NeutralRoomMemory>,
     pub creeps: HashMap<String, CreepMemory>,
     pub power_creeps: HashMap<String, PowerCreepMemory>,
     pub work_requests: WorkRequests,
@@ -36,12 +50,11 @@ pub struct GameMemory {
     // Consider putting construction sites in a segment
     pub construction_sites: HashMap<ObjectId<ConstructionSite>, u32>,
     pub allies: HashMap<String, AllyMemory>,
-    pub enemies: HashMap<String, EnemyMemory>
+    pub enemies: HashMap<String, EnemyMemory>,
 }
 
 impl GameMemory {
     pub fn new(breaking_version: Option<u32>) -> Self {
-
         info!("constructing new GameMemory");
 
         GameMemory {
@@ -50,13 +63,13 @@ impl GameMemory {
             rooms: HashMap::new(),
             remotes: HashMap::new(),
             communes: HashMap::new(),
+            claimable_rooms: HashMap::new(),
             highway: HashMap::new(),
-            intersection: HashMap::new(),
-            center: HashMap::new(),
+            portal_rooms: HashMap::new(),
+            harvestable_rooms: HashMap::new(),
             keeper: HashMap::new(),
             ally: HashMap::new(),
             enemy: HashMap::new(),
-            neutral: HashMap::new(),
             creeps: HashMap::new(),
             power_creeps: HashMap::new(),
             work_requests: WorkRequests::new(),
@@ -79,14 +92,12 @@ impl GameMemory {
                 error!("memory parse error on initial read {:?}", err);
 
                 // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
-                SETTINGS.with_borrow(|settings| {
-                    GameMemory::new(Some(settings.breaking_version))
-                })
+                SETTINGS.with_borrow(|settings| GameMemory::new(Some(settings.breaking_version)))
             }
         }
     }
 
-    pub fn write(&mut self) {
+    pub fn write_json(&self) {
         match serde_json::to_string(self) {
             Ok(v) => raw_memory::set(&JsString::from(v)),
             Err(e) => {
@@ -94,18 +105,20 @@ impl GameMemory {
             }
         }
     }
+    
+    // pub fn write_base64_bitcode(&self) {
+    //     let bitcode = bitcode;
+    //     let base64 = base64_light::base64_encode_bytes(bitcode);
+    //     raw_memory::set(&JsString::from(base64));
+    // }
 
     pub fn tick_update(&mut self, game_state: &mut GameState, settings: &Settings) {
-        
         self.try_migrate(game_state, settings);
+        self.scout_visible_rooms(game_state);
         self.tick_update_commune_memory(game_state);
     }
 
-    pub fn try_migrate(
-        &mut self,
-        game_state: &GameState,
-        settings: &Settings,
-    ) -> GeneralResult {
+    pub fn try_migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
         if game_state.init_tick != game_state.tick {
             return GeneralResult::Fail;
         }
@@ -121,10 +134,7 @@ impl GameMemory {
         self.migrate(game_state, settings)
     }
 
-    fn migrate(&mut self,
-        game_state: &GameState,
-        settings: &Settings,
-    ) -> GeneralResult {
+    fn migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
         collective_ops::kill_all_creeps(game_state);
         mem::swap(self, &mut GameMemory::new(Some(settings.breaking_version)));
 
@@ -137,11 +147,36 @@ impl GameMemory {
     }
 
     pub fn tick_update_commune_memory(&mut self, game_state: &mut GameState) {
-
         let commune_names = game_state.communes.clone();
         for room_name in commune_names {
+            if self.communes.contains_key(&room_name) {
+                continue;
+            }
 
-            self.communes.entry(room_name).or_insert_with(|| CommuneRoomMemory::new(&room_name, game_state));
+            if let Ok(commune_memory) = CommuneRoomMemory::new(&room_name, game_state) {
+                self.communes.insert(room_name, commune_memory);
+            }
+        }
+    }
+
+    pub fn update_claimable_room_memory(&mut self, game_state: &mut GameState) {
+        let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
+        for room_name in room_names {
+            if self.claimable_rooms.contains_key(&room_name) {
+                continue;
+            };
+
+            if let Ok(claimable_memory) = ClaimableRoomMemory::new(&room_name, game_state, self) {
+                self.claimable_rooms.insert(room_name, claimable_memory);
+            }
+        }
+    }
+
+    pub fn scout_visible_rooms(&mut self, game_state: &mut GameState) {
+        let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
+
+        for room_name in room_names {
+            try_scout_room(&room_name, game_state, self);
         }
     }
 }

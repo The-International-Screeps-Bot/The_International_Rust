@@ -29,13 +29,9 @@ impl CreepState {
             active_parts_by_type: None,
         }
     }
-}
 
-pub struct CreepStateOps;
-
-impl CreepStateOps {
-    pub fn update_state(state: &mut CreepState) {
-        state.pos = None;
-        state.active_parts_by_type = None;
+    pub fn tick_update(&mut self) {
+        self.pos = None;
+        self.active_parts_by_type = None;
     }
 }

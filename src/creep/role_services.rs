@@ -1,3 +1,5 @@
+use screeps::RoomName;
+
 use crate::{constants::creep::CreepRole, memory::game_memory::GameMemory, state::game::GameState};
 
 use super::roles::{scout_ops, source_harvester_ops};
@@ -31,9 +33,7 @@ pub fn harvest_commune_sources(game_state: &mut GameState, memory: &mut GameMemo
     let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
-        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
-            
-        }
+        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {}
     }
 }
 
@@ -42,9 +42,7 @@ pub fn harvest_remote_sources(game_state: &mut GameState, memory: &mut GameMemor
     let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
-        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
-            
-        }
+        for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {}
     }
 }
 
@@ -54,14 +52,19 @@ pub fn register_commune_harvest_strength(game_state: &mut GameState, memory: &mu
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
         for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
-            source_harvester_ops::register_harvest_strength(creep_name.as_str(), &room_name, game_state, memory)
+            source_harvester_ops::register_harvest_strength(
+                creep_name.as_str(),
+                &room_name,
+                game_state,
+                memory,
+            )
         }
     }
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_harvest_commune_sources(game_state: &mut GameState, memory: &mut GameMemory) {
-    let room_names = game_state.rooms.keys().cloned().collect::<Vec<_>>();
+    let room_names = game_state.rooms.keys().cloned().collect::<Vec<RoomName>>();
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
         for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {

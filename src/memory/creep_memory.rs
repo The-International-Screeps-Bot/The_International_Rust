@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::constants::creep::CreepRole;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CreepMemory {
     #[serde(rename = "0")]
     pub role: CreepRole,

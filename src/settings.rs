@@ -3,11 +3,9 @@ use std::collections::HashSet;
 use log::LevelFilter;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct Settings {
-    #[serde(rename = "0")]
     pub breaking_version: u32,
-    #[serde(rename = "1")]
     pub allies: HashSet<String>,
     pub log_filter: LevelFilter,
 }
@@ -21,7 +19,7 @@ impl Settings {
 
         Settings {
             allies,
-            breaking_version: 0,
+            breaking_version: 3,
             log_filter: LevelFilter::Info,
         }
     }
