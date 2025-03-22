@@ -11,7 +11,7 @@ pub fn get_adjacent_positions(pos: &Position) -> Vec<Position> {
                 continue;
             }
 
-            if !is_xy_in_room(x, y) {
+            if !is_xy_in_room(x as u8, y as u8) {
                 continue;
             }
 
@@ -32,7 +32,7 @@ pub fn get_adjacent_positions_conditional(pos: &Position, condition: &dyn Fn(&Po
                 continue;
             }
 
-            if !is_xy_in_room(x, y) {
+            if !is_xy_in_room(x as u8, y as u8) {
                 continue;
             }
 
@@ -63,11 +63,11 @@ pub fn get_adjacent_positions_unbounded(pos: &Position) -> Vec<Position> {
     adjacent_positions
 }
 
-pub fn for_positions_in_range_in_room(pos: &Position, range: i32, callback: &dyn Fn(&Position)) {
+pub fn for_positions_in_range_in_room(pos: &Position, range: u8, callback: &dyn Fn(&Position)) {
 
     let world_coords = pos.world_coords();
-    let pos_x = pos.x().0 as i32;
-    let pos_y = pos.y().0 as i32;
+    let pos_x = pos.x().0;
+    let pos_y = pos.y().0;
 
     for x in (pos_x - range)..=(range + pos_x) {
         for y in (pos_y - range)..=(pos_y + range) {
@@ -75,18 +75,18 @@ pub fn for_positions_in_range_in_room(pos: &Position, range: i32, callback: &dyn
             if !is_xy_in_room(x, y) {
                 continue;
             }
-            callback(&Position::from_world_coords(pos.world_coords().0 + x, pos.world_coords().1 + y));
+            callback(&Position::from_world_coords(pos.world_coords().0 + x as i32, pos.world_coords().1 + y as i32));
         }
     }
 }
 
-pub fn get_positions_in_range_in_room(pos: &Position, range: i32) -> Vec<Position> {
+pub fn get_positions_in_range_in_room(pos: &Position, range: u8) -> Vec<Position> {
 
     let mut positions = Vec::new();
 
     let world_coords = pos.world_coords();
-    let pos_x = pos.x().0 as i32;
-    let pos_y = pos.y().0 as i32;
+    let pos_x = pos.x().0;
+    let pos_y = pos.y().0;
 
     for x in (pos_x - range)..=(range + pos_x) {
         for y in (pos_y - range)..=(pos_y + range) {
@@ -95,7 +95,7 @@ pub fn get_positions_in_range_in_room(pos: &Position, range: i32) -> Vec<Positio
                 continue;
             }
             
-            let new_pos = Position::from_world_coords(pos.world_coords().0 + x, pos.world_coords().1 + y);
+            let new_pos = Position::from_world_coords(pos.world_coords().0 + x as i32, pos.world_coords().1 + y as i32);
             positions.push(new_pos);
         }
     }
@@ -103,9 +103,9 @@ pub fn get_positions_in_range_in_room(pos: &Position, range: i32) -> Vec<Positio
     positions
 }
 
-pub fn is_xy_in_room(x: i32, y: i32) -> bool {
+pub fn is_xy_in_room(x: u8, y: u8) -> bool {
 
-    x >= 0 && y >= 0 && x < ROOM_SIZE.into() && y < ROOM_SIZE.into()
+    x < ROOM_SIZE.into() && y < ROOM_SIZE.into()
 }
 
 pub fn is_xy_exit(x: i32, y: i32) -> bool {

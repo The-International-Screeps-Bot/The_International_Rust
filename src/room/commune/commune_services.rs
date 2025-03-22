@@ -24,16 +24,6 @@ pub fn run_spawning(game_state: &mut GameState, memory: &mut GameMemory) {
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
-
-    let room_names = game_state.communes.clone();
-
-    for room_name in room_names {
-        my_creep_services::move_creeps(game_state, memory);
-    }
-}
-
-#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_active_safe_mode(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names = game_state.communes.clone();
 

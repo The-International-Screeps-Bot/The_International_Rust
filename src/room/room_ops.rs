@@ -28,26 +28,18 @@ use crate::{
         structure::{
             OldOrganizedStructures, OrganizedStructures, SpawnsByActivity, IMPASSIBLE_STRUCTURES,
         },
-    },
-    memory::{
+    }, creep::creep_move_ops::try_run_move_request, memory::{
         game_memory::GameMemory,
         room_memory::{
             AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
         }, static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
-    },
-    pathfinding::{pathfinding_services::PathfindingOpts, portal_router, room_costs, route_costs},
-    settings::Settings,
-    state::{
-        game::GameState,
-        market::MarketState,
-        room::{self, NotMyConstructionSites, RoomState},
-    },
-    utils::{
+    }, pathfinding::{pathfinding_services::PathfindingOpts, portal_router, room_costs, route_costs}, settings::Settings, state::{
+        commune::CommuneState, game::GameState, market::MarketState, room::{self, NotMyConstructionSites, RoomState}
+    }, utils::{
         self,
         general::{for_adjacent_positions, GeneralUtils},
         pos::{for_positions_in_range_in_room, get_positions_in_range_in_room},
-    },
-    GAME_STATE,
+    }, GAME_STATE
 };
 
 /// Acquires and caches structures in the room based on their structure type
@@ -90,7 +82,7 @@ pub fn enemy_threat_positions<'state>(
 
     for creep in enemy_creeps {
         let positions =
-            get_positions_in_range_in_room(&creep.pos(), CREEP_RANGED_ACTION_RANGE.into());
+            get_positions_in_range_in_room(&creep.pos(), CREEP_RANGED_ACTION_RANGE );
 
         for pos in positions {
             threat_positions.set(pos.xy(), MAX_COST);
@@ -432,6 +424,9 @@ pub fn room_status(room_name: &RoomName, game_state: &mut GameState) -> RoomStat
 }
 
 pub fn move_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+    
+    
+    
     let Some(room) = game_state.rooms.get_mut(room_name) else {
         return;
     };
@@ -457,6 +452,7 @@ pub fn test_name(room_name: &RoomName, room: &Room, game_state: &mut GameState, 
 
 } */
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_add_remote(
     room_name: &RoomName,
     scouting_room_name: &RoomName,
@@ -547,6 +543,7 @@ pub fn try_add_remote(
     FlowResult::Stop
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTerrain {
     {
         let room_state = game_state.room_states.get(room_name).unwrap();
@@ -565,6 +562,7 @@ pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTer
     terrain
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> SparseCostMatrix {
     {
         let room_state = game_state.room_states.get(room_name).unwrap();
@@ -600,6 +598,7 @@ pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> Spars
     sparse_terrain
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn default_move_costs(
     room_name: &RoomName,
     game_state: &mut GameState,
@@ -788,4 +787,12 @@ pub fn range(room_name1: &RoomName, room_name2: &RoomName) -> u32 {
     let y2 = room_name2.y_coord();
 
     utils::general::xy_range(x1, y1, x2, y2)
+}
+
+pub fn try_create_commune_state(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
+    // If the commune doesn't have a state, create one
+    if !game_state.commune_states.contains_key(room_name) {
+        game_state.commune_states
+            .insert(*room_name, CommuneState::new(*room_name, game_state, memory));
+    };
 }

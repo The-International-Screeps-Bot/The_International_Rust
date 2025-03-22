@@ -107,6 +107,8 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
+    room_services::try_create_commune_states(game_state, memory);
+    
     stat_services::tick_update(game_state, memory);
 
     my_creep_services::clean_creep_memories(game_state, memory);
@@ -126,6 +128,8 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     role_services::try_scouts(game_state, memory);
     role_services::try_harvest_commune_sources(game_state, memory);
+    
+    room_services::move_creeps(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
     memory.write_json();

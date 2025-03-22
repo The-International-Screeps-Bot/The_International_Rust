@@ -6,6 +6,7 @@ use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory};
 
 use super::pathfinding_services::{PathfindingOpts, RouteCallback};
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn find_route(
     origin: RoomName,
     goals: HashSet<RoomName>,
@@ -75,6 +76,7 @@ pub fn find_route(
     Err(GeneralResult::Fail)
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// navigate backwards accross our map of where tiles came from to construct a path
 fn find_path(room_name: &RoomName, path_from: &HashMap<RoomName, RoomName>) -> HashSet<RoomName> {
     let mut path = HashSet::new();
@@ -90,6 +92,7 @@ fn find_path(room_name: &RoomName, path_from: &HashMap<RoomName, RoomName>) -> H
     path
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// Provides a semi-accurate range cost that serves to limit the search area of the algorithm
 fn find_range_cost(
     room_name: &RoomName,
@@ -104,6 +107,7 @@ fn find_range_cost(
     origin_cost + goal_cost
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// Find cost as the lowest linear distance to any goal
 fn find_lowest_cost_goal(room_name: &RoomName, goals: &HashSet<RoomName>) -> u32 {
     let mut lowest_cost = f32::INFINITY as u32;

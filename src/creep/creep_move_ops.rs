@@ -17,6 +17,7 @@ use crate::{
 
 use super::my_creep_ops;
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn create_move_request(
     creep_name: &str,
     goals: &PathGoals,
@@ -40,6 +41,7 @@ pub fn create_move_request(
 
 fn assign_move_request(creep_name: &str) {}
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn assign_move_target_as_pos(
     creep_name: &str,
     game_state: &mut GameState,
@@ -54,6 +56,7 @@ pub fn assign_move_target_as_pos(
     creep_state.move_target = Some(pos);
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn assign_move_target(
     creep_name: &str,
     position: Position,
@@ -66,6 +69,7 @@ pub fn assign_move_target(
     creep_state.move_target = Some(position);
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_run_move_request(
     creep_name: &str,
     room_name: &RoomName,
@@ -106,6 +110,7 @@ pub fn try_run_move_request(
     assign_move_target_as_pos(creep_name, game_state, move_targets)
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 // Use a sparse cost matrix to optimize cost calculations
 fn run_move_request(
     creep_name: &str,
@@ -209,6 +214,7 @@ fn run_move_request(
     return i32::MAX;
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn get_move_options(
     creep_name: &str,
     room_name: &RoomName,
@@ -268,6 +274,7 @@ pub fn get_move_options(
     move_options
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_run_move_target(creep_name: &str, game_state: &GameState) {
     let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
     let Some(move_target) = creep_state.move_target else {

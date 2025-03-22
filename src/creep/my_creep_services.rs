@@ -73,6 +73,8 @@ pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
         register_move_targets(game_state, &room_name, &mut move_targets);
 
         run_move_requests(game_state, memory, &room_name, &mut move_targets);
+        
+        run_move_targets(&room_name, game_state);
     }
 }
 
@@ -83,7 +85,7 @@ fn register_move_targets(
     move_targets: &mut MoveTargets,
 ) {
     let room_state = game_state.room_states.get(&room_name).unwrap();
-    let creep_names: Vec<String> = room_state.my_creeps.clone();
+    let creep_names: Vec<String> = room_state.my_creeps.iter().cloned().collect();
 
     for creep_name in creep_names {
         assign_move_target_as_pos(creep_name.as_str(), game_state, move_targets)
@@ -98,7 +100,7 @@ fn run_move_requests(
     move_targets: &mut MoveTargets,
 ) {
     let room_state = game_state.room_states.get(&room_name).unwrap();
-    let creep_names: Vec<String> = room_state.my_creeps.clone();
+    let creep_names: Vec<String> = room_state.my_creeps.iter().cloned().collect();
 
     for creep_name in creep_names {
         creep_move_ops::try_run_move_request(
@@ -108,5 +110,14 @@ fn run_move_requests(
             memory,
             move_targets,
         );
+    }
+}
+
+fn run_move_targets(room_name: &RoomName, game_state: &GameState) {
+    let room_state = game_state.room_states.get(&room_name).unwrap();
+    let creep_names: Vec<String> = room_state.my_creeps.iter().cloned().collect();
+
+    for creep_name in creep_names {
+        creep_move_ops::try_run_move_target(creep_name.as_str(), game_state);
     }
 }

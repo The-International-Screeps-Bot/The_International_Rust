@@ -45,7 +45,7 @@ impl MyCreepState {
         }
     }
 
-    pub fn tick_update(&mut self) {
+    pub fn interval_update(&mut self) {
         self.move_request = None;
         self.action_pos = None;
         self.move_target = None;

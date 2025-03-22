@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use screeps::{ObjectId, Structure};
+use screeps::{ObjectId, Position, Structure};
 
 #[derive(Debug)]
 pub struct StructuresState {

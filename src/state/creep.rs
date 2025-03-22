@@ -29,9 +29,13 @@ impl CreepState {
             active_parts_by_type: None,
         }
     }
-
+    
     pub fn tick_update(&mut self) {
         self.pos = None;
         self.active_parts_by_type = None;
+    }
+
+    pub fn interval_update(&mut self) {
+        
     }
 }

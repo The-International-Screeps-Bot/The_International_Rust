@@ -5,22 +5,22 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    game::{self, shard},
     AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName, SharedCreepProperties,
     StructureType,
+    game::{self, shard},
 };
 
 use super::{
     commune::{self, CommuneState},
     market::MarketState,
-    my_creep::{MyCreepState},
+    my_creep::MyCreepState,
     room::RoomState,
     segments::Segments,
     structure::{self, StructuresState},
     tick_intervals::TickIntervals,
 };
 use crate::{
-    constants::creep::CreepRole,
+    constants::{creep::CreepRole, general::GeneralResult},
     creep::my_creep::{self, MyCreep},
     memory::{game_memory::GameMemory, room_memory::CommuneRoomMemory},
     room::room_ops,
@@ -36,6 +36,7 @@ pub struct GameState {
     pub init_tick: u32,
     pub tick: u32,
     pub shard: String,
+    pub highest_rcl: u8,
     pub creeps: HashMap<String, MyCreep>,
     pub account_power_creeps: HashMap<String, AccountPowerCreep>,
     pub rooms: HashMap<RoomName, Room>,
@@ -60,6 +61,7 @@ impl GameState {
             init_tick: game::time(),
             tick: game::time(),
             shard: shard::name(),
+            highest_rcl: 0,
             creeps: HashMap::new(),
             account_power_creeps: HashMap::new(),
             rooms: HashMap::new(),
@@ -98,7 +100,8 @@ impl GameState {
         self.update_structures_state();
 
         //
-
+        
+        self.find_highest_rcl();
         self.update_terminal_communes();
     }
 
@@ -143,44 +146,32 @@ impl GameState {
         let js_rooms = screeps::game::rooms();
 
         for (room_name, room) in js_rooms.keys().zip(js_rooms.values()) {
-            log::info!("Processing room: {} {:?}", room_name, room);
-            
-            self.room_states
-                .entry(room_name)
-                .or_insert_with(|| RoomState::new(&room, room_name));
+            if !self.room_states.contains_key(&room_name) {
+                self.room_states
+                    .insert(room_name, RoomState::new(&room, room_name, self));
+            }
 
             self.rooms.insert(room_name, room);
         }
     }
-    
+
     fn update_communes(&mut self, memory: &mut GameMemory) {
         self.communes.clear();
 
         let room_names = self.rooms.keys().cloned().collect::<Vec<RoomName>>();
         for room_name in room_names {
-            self.try_update_commune(&room_name, memory);
+            let room = self.rooms.get(&room_name).unwrap();
+
+            let Some(controller) = room.controller() else {
+                return;
+            };
+
+            if !controller.my() {
+                return;
+            }
+
+            self.communes.insert(room_name);
         }
-    }
-
-    // This should be moved elsewhere as it initializes commune memory as well as commune state
-    fn try_update_commune(&mut self, room_name: &RoomName, memory: &mut GameMemory) {
-        let room = self.rooms.get(room_name).unwrap();
-
-        let Some(controller) = room.controller() else {
-            return;
-        };
-
-        if !controller.my() {
-            return;
-        }
-
-        self.communes.insert(*room_name);
-
-        // If the commune doesn't have a state, create one
-        if !self.commune_states.contains_key(room_name) {
-            self.commune_states
-                .insert(*room_name, CommuneState::new(*room_name, self, memory));
-        };
     }
 
     fn update_creep_id_index(&mut self) {
@@ -188,19 +179,29 @@ impl GameState {
     }
 
     fn update_rooms_state(&mut self) {
+        for (room_name, room_state) in &mut self.room_states {
+            room_state.tick_update(room_name);
+
+            let has_vision = self.rooms.get(room_name).is_some();
+            room_state.track_vision(has_vision, self.tick);
+        }
+
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
 
-        self.room_states
-            .retain(|room_name, _| self.rooms.contains_key(room_name));
+        self.room_states.retain(|room_name, state| !state.expired);
 
         for (room_name, room_state) in &mut self.room_states {
-            room_state.tick_update(room_name);
+            room_state.interval_update(room_name);
         }
     }
 
     fn update_communes_state(&mut self) {
+        for (room_name, commune_state) in &mut self.commune_states {
+            commune_state.tick_update(room_name);
+        }
+        
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
@@ -209,7 +210,7 @@ impl GameState {
             .retain(|room_name, _| self.communes.contains(room_name));
 
         for (room_name, commune_state) in &mut self.commune_states {
-            commune_state.tick_update(room_name);
+            commune_state.interval_update(room_name);
         }
     }
 
@@ -218,11 +219,11 @@ impl GameState {
             return;
         }
 
-        self.creep_states
+        self.my_creep_states
             .retain(|creep_name, _| self.creeps.contains_key(creep_name));
 
         for (creep_name, my_creep_state) in &mut self.my_creep_states {
-            my_creep_state.tick_update();
+            my_creep_state.interval_update();
         }
     }
 
@@ -230,10 +231,13 @@ impl GameState {
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
+        
+        // Delete creep states every so often
+        self.creep_states = HashMap::new();
 
-        for (creep_name, creep_state) in &mut self.creep_states {
-            creep_state.tick_update();
-        }
+        // for (creep_name, creep_state) in &mut self.creep_states {
+        //     creep_state.interval_update();
+        // }
     }
 
     fn update_structures_state(&mut self) {
@@ -244,19 +248,19 @@ impl GameState {
         self.structures_state.active_statuses.clear()
     }
 
-    // fn find_highest_rcl(&mut self) {
-    //     let mut highest_rcl = 0;
+    fn find_highest_rcl(&mut self) {
+        let mut highest_rcl = 0;
 
-    //     for (room_name, commune_state) in &self.commune_states {
-    //         if commune_state.rcl <= highest_rcl {
-    //             continue;
-    //         }
+        for (room_name, commune_state) in &self.commune_states {
+            if commune_state.rcl <= highest_rcl {
+                continue;
+            }
 
-    //         highest_rcl = commune_state.rcl;
-    //     }
+            highest_rcl = commune_state.rcl;
+        }
 
-    //     self.highest_rcl = highest_rcl
-    // }
+        self.highest_rcl = highest_rcl
+    }
 
     fn update_terminal_communes(&mut self) {
         let mut terminal_communes: HashSet<RoomName> = HashSet::new();

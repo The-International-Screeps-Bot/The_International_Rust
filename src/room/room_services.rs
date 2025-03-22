@@ -7,6 +7,7 @@ use crate::{
 
 use super::room_ops;
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
     for room_name in &room_names {
@@ -14,10 +15,19 @@ pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_scout_rooms(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
     for room_name in &room_names {
         room_ops::try_scout_room(room_name, game_state, memory);
+    }
+}
+
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+pub fn try_create_commune_states(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names: Vec<RoomName> = game_state.communes.iter().cloned().collect();
+    for room_name in &room_names {
+        room_ops::try_create_commune_state(room_name, game_state, memory);
     }
 }
 

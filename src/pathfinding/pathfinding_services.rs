@@ -27,6 +27,7 @@ impl PathfindingOpts {
 pub type RoomCallback = fn(&RoomName) -> u8;
 pub type RouteCallback = fn(&RoomName, &GameMemory) -> u8;
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts, game_state: &mut GameState, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
     let mut allowed_rooms: HashSet<RoomName> = find_allowed_rooms(origin, goals, &opts, memory);
     let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state);
@@ -34,6 +35,7 @@ pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts
     path
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn find_allowed_rooms(origin: &Position, goals: &PathGoals, opts: &PathfindingOpts, memory: &GameMemory) -> HashSet<RoomName> {
     let mut allowed_rooms: HashSet<RoomName> = HashSet::new();
     allowed_rooms.insert(origin.room_name());
@@ -41,10 +43,16 @@ fn find_allowed_rooms(origin: &Position, goals: &PathGoals, opts: &PathfindingOp
     let goal_room_names = HashSet::from_iter(goals.0.iter().map(|pos| {
         pos.0.room_name()
     }));
+    // Early return if all the goals are in the origin room
+    // Comes at the cost of making creeps unable to move around intra-room obstacles
+    if goal_room_names.len() == 1 && goal_room_names.contains(&origin.room_name()) {
+        return allowed_rooms;
+    }
+    
     let Ok(route) = portal_router::find_route(origin.room_name(), goal_room_names, opts, memory) else {
         return allowed_rooms
     };
-
+    
     allowed_rooms.extend(route);
     allowed_rooms
 }

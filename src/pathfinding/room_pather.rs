@@ -3,11 +3,14 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet},
 };
 
-use screeps::{pathfinder::SearchGoal, Direction, Position, RoomName};
+use screeps::{Direction, Position, RoomName, RoomVisual, pathfinder::SearchGoal, visual};
 use screeps_utils::sparse_cost_matrix::{self, SparseCostMatrix};
 
 use crate::{
-    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS}, room::room_ops::{sparse_terrain, terrain}, state::game::GameState, utils::general::GeneralUtils
+    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS},
+    room::room_ops::{sparse_terrain, terrain},
+    state::game::GameState,
+    utils::{general::GeneralUtils, pos::get_positions_in_range_in_room},
 };
 
 use super::room_costs::economy_room_costs;
@@ -33,9 +36,9 @@ pub struct PathGoals(pub HashMap<Position, u8>);
 
 impl PathGoals {
     pub fn new() -> Self {
-        Self (HashMap::new())
+        Self(HashMap::new())
     }
-    
+
     pub fn new_from_pos(pos: Position, range: u8) -> Self {
         let mut goals = HashMap::new();
         goals.insert(pos, range);
@@ -88,6 +91,7 @@ impl PathfinderOpenSetEntry {
     }
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn find_path(
     origin: Position,
     goals: &PathGoals,
@@ -101,10 +105,19 @@ pub fn find_path(
     let mut open_set = BinaryHeap::new();
     let mut visited = HashMap::new();
 
-    let goals_set: HashSet<Position> = goals.0.keys().copied().collect();
+    let goals_exact = goals.0.keys().copied().collect::<HashSet<Position>>();
+    let goals_set = {
+        let mut goals_set = goals_exact.clone();
+        for goal in goals.0.iter() {
+            for position in get_positions_in_range_in_room(goal.0, *goal.1) {
+                goals_set.insert(position);
+            }
+        }
+        goals_set
+    };
     let mut rooms_costs: HashMap<RoomName, SparseCostMatrix> = HashMap::new();
 
-    open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_set, None));
+    open_set.push(PathfinderOpenSetEntry::new(origin, 0, &goals_exact, None));
     visited.insert(origin, None);
 
     while let Some(open_set_entry) = open_set.pop() {
@@ -120,7 +133,6 @@ pub fn find_path(
             if visited.contains_key(&pos) {
                 continue;
             }
-
             visited.insert(pos, Some(direction));
 
             // Need to check if it's sufficiently in range to any of the goals
@@ -129,6 +141,12 @@ pub fn find_path(
                 let mut path_vec = path.into_iter().collect::<Vec<Position>>();
                 path_vec.reverse();
                 
+                log::info!("Completed path: {:?}", path_vec);
+
+                let room_visual = RoomVisual::new(Some(pos.room_name()));
+                let points = path_vec.iter().map(|pos| (pos.x().u8() as f32, pos.y().u8() as f32)).collect();
+                let points = room_visual.poly(points, None);
+
                 return Ok(path_vec);
             }
 
@@ -136,14 +154,16 @@ pub fn find_path(
             if !opts.allow_outside_origin_room && room_name != origin_room_name {
                 continue;
             }
-
-            let room_costs = rooms_costs.entry(room_name).or_insert((opts.cost_callback)(&room_name, game_state));
+            log::info!("Room name: {}", room_name);
+            let room_costs = rooms_costs
+                .entry(room_name)
+                .or_insert((opts.cost_callback)(&room_name, game_state));
 
             // let room_costs = match rooms_costs.get(&room_name) {
             //     Some(costs) => costs,
             //     None => &rooms_costs.insert(room_name, (opts.cost_callback)(&room_name, game_state)).unwrap(),
             // };
-            
+
             let traverse_cost = room_costs.get(pos.xy());
             if traverse_cost == u8::MAX {
                 continue;
@@ -152,7 +172,7 @@ pub fn find_path(
             open_set.push(PathfinderOpenSetEntry::new(
                 pos,
                 open_set_entry.g_score + traverse_cost as u32,
-                &goals_set,
+                &goals_exact,
                 Some(direction),
             ));
         }
@@ -161,6 +181,7 @@ pub fn find_path(
     Err(GeneralResult::Fail)
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// Find cost as the lowest manhattan distance to any goal
 fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) -> u32 {
     let mut lowest_cost = u32::MAX;
@@ -176,13 +197,14 @@ fn get_heuristic_cost_to_closest_goal(pos: Position, goals: &HashSet<Position>) 
     lowest_cost
 }
 
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// navigate backwards across our map of where tiles came from to construct a path
 fn resolve_completed_path(
     pos: Position,
     visited: &HashMap<Position, Option<Direction>>,
-) -> HashSet<Position> {
-    let mut path = HashSet::new();
-    path.insert(pos);
+) -> Vec<Position> {
+    let mut path = Vec::new();
+    path.push(pos);
 
     let mut cursor_pos = pos;
 
@@ -190,7 +212,7 @@ fn resolve_completed_path(
         match optional_search_direction {
             Some(search_dir) => {
                 if let Ok(next_pos) = cursor_pos.checked_add((-*search_dir).into()) {
-                    path.insert(next_pos);
+                    path.push(next_pos);
                     cursor_pos = next_pos;
                 }
             }

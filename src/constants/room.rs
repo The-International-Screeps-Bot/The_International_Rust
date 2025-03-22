@@ -17,3 +17,4 @@ impl NotMyCreeps {
 
 pub const MAX_REMOTE_ROOM_DISTANCE: u8 = 5;
 pub const ROOM_DIMENSIONS: u8 = 50;
+pub const NO_VISION_STATE_EXPIRATION: u32 = 100;

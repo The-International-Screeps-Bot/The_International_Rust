@@ -30,7 +30,9 @@ screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = 
 screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
 enum-map = "2.7.3"
 fastrand = "2.3.0"
-base64_light = "0.1.5"
+# base64_light = "0.1.5"
+base32768 = "0.1.0"
+bitcode = { version = "0.6.6", features = ["serde"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

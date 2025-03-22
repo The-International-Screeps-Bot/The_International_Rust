@@ -69,9 +69,12 @@ impl CommuneState {
             planning_completed: false,
         }
     }
-
+    
     pub fn tick_update(&mut self, room_name: &RoomName) {
-        self.min_energy = None;
         self.spawns_by_activity = None;
+    }
+
+    pub fn interval_update(&mut self, room_name: &RoomName) {
+        self.min_energy = None;
     }
 }

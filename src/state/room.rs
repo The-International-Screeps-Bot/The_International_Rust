@@ -1,15 +1,19 @@
 use std::collections::HashMap;
 
-use enum_map::{enum_map, EnumMap};
+use enum_map::{EnumMap, enum_map};
 use screeps::{
-    find, game::map::RoomStatus, ConstructionSite, LocalRoomTerrain, ObjectId, Path, Position, Room, RoomName, Source, Structure, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
+    ConstructionSite, LocalRoomTerrain, ObjectId, Path, Position, Room, RoomName, Source,
+    Structure, StructureContainer, StructureController, StructureFactory, StructureNuker,
+    StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal,
+    StructureType, find, game::map::RoomStatus,
 };
 use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{
     constants::{
         creep::CreepRole,
-        room::NotMyCreeps,
+        general::{GeneralError, GeneralResult},
+        room::{NO_VISION_STATE_EXPIRATION, NotMyCreeps},
         structure::{OrganizedStructures, SpawnsByActivity},
     },
     creep::my_creep::MyCreep,
@@ -27,6 +31,8 @@ pub struct RoomState {
     pub sparse_terrain: Option<SparseCostMatrix>,
     pub default_move_ops: Option<SparseCostMatrix>,
     pub enemy_threat_positions: Option<SparseCostMatrix>,
+    pub last_seen: u32,
+    pub expired: bool,
 
     // Structures
     pub structures: Option<Vec<StructureObject>>,
@@ -50,7 +56,7 @@ pub struct RoomState {
 }
 
 impl RoomState {
-    pub fn new(room: &Room, room_name: RoomName) -> Self {
+    pub fn new(room: &Room, room_name: RoomName, game_state: &GameState) -> Self {
         Self {
             name: room_name,
             status: None,
@@ -58,6 +64,8 @@ impl RoomState {
             sparse_terrain: None,
             default_move_ops: None,
             enemy_threat_positions: None,
+            last_seen: game_state.tick,
+            expired: false,
             structures: None,
             structures_by_type: None,
             storage: None,
@@ -74,11 +82,30 @@ impl RoomState {
         }
     }
 
+    /// Track when the room was last seen.
+    /// If the room hasn't been seen for awhile, remove it
+    /// Otherwise if we do see the room, record the fact (reset timer)
+    pub fn track_vision(&mut self, has_vision: bool, tick: u32) {
+        if has_vision {
+            self.last_seen = tick;
+            return;
+        }
+
+        // We don't have vision
+
+        // If the room hasn't been seen for awhile, record that it is expired
+        if tick - self.last_seen >= NO_VISION_STATE_EXPIRATION {
+            self.expired = true;
+        }
+    }
+
     pub fn tick_update(&mut self, room_name: &RoomName) {
-        self.terrain = None;
-        self.sparse_terrain = None;
-        self.default_move_ops = None;
-        self.enemy_threat_positions = None;
+        self.my_construction_sites = None;
+        self.not_my_construction_sites = None;
+
+        self.my_creeps = Vec::new();
+        self.creeps_by_role = creeps_by_role();
+        self.not_my_creeps = None;
 
         self.structures = None;
         self.structures_by_type = None;
@@ -86,12 +113,13 @@ impl RoomState {
         self.terminal = None;
         self.controller = None;
 
-        self.my_construction_sites = None;
-        self.not_my_construction_sites = None;
+        self.enemy_threat_positions = None;
+    }
 
-        self.my_creeps = Vec::new();
-        self.creeps_by_role = creeps_by_role();
-        self.not_my_creeps = None;
+    pub fn interval_update(&mut self, room_name: &RoomName) {
+        self.terrain = None;
+        self.sparse_terrain = None;
+        self.default_move_ops = None;
     }
 }
 
