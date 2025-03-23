@@ -7,16 +7,13 @@ use screeps::{Direction, Position, RoomName, RoomVisual, pathfinder::SearchGoal,
 use screeps_utils::sparse_cost_matrix::{self, SparseCostMatrix};
 
 use crate::{
-    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS},
-    room::room_ops::{sparse_terrain, terrain},
-    state::game::GameState,
-    utils::{general::GeneralUtils, pos::get_positions_in_range_in_room},
+    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS}, memory::game_memory::GameMemory, room::room_ops::{self, sparse_terrain, terrain}, state::game::GameState, utils::{general::GeneralUtils, pos::get_positions_in_range_in_room}
 };
 
 use super::room_costs::economy_room_costs;
 
 pub struct RoomPathfinderOpts {
-    pub cost_callback: fn(&RoomName, &mut GameState) -> SparseCostMatrix,
+    pub cost_callback: fn(&RoomName, &mut GameState, &GameMemory) -> SparseCostMatrix,
     pub allow_outside_origin_room: bool,
     pub avoid_enemy_attackers: bool,
 }
@@ -98,6 +95,7 @@ pub fn find_path(
     allowed_rooms: HashSet<RoomName>,
     opts: &RoomPathfinderOpts,
     game_state: &mut GameState,
+    memory: &GameMemory,
 ) -> Result<Vec<Position>, GeneralResult> {
     log::info!("Trying to find a path");
     let origin_room_name = origin.room_name();
@@ -109,7 +107,7 @@ pub fn find_path(
     let goals_set = {
         let mut goals_set = goals_exact.clone();
         for goal in goals.0.iter() {
-            for position in get_positions_in_range_in_room(goal.0, *goal.1) {
+            for position in get_positions_in_range_in_room(goal.0, 1) {
                 goals_set.insert(position);
             }
         }
@@ -140,12 +138,10 @@ pub fn find_path(
                 let path = resolve_completed_path(pos, &visited);
                 let mut path_vec = path.into_iter().collect::<Vec<Position>>();
                 path_vec.reverse();
-                
-                log::info!("Completed path: {:?}", path_vec);
 
                 let room_visual = RoomVisual::new(Some(pos.room_name()));
                 let points = path_vec.iter().map(|pos| (pos.x().u8() as f32, pos.y().u8() as f32)).collect();
-                let points = room_visual.poly(points, None);
+                room_visual.poly(points, None);
 
                 return Ok(path_vec);
             }
@@ -154,10 +150,10 @@ pub fn find_path(
             if !opts.allow_outside_origin_room && room_name != origin_room_name {
                 continue;
             }
-            log::info!("Room name: {}", room_name);
+
             let room_costs = rooms_costs
                 .entry(room_name)
-                .or_insert((opts.cost_callback)(&room_name, game_state));
+                .or_insert((opts.cost_callback)(&room_name, game_state, memory));
 
             // let room_costs = match rooms_costs.get(&room_name) {
             //     Some(costs) => costs,

@@ -38,11 +38,12 @@ pub fn drop_harvest(
     game_state: &mut GameState,
     memory: &mut GameMemory,
 ) -> CreepOperationResult {
+    info!("Trying to drop harvest");
     let creep = game_state.creeps.get(creep_name).unwrap();
 
     let source_pos = source.pos();
     if creep.inner().pos().is_near_to(source_pos) {
-        return match creep.inner().harvest(source) {
+        match creep.inner().harvest(source) {
             Ok(()) | Err(ErrorCode::NotEnough) => CreepOperationResult::Fail,
             Err(e) => {
                 warn!(
@@ -52,7 +53,7 @@ pub fn drop_harvest(
                 );
                 CreepOperationResult::Exception
             }
-        };
+        }
     } else {
         info!("{} is moving to source {}", creep.inner().name(), source.pos());
         // The creep needs to move to the source to harvest it.

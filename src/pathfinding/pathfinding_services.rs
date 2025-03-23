@@ -30,7 +30,7 @@ pub type RouteCallback = fn(&RoomName, &GameMemory) -> u8;
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts, game_state: &mut GameState, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
     let mut allowed_rooms: HashSet<RoomName> = find_allowed_rooms(origin, goals, &opts, memory);
-    let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state);
+    let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state, memory);
 
     path
 }

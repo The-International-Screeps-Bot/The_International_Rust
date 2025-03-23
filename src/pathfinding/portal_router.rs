@@ -12,7 +12,7 @@ pub fn find_route(
     goals: HashSet<RoomName>,
     opts: &PathfindingOpts,
     memory: &GameMemory,
-) -> Result<HashSet<RoomName>, GeneralResult> {
+) -> Result<Vec<RoomName>, GeneralResult> {
     let mut current_generation = HashSet::new();
     current_generation.insert(origin);
 
@@ -78,14 +78,14 @@ pub fn find_route(
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 /// navigate backwards accross our map of where tiles came from to construct a path
-fn find_path(room_name: &RoomName, path_from: &HashMap<RoomName, RoomName>) -> HashSet<RoomName> {
-    let mut path = HashSet::new();
-    path.insert(*room_name);
+fn find_path(room_name: &RoomName, path_from: &HashMap<RoomName, RoomName>) -> Vec<RoomName> {
+    let mut path = Vec::new();
+    path.push(*room_name);
 
     let mut next_room_name = path_from.get(room_name);
 
     while next_room_name.is_some() {
-        path.insert(*next_room_name.unwrap());
+        path.push(*next_room_name.unwrap());
         next_room_name = path_from.get(next_room_name.unwrap());
     }
 

@@ -1,22 +1,13 @@
 use std::{
     collections::{HashMap, HashSet},
     io::Error,
-    str::FromStr,
+    str::FromStr, u8,
 };
 
 use enum_map::{enum_map, EnumMap};
 use log::{debug, warn};
 use screeps::{
-    find,
-    game::{self, map::RoomStatus},
-    look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId,
-    OwnedStructureProperties, Position, Room, RoomCoordinate, RoomName, RoomTerrain, RoomXY,
-    SharedCreepProperties, Source, Structure, StructureContainer, StructureController,
-    StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore,
-    StructureKeeperLair, StructureLink, StructureNuker, StructureObject, StructureObserver,
-    StructurePowerBank, StructurePowerSpawn, StructureProperties, StructureRampart, StructureRoad,
-    StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType,
-    StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE,
+    find, game::{self, map::RoomStatus}, look, structure, ConstructionSite, Creep, HasPosition, LocalRoomTerrain, ObjectId, OwnedStructureProperties, Position, Room, RoomCoordinate, RoomName, RoomTerrain, RoomVisual, RoomXY, SharedCreepProperties, Source, Structure, StructureContainer, StructureController, StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLink, StructureNuker, StructureObject, StructureObserver, StructurePowerBank, StructurePowerSpawn, StructureProperties, StructureRampart, StructureRoad, StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType, StructureWall, Terrain, CREEP_RANGED_ACTION_RANGE
 };
 use screeps_utils::sparse_cost_matrix::{SparseCostMatrix, ROOM_AREA};
 
@@ -423,23 +414,6 @@ pub fn room_status(room_name: &RoomName, game_state: &mut GameState) -> RoomStat
     new_status
 }
 
-pub fn move_creeps(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    
-    
-    
-    let Some(room) = game_state.rooms.get_mut(room_name) else {
-        return;
-    };
-
-    let Some(room_state) = game_state.room_states.get_mut(room_name) else {
-        return;
-    };
-
-    let Some(room_memory) = memory.rooms.get_mut(room_name) else {
-        return;
-    };
-}
-
 /* pub fn test_state(room: &Room, room_state: &mut RoomState, game_state: &mut GameState, memory: &mut GameMemory) {
 
 }
@@ -567,8 +541,8 @@ pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> Spars
     {
         let room_state = game_state.room_states.get(room_name).unwrap();
 
-        if let Some(terrain) = &room_state.sparse_terrain {
-            return terrain.clone();
+        if let Some(sparse_terrain) = &room_state.sparse_terrain {
+            return sparse_terrain.clone();
         }
     }
     
@@ -584,10 +558,9 @@ pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> Spars
 
             let terrain_type = terrain.get_xy(room_xy);
             match terrain_type {
-                Terrain::Wall => sparse_terrain.set(room_xy, 255),
-                Terrain::Swamp => sparse_terrain.set(room_xy, 5),
-                Terrain::Plain => sparse_terrain.set(room_xy, 2),
-                _ => sparse_terrain.set(room_xy, 1),
+                Terrain::Wall => sparse_terrain.set(room_xy, u8::MAX),
+                Terrain::Swamp => sparse_terrain.set(room_xy, DEFAULT_SWAMP_COST),
+                _ => ()
             }
         }
     }
@@ -605,6 +578,7 @@ pub fn default_move_costs(
     memory: &GameMemory,
 ) -> SparseCostMatrix {
     {
+        // log::info!("room_name {} rooms {:?}", room_name, game_state.rooms);
         let room_state = game_state.room_states.get(room_name).unwrap();
 
         if let Some(default_move_ops) = &room_state.default_move_ops {
@@ -612,30 +586,7 @@ pub fn default_move_costs(
         }
     }
 
-    let mut default_move_ops = SparseCostMatrix::new();
-
-    // Avoid terrain
-
-    let terrain = terrain(room_name, game_state);
-    for x in 0..ROOM_DIMENSIONS {
-        for y in 0..ROOM_DIMENSIONS {
-            let room_xy = RoomXY {
-                x: RoomCoordinate::new(x).unwrap(),
-                y: RoomCoordinate::new(y).unwrap(),
-            };
-
-            let terrain_type = terrain.get_xy(room_xy);
-            match terrain_type {
-                Terrain::Swamp => {
-                    default_move_ops.set(room_xy, DEFAULT_SWAMP_COST);
-                }
-                Terrain::Wall => {
-                    default_move_ops.set(room_xy, DEFAULT_WALL_COST);
-                }
-                _ => {}
-            }
-        }
-    }
+    let mut default_move_ops = sparse_terrain(room_name, game_state);
 
     // Avoid impassible structures
 
@@ -645,7 +596,7 @@ pub fn default_move_costs(
             continue;
         }
 
-        default_move_ops.set(structure.pos().xy(), 255);
+        default_move_ops.set(structure.pos().xy(), u8::MAX);
     }
 
     // Avoid construction sites we own that are impassible
@@ -656,14 +607,14 @@ pub fn default_move_costs(
             continue;
         }
 
-        default_move_ops.set(construction_site.pos().xy(), 255);
+        default_move_ops.set(construction_site.pos().xy(), u8::MAX);
     }
 
     // Avoid all ally construction sites
 
     let consturction_sites = &not_my_construction_sites(room_name, game_state, memory).ally;
     for construction_site in consturction_sites {
-        default_move_ops.set(construction_site.pos().xy(), 255);
+        default_move_ops.set(construction_site.pos().xy(), u8::MAX);
     }
 
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
@@ -795,4 +746,18 @@ pub fn try_create_commune_state(room_name: &RoomName, game_state: &mut GameState
         game_state.commune_states
             .insert(*room_name, CommuneState::new(*room_name, game_state, memory));
     };
+}
+
+pub fn visualize_sparse_matrix(room_name: &RoomName, game_state: &GameState, matrix: &SparseCostMatrix) {
+
+    let room = game_state.rooms.get(room_name).unwrap();
+
+    let mut room_visual = RoomVisual::new(Some(*room_name));
+    for (coord, cost) in matrix.iter() {
+        if cost > 0 {
+            let x = coord.x.0;
+            let y = coord.y.0;
+            room_visual.text(x as f32, y as f32, format!("{}", cost), None);
+        }
+    }
 }

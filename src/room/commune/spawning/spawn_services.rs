@@ -83,7 +83,7 @@ fn try_use_inactive_spawns(
             }
         };
 
-        println!("Spawn requests: {:?}", spawn_requests);
+        log::info!("Spawn requests: {:?}", spawn_requests);
 
         spawn_requests.sort_by(|a, b| {
             a.priority.partial_cmp(&b.priority).unwrap()

@@ -15,6 +15,9 @@ use crate::{
 
 pub fn run_towers(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
     let mut towers = room_ops::structures_by_type(room_name, game_state).tower.clone();
+    if towers.is_empty() {
+        return; 
+    }
 
     if towers_creep_actions(room_name, game_state, memory, &mut towers) == TowersResult::Stop {
         return;
@@ -47,7 +50,7 @@ fn tower_my_creep_actions(
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
-    let mut creep_names = &mut room_state.my_creeps;
+    let mut creep_names = &mut room_state.my_creeps.clone();
     
     // Also make sure the creep isn't in enemy attack coords and hasn't been healed too often over the last few ticks (use a tower heal heat metric)
 

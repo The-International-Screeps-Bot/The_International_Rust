@@ -35,5 +35,5 @@ pub fn try_harvest(creep_name: &str, game_state: &mut GameState, memory: &mut Ga
 
     let source = sources.get(source_index).unwrap();
 
-    my_creep_ops::drop_harvest(&creep_name.to_string(), &source, game_state, memory);
+    my_creep_ops::drop_harvest(&creep_name.to_string(), source, game_state, memory);
 }

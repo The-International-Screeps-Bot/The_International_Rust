@@ -11,10 +11,7 @@ pub fn try_register_scout_targets(game_state: &mut GameState, memory: &mut GameM
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
 
-        let creep_names = room_state.creeps_by_role[CreepRole::Scout]
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>();
+        let creep_names = room_state.creeps_by_role[CreepRole::Scout].to_vec();
         for creep_name in creep_names {
             scout_ops::try_register_scout_target(&creep_name, game_state, memory);
         }
@@ -27,10 +24,7 @@ pub fn try_scouts(game_state: &mut GameState, memory: &mut GameMemory) {
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
 
-        let creep_names = room_state.creeps_by_role[CreepRole::Scout]
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>();
+        let creep_names = room_state.creeps_by_role[CreepRole::Scout].to_vec();
         for creep_name in creep_names {
             scout_ops::try_scout(&creep_name, &room_name, game_state, memory);
         }
@@ -77,6 +71,11 @@ pub fn try_harvest_commune_sources(game_state: &mut GameState, memory: &mut Game
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
         for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
+            let my_creep_state = game_state.my_creep_states.get_mut(creep_name.as_str()).unwrap();
+            if my_creep_state.spawning {
+                continue;
+            }
+
             source_harvester_ops::try_harvest(creep_name.as_str(), game_state, memory);
         }
     }

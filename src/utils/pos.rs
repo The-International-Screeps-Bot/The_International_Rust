@@ -88,7 +88,7 @@ pub fn get_positions_in_range_in_room(pos: &Position, range: u8) -> Vec<Position
     let pos_x = pos.x().0;
     let pos_y = pos.y().0;
 
-    for x in (pos_x - range)..=(range + pos_x) {
+    for x in (pos_x - range)..=(pos_x + range) {
         for y in (pos_y - range)..=(pos_y + range) {
 
             if !is_xy_in_room(x, y) {
@@ -105,10 +105,10 @@ pub fn get_positions_in_range_in_room(pos: &Position, range: u8) -> Vec<Position
 
 pub fn is_xy_in_room(x: u8, y: u8) -> bool {
 
-    x < ROOM_SIZE.into() && y < ROOM_SIZE.into()
+    x < ROOM_SIZE && y < ROOM_SIZE
 }
 
-pub fn is_xy_exit(x: i32, y: i32) -> bool {
+pub fn is_xy_exit(x: u8, y: u8) -> bool {
 
-    x == 0 || y == 0 || x == ROOM_SIZE as i32 - 1 || y == ROOM_SIZE as i32 - 1
+    x == 0 || y == 0 || x == ROOM_SIZE - 1 || y == ROOM_SIZE - 1
 }

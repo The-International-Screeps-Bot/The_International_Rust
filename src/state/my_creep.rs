@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use enum_map::EnumMap;
-use screeps::{HasPosition, Part, Position};
+use screeps::{Creep, HasPosition, Part, Position, Spawning};
 
 use crate::{
     constants::creep::{ActiveCreepPartsByType, CreepParts, CreepPartsByType},
@@ -16,6 +16,8 @@ pub type MyCreepStates = HashMap<String, MyCreepState>;
 /// State for creeps we necessarily own
 pub struct MyCreepState {
     pub cost: Option<u32>,
+    pub spawning: bool,
+    pub fatigue: u32,
     /// The next position the creep intends to move to
     pub move_request: Option<Position>,
     /// The position which the creep is registered to move to or stay at
@@ -32,9 +34,11 @@ pub struct MyCreepState {
 }
 
 impl MyCreepState {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: &str, creep: &Creep) -> Self {
         Self {
             cost: None,
+            spawning: creep.spawning(),
+            fatigue: creep.fatigue(),
             move_request: None,
             move_target: None,
             move_options: None,
@@ -45,14 +49,21 @@ impl MyCreepState {
         }
     }
 
-    pub fn interval_update(&mut self) {
+    pub fn tick_update(&mut self, creep: &MyCreep) {
+        self.spawning = creep.inner().spawning();
+        self.fatigue = creep.inner().fatigue();
+
         self.move_request = None;
         self.action_pos = None;
         self.move_target = None;
         self.move_options = None;
 
+        self.active_parts_by_type = None;
+    }
+
+    pub fn interval_update(&mut self) {
+
         self.parts = None;
         self.parts_by_type = None;
-        self.active_parts_by_type = None;
     }
 }

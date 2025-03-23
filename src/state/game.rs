@@ -5,9 +5,7 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    AccountPowerCreep, Creep, OwnedStructureProperties, Room, RoomName, SharedCreepProperties,
-    StructureType,
-    game::{self, shard},
+    game::{self, shard}, AccountPowerCreep, Creep, MaybeHasId, OwnedStructureProperties, Room, RoomName, SharedCreepProperties, StructureType
 };
 
 use super::{
@@ -117,7 +115,12 @@ impl GameState {
 
             if !self.my_creep_states.contains_key(&creep_name) {
                 self.my_creep_states
-                    .insert(creep_name.clone(), MyCreepState::new(creep_name.as_str()));
+                    .insert(creep_name.clone(), MyCreepState::new(creep_name.as_str(), &any_creep));
+            }
+            else {
+                let my_creep_state = self.my_creep_states.get_mut(&creep_name).unwrap();
+                
+                my_creep_state.tick_update(&creep);
             }
 
             if !self.creep_states.contains_key(&creep_name) {
@@ -182,7 +185,7 @@ impl GameState {
         for (room_name, room_state) in &mut self.room_states {
             room_state.tick_update(room_name);
 
-            let has_vision = self.rooms.get(room_name).is_some();
+            let has_vision = self.rooms.contains_key(room_name);
             room_state.track_vision(has_vision, self.tick);
         }
 
@@ -215,6 +218,9 @@ impl GameState {
     }
 
     fn update_my_creeps_state(&mut self) {
+
+        // Tick update done in update_my_creeps
+
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
