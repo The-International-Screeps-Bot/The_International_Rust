@@ -43,7 +43,7 @@ impl RoomMemory {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Copy, Clone, Debug, Enum)]
 /// Distinct descriptions of rooms that implies certain properties and does not change over time
 pub enum StaticRoomType {
-    /// Rooms we control the controller of
+    /// Rooms we can potentially claim
     #[serde(rename = "0")]
     Claimable,
     /// The rooms surrounding the center of a sector that potentially contain portals
@@ -60,7 +60,7 @@ pub enum StaticRoomType {
     Intersection,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct HighwayRoomMemory {
     pub deposits: Vec<u32>,
     pub power_banks: Vec<u32>,
@@ -75,7 +75,7 @@ impl HighwayRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CommuneRoomMemory {
     /// The highest controller level the room has had without loosing ownership (implied by commune memory existing)
     highest_rcl: u8,
@@ -97,7 +97,7 @@ impl CommuneRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// General remote room memory
 pub struct RemoteRoomMemory {
     pub commune: RoomName,
@@ -127,7 +127,7 @@ impl RemoteRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InvaderCodeInfo {
     /// The level of the invader code
     pub level: u16,
@@ -135,7 +135,7 @@ pub struct InvaderCodeInfo {
     pub decay_by: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Rooms claimed by allies
 pub struct AllyRoomMemory {}
 
@@ -145,7 +145,7 @@ impl AllyRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Rooms claimed by enemies
 pub struct EnemyRoomMemory {
     pub terminal: bool,
@@ -163,7 +163,7 @@ impl EnemyRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Rooms with sources and minerals (In the base game all rooms with sources also have minerals)
 pub struct HarvestableRoomMemory {
     /* #[serde(with = "screeps::local::serde_position_packed")] */
@@ -204,7 +204,7 @@ impl HarvestableRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Rooms that have portals
 pub struct PortalRoomMemory {
     /// Portal positions

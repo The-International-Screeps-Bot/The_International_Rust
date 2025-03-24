@@ -1,5 +1,3 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "the_international_rust"
 version = "0.0.1"
@@ -33,6 +31,7 @@ fastrand = "2.3.0"
 # base64_light = "0.1.5"
 base32768 = "0.1.0"
 bitcode = { version = "0.6.6", features = ["serde"] }
+wasm-bindgen-test = "0.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

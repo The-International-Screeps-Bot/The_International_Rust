@@ -9,7 +9,7 @@ use crate::{constants::general::GeneralError, room::room_ops, state::game::GameS
 
 use super::{game_memory::GameMemory, room_memory::InvaderCodeInfo};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Used for all rooms that have a controller
 pub struct ClaimableRoomMemory {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,7 +62,7 @@ impl ClaimableRoomMemory {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct KeeperRoomMemory {
     pub keeper_positions: HashSet<Position>,
     pub invader_core_info: Option<InvaderCodeInfo>,

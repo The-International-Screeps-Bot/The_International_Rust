@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use screeps::RoomName;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct WorkRequest {
     /// May want to have multiple responders in the future
     pub responders: Option<HashSet<RoomName>>,
@@ -38,7 +38,7 @@ impl WorkRequest {
 
 pub type WorkRequests = HashMap<RoomName, WorkRequest>;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ClaimRequest {
     pub responder: Option<RoomName>,
     /// How many ticks to abandon the request for
@@ -71,7 +71,7 @@ impl ClaimRequest {
 
 pub type ClaimRequests = HashMap<RoomName, ClaimRequest>;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AttackRequest {
     pub responders: Option<RoomName>,
     pub abandon: Option<u32>,
@@ -101,7 +101,7 @@ impl AttackRequest {
 
 pub type AttackRequests = HashMap<RoomName, AttackRequest>;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct DefenseRequest {
     pub responders: Option<RoomName>,
     pub abandon: Option<u32>,

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{constants::{self, general::DEFAULT_DATA_DECAY, player}, state::game::GameState};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AllyMemory {
     /// reputation is used to measure the synergy of players with us. If players provide us lots of resource, assistance, etc. we will recognize that and consider it in our own decision making
     pub reputation: f32,

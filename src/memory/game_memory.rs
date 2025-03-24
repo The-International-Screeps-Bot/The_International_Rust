@@ -6,7 +6,7 @@ use screeps::{ConstructionSite, ObjectId, RoomName, raw_memory};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::general::GeneralResult, international::collective_ops, memory::global_requests::DefenseRequests, room::room_ops::try_scout_room, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS
+    constants::general::{GeneralError, GeneralResult}, international::collective_ops, memory::global_requests::DefenseRequests, room::room_ops::try_scout_room, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS
 };
 
 use super::{
@@ -21,14 +21,15 @@ use super::{
     static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub struct GameMemory {
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "0")]
-    pub breaking_version: Option<u32>,
+    pub breaking_version: u32,
     #[serde(rename = "1")]
     pub me: String,
+    #[serde(rename = "3")]
+    pub compressed_memory: bool,
     #[serde(rename = "2")]
     pub rooms: HashMap<RoomName, RoomMemory>,
     pub remotes: HashMap<RoomName, RemoteRoomMemory>,
@@ -54,11 +55,12 @@ pub struct GameMemory {
 }
 
 impl GameMemory {
-    pub fn new(breaking_version: Option<u32>) -> Self {
+    pub fn new(settings: &Settings) -> Self {
         info!("constructing new GameMemory");
 
         GameMemory {
-            breaking_version,
+            breaking_version: settings.breaking_version,
+            compressed_memory: settings.compressed_memory,
             me: utils::general::me().unwrap(),
             rooms: HashMap::new(),
             remotes: HashMap::new(),
@@ -84,19 +86,77 @@ impl GameMemory {
     }
 
     pub fn load_from_memory_or_default() -> GameMemory {
+        SETTINGS.with_borrow(|settings| {
+            let memory: Result<GameMemory, GeneralError> = match settings.compressed_memory {
+                true => GameMemory::read_base32768_bitcode_or_default(),
+                false => GameMemory::read_or_default(),
+            };
+            
+            if let Ok(memory) = memory {
+                return memory;
+            }
+            
+            // We were not able to create memory from the game's cache
+            
+            GameMemory::new(settings)
+        })
+        
+        // let stringified_memory = raw_memory::get().as_string().unwrap();
+        // info!("TRYING TO LOAD MEMORY");
+        // match serde_json::from_str::<GameMemory>(&stringified_memory) {
+        //     Ok(memory) => memory,
+        //     Err(err) => {
+        //         error!("memory parse error on initial read {:?}", err);
+
+        //         // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
+        //         // Doesn't seem to panic so, keep it ig?
+        //         SETTINGS.with_borrow(|settings| GameMemory::new(&settings))
+        //     }
+        // }
+    }
+    
+    fn read_or_default() -> Result<GameMemory, GeneralError> {
         let stringified_memory = raw_memory::get().as_string().unwrap();
-        info!("TRYING TO LOAD MEMORY");
+        
         match serde_json::from_str::<GameMemory>(&stringified_memory) {
-            Ok(memory) => memory,
+            Ok(memory) => Ok(memory),
             Err(err) => {
                 error!("memory parse error on initial read {:?}", err);
-
-                // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
-                SETTINGS.with_borrow(|settings| GameMemory::new(Some(settings.breaking_version)))
+                
+                Err(GeneralError::Fail)
             }
         }
     }
+    
+    fn read_base32768_bitcode_or_default() -> Result<GameMemory, GeneralError> {
+        let stringified_memory = raw_memory::get().as_string().unwrap();
+        
+        let mut bits = Vec::new();
+        // Try to decode memory to bitcode
+        let Ok(res) = base32768::decode(&stringified_memory, &mut bits) else {
+            error!("Failed to decode base32768 memory");
+            
+            return Err(GeneralError::Fail)
+        };
+        
+        // Try to decode bitcode to memory
+        let Ok(memory) = bitcode::deserialize::<GameMemory>(&bits) else {
+            error!("Failed to decode bitcode memory");
+            
+            return Err(GeneralError::Fail)
+        };
+        
+        Ok(memory)
+    }
 
+    pub fn write(&self) {
+        match self.compressed_memory {
+            true => self.write_bitcode_base32768(),
+            false => self.write_json(),
+        }
+    }
+
+    /// Write to memory using JSON (ew!)
     pub fn write_json(&self) {
         match serde_json::to_string(self) {
             Ok(v) => raw_memory::set(&JsString::from(v)),
@@ -105,12 +165,21 @@ impl GameMemory {
             }
         }
     }
-    
-    // pub fn write_base64_bitcode(&self) {
-    //     let bitcode = bitcode;
-    //     let base64 = base64_light::base64_encode_bytes(bitcode);
-    //     raw_memory::set(&JsString::from(base64));
-    // }
+
+    /// Write to memory using bitcode encoding + base32768
+    pub fn write_bitcode_base32768(&self) {
+        let Ok(bits) = bitcode::serialize(self) else {
+            warn!("Bitcode serialization error");
+            return;
+        };
+
+        let Ok(base) = base32768::encode(&bits) else {
+            warn!("Base32768 encoding error");
+            return;
+        };
+
+        raw_memory::set(&JsString::from(base));
+    }
 
     pub fn tick_update(&mut self, game_state: &mut GameState, settings: &Settings) {
         self.try_migrate(game_state, settings);
@@ -123,10 +192,8 @@ impl GameMemory {
             return GeneralResult::Fail;
         }
 
-        if let Some(breaking_version) = self.breaking_version {
-            if (breaking_version == settings.breaking_version) {
-                return GeneralResult::Fail;
-            }
+        if (self.breaking_version == settings.breaking_version) {
+            return GeneralResult::Fail;
         }
 
         // migrate
@@ -136,7 +203,7 @@ impl GameMemory {
 
     fn migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
         collective_ops::kill_all_creeps(game_state);
-        mem::swap(self, &mut GameMemory::new(Some(settings.breaking_version)));
+        mem::swap(self, &mut GameMemory::new(settings));
 
         GeneralResult::Success
     }
@@ -178,5 +245,35 @@ impl GameMemory {
         for room_name in room_names {
             try_scout_room(&room_name, game_state, self);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use screeps::RoomName;
+    use wasm_bindgen_test::*;
+
+    use crate::{constants::general::GeneralResult, memory::{game_memory::GameMemory, room_memory::{self, RoomMemory}}, settings::Settings, state::game::GameState};
+
+    #[wasm_bindgen_test]
+    fn test_memory_compressed() {
+        let mut memory = GameMemory::new(&Settings::new());
+        let mut game_state = GameState::new();
+        
+        let room_name = RoomName::new("W1N1").unwrap();
+        let room_memory = RoomMemory::new(&room_name, &mut game_state, &mut memory).ok().unwrap();
+        memory.rooms.insert(room_name, room_memory);
+
+        memory.write();
+        let read_memory = GameMemory::read_or_default();
+
+        // eprintln!("read memory {:?}", read_memory);
+        
+        assert!(read_memory.is_ok());
+    }
+    
+    #[wasm_bindgen_test]
+    fn pass() {
+        assert_eq!(1, 1);
     }
 }

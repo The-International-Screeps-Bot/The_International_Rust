@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone)]
 pub struct Settings {
     pub breaking_version: u32,
+    pub compressed_memory: bool,
     pub allies: HashSet<String>,
     pub log_filter: LevelFilter,
 }
@@ -19,7 +20,8 @@ impl Settings {
 
         Settings {
             allies,
-            breaking_version: 3,
+            compressed_memory: true,
+            breaking_version: 4,
             log_filter: LevelFilter::Info,
         }
     }

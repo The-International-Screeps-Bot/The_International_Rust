@@ -28,5 +28,5 @@ impl CreepMemory {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PowerCreepMemory {}

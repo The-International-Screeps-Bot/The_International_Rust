@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{constants::{self, general::DEFAULT_DATA_DECAY, player}, state::game::GameState};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct EnemyMemory {
     pub offensive_strength: f32,
     pub defensive_strength: f32,
