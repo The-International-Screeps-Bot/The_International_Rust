@@ -1,4 +1,4 @@
-use screeps::RoomName;
+use screeps::{Position, RoomName};
 use serde::{Deserialize, Serialize};
 
 use crate::constants::creep::CreepRole;
@@ -10,6 +10,9 @@ pub struct CreepMemory {
     pub source_index: Option<usize>,
     pub scout_target: Option<RoomName>,
     pub rampart_only_shoving: Option<bool>,
+    pub move_target_pos: Option<Position>,
+    pub move_goal_pos: Option<Position>,
+    pub move_path: Option<Vec<Position>>,
 }
 
 impl CreepMemory {
@@ -20,6 +23,9 @@ impl CreepMemory {
             source_index: None,
             scout_target: None,
             rampart_only_shoving: None,
+            move_target_pos: None,
+            move_goal_pos: None,
+            move_path: None,
         }
     }
 }

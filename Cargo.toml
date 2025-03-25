@@ -52,7 +52,7 @@ lto = true
 wasm-opt = ["-O4", "--signext-lowering"]
 
 [features]
-default = ["profile"]
+default = []
 
 debug = []
 sim = ["screeps-game-api/sim"]

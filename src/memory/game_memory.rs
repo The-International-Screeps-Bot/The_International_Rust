@@ -6,7 +6,7 @@ use screeps::{ConstructionSite, ObjectId, RoomName, raw_memory};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::general::{GeneralError, GeneralResult}, international::collective_ops, memory::global_requests::DefenseRequests, room::room_ops::try_scout_room, settings::Settings, state::game::GameState, utils::{self, general::GeneralUtils}, SETTINGS
+    constants::general::{GeneralError, GeneralResult}, international::collective_ops, memory::global_requests::DefenseRequests, room::room_ops::try_scout_room, settings::Settings, state::game::GameState, utils::{self, general::{is_tick_interval, GeneralUtils}}, SETTINGS
 };
 
 use super::{
@@ -140,7 +140,11 @@ impl GameMemory {
     }
 
     #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-    pub fn write(&self) {
+    pub fn write(&self, game_state: &GameState) {
+        if !is_tick_interval(game_state.tick, game_state.intervals.write_memory) {
+            return;
+        };
+        
         match self.compressed_memory {
             true => self.write_bitcode_base32768(),
             false => self.write_json(),
@@ -264,7 +268,7 @@ mod tests {
         let room_memory = RoomMemory::new(&room_name, &mut game_state, &mut memory).ok().unwrap();
         memory.rooms.insert(room_name, room_memory);
 
-        memory.write();
+        memory.write(&game_state);
         let read_memory = GameMemory::read_base32768_bitcode();
 
         // eprintln!("read memory {:?}", read_memory);

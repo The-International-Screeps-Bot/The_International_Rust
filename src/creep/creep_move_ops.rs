@@ -11,13 +11,14 @@ use crate::{
     },
     memory::{creep_memory, game_memory::GameMemory},
     pathfinding::{
-        pathfinding_services_multi::try_find_path, pathfinding_services_single, room_pather_multi::PathGoals, room_pather_single::PathGoal, PathfindingOpts
+        PathfindingOpts, pathfinding_services_multi::try_find_path, pathfinding_services_single,
+        room_pather_multi::PathGoals, room_pather_single::PathGoal,
     },
     room::room_ops::{self, default_move_costs},
     state::game::GameState,
     utils::{
         self,
-        general::{pos_range, GeneralUtils},
+        general::{GeneralUtils, pos_range},
         pos::{get_adjacent_positions_conditional, is_xy_exit},
     },
 };
@@ -30,41 +31,141 @@ pub fn create_move_request(
     goal: &PathGoal,
     opts: PathfindingOpts,
     game_state: &mut GameState,
-    memory: &GameMemory,
-) {
+    memory: &mut GameMemory,
+) -> Result<GeneralResult, GeneralError> {
     let creep = game_state.creeps.get(creep_name).unwrap();
 
     // If we have fatigue
     let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
     if my_creep_state.fatigue > 0 {
-        return
+        return Err(GeneralError::Fail);
     }
 
     // If we already have a move request
     if my_creep_state.move_request.is_some() {
-        return
+        return Err(GeneralError::Fail);
     }
 
     // If we are at the goal
     let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
-    if let Some(pos) = creep_state.pos {
-        if goal.pos == pos { return }
+    let creep_pos = creep_state.pos.unwrap();
+
+    if goal.pos == creep_pos {
+        return Err(GeneralError::Fail);
     }
 
-    let creep_memory = memory.creeps.get(creep_name).unwrap();
+    // If we are near the goal, just make a move request to it
+    if creep_pos.get_range_to(goal.pos) == 1 {
+        let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
+        my_creep_state.move_request = Some(goal.pos);
 
-    let Ok(path) = pathfinding_services_single::try_find_path(&creep.inner().pos(), goal, opts, game_state, memory) else {
-        return;
+        return Err(GeneralError::Fail);
+    }
+
+    // If we have a valid path, continue to use it
+
+    if try_use_existing_path(creep_name, goal, game_state, memory).is_ok() {
+        return Ok(GeneralResult::Success)
+    }
+
+    // If there is no existing path, create one
+     
+    let creep = game_state.creeps.get(creep_name).unwrap();
+
+    // Try to create a new path
+    let Ok(path) = pathfinding_services_single::try_find_path(
+        &creep.inner().pos(),
+        goal,
+        opts,
+        game_state,
+        memory,
+    ) else {
+        return Err(GeneralError::Fail);
     };
-
-    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
-    creep_state.move_request = Some(path[1]);
 
     log::info!(
         "Created move request for creep {} to {}",
         creep_name,
         path[1]
     );
+
+    let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    creep_state.move_request = Some(path[1]);
+
+    let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
+
+    creep_memory.move_goal_pos = path.last().copied();
+    creep_memory.move_path = Some(path);
+    creep_memory.move_target_pos = Some(goal.pos);
+
+    Ok(GeneralResult::Success)
+}
+
+/// Make sure that we have a valid path that aligns with a specified goal
+fn try_use_existing_path(
+    creep_name: &str,
+    goal: &PathGoal,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+) -> Result<(), GeneralError> {
+    let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
+
+    // False if we have no goal pos
+    let Some(existing_goal_pos) = creep_memory.move_goal_pos else {
+        return Err(GeneralError::Fail);
+    };
+
+    // False if existing goal pos does not match desired goal pos
+    if existing_goal_pos != goal.pos {
+        return Err(GeneralError::Fail);
+    }
+
+    // False if we have no path
+    let Some(path) = &creep_memory.move_path else {
+        return Err(GeneralError::Fail);
+    };
+
+    // Make sure we have a least one pos
+    let Some(first) = path.first().copied() else {
+        return Err(GeneralError::Fail);
+    };
+
+    // Ok we are done the basic guard clauses
+    
+    let creep_pos = {
+        let creep_state = game_state.creep_states.get(creep_name).unwrap();
+        creep_state.pos.unwrap()
+    };
+
+    // If we are right next to the first pos in the path, move towards it
+    if creep_pos.is_near_to(first) {
+        let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+        my_creep_state.move_request = Some(first);
+        
+        return Ok(());
+    }
+    
+    // If we are on a position in the path
+    if let Some(index) = path.iter().position(|pos| pos == &creep_pos) {
+        
+        // Remove all positions earlier on the path that we are not on
+        let new_path = path[index + 1..].to_vec();
+        if new_path.is_empty() {
+            panic!("Path ended up empty unexpectedly {}", creep_name);
+        }
+        
+        // Assign move request and update path
+        
+        let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+        my_creep_state.move_request = Some(new_path[0]);
+        
+        let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
+        creep_memory.move_path = Some(new_path);
+
+        return Ok(());
+    }
+    
+    Err(GeneralError::Fail)
 }
 
 fn assign_move_request(creep_name: &str) {}
@@ -177,7 +278,7 @@ fn run_move_request(
                 }
             }
         }
-     
+
         let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
 
         // Don't allow exits unless we are actively trying to move onto one
@@ -193,7 +294,7 @@ fn run_move_request(
                 }
             }
         }
-    
+
         let mut potential_cost = cost;
         {
             let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
@@ -204,7 +305,7 @@ fn run_move_request(
                 }
             }
         }
-     
+
         if let Some(creep_in_way_name) = creep_in_way_name {
             // Could be a power creep
             let creep_in_way = game_state.creeps.get(creep_in_way_name);
@@ -225,7 +326,7 @@ fn run_move_request(
                     visited_creeps,
                     potential_cost,
                 );
-   
+
                 if creep_in_way_cost >= 0 {
                     continue;
                 }

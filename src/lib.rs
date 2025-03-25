@@ -133,5 +133,5 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     my_creep_services::move_creeps(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
-    memory.write();
+    memory.write(game_state);
 }
