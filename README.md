@@ -4,11 +4,7 @@
 
 ### MMO
 
-`cargo screeps deploy`
-
-### Private server
-
-`cargo screeps copy`
+`npm run deploy -- --server jaysee --release --`
 
 ## Quickstart:
 

@@ -56,7 +56,7 @@ pub fn game_loop() {
 
     #[cfg(feature = "profile")]
     {
-        screeps_timing::start_trace(Box::new(|| (start_cpu * 1000.0) as u64));
+        screeps_timing::start_trace(Box::new(|| (game::cpu::get_used() * 1000.0) as u64));
     }
 
     let tick = game::time();
@@ -85,7 +85,7 @@ pub fn game_loop() {
         let trace = screeps_timing::stop_trace();
 
         if let Ok(trace_output) = serde_json::to_string(&trace) {
-            info!("{}", trace_output);
+            info!("Finished profiling {}", trace_output);
         }
     }
 
