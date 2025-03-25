@@ -5,7 +5,7 @@ use crate::{
     constants::creep::{
         CreepOperationResult, CreepPart, CreepParts, CreepPartsByType, CreepRole,
         CREEP_PARTS_BY_TYPE,
-    }, creep::my_creep::MyCreep, memory::game_memory::GameMemory, pathfinding::{pathfinding_services::PathfindingOpts, room_pather::PathGoals}, state::{game::GameState, my_creep::MyCreepState}
+    }, creep::my_creep::MyCreep, memory::game_memory::GameMemory, pathfinding::{room_pather_multi::PathGoals, room_pather_single::PathGoal, PathfindingOpts}, state::{game::GameState, my_creep::MyCreepState}
 };
 
 use super::{
@@ -57,7 +57,7 @@ pub fn drop_harvest(
     } else {
         info!("{} is moving to source {}", creep.inner().name(), source.pos());
         // The creep needs to move to the source to harvest it.
-        creep_move_ops::create_move_request(creep_name, &PathGoals::new_from_pos(source_pos, 1), PathfindingOpts::new(), game_state, memory);
+        creep_move_ops::create_move_request(creep_name, &PathGoal::new(source_pos, 1), PathfindingOpts::new(), game_state, memory);
         CreepOperationResult::InProgress
     }
 }

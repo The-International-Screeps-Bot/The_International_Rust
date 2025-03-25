@@ -24,7 +24,7 @@ use crate::{
         room_memory::{
             AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
         }, static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
-    }, pathfinding::{pathfinding_services::PathfindingOpts, portal_router, room_costs, route_costs}, settings::Settings, state::{
+    }, pathfinding::{portal_router, room_costs, route_costs, PathfindingOpts}, settings::Settings, state::{
         commune::CommuneState, game::GameState, market::MarketState, room::{self, NotMyConstructionSites, RoomState}
     }, utils::{
         self,

@@ -6,31 +6,12 @@ use screeps::{
 
 use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory, state::game::GameState};
 
-use super::{portal_router, room_pather::{self, PathGoals, RoomPathfinderOpts}, route_costs::{self, economy_creep_costs}};
-
-pub struct PathfindingOpts {
-    pub room_pathfinder_opts: RoomPathfinderOpts,
-    pub route_callback: RouteCallback,
-    pub avoid_enemy_creeps: Option<bool>,
-}
-
-impl PathfindingOpts {
-    pub fn new() -> Self {
-        Self {
-            room_pathfinder_opts: RoomPathfinderOpts::new(),
-            route_callback: economy_creep_costs,
-            avoid_enemy_creeps: None,
-        }
-    }
-}
-
-pub type RoomCallback = fn(&RoomName) -> u8;
-pub type RouteCallback = fn(&RoomName, &GameMemory) -> u8;
+use super::{portal_router, room_pather_multi::{self, PathGoals}, route_costs::{self, economy_creep_costs}, PathfindingOpts};
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts, game_state: &mut GameState, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
     let mut allowed_rooms: HashSet<RoomName> = find_allowed_rooms(origin, goals, &opts, memory);
-    let path = room_pather::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state, memory);
+    let path = room_pather_multi::find_path(*origin, goals, allowed_rooms, &opts.room_pathfinder_opts, game_state, memory);
 
     path
 }

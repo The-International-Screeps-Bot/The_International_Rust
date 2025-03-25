@@ -4,7 +4,7 @@ use screeps::{game, RoomName};
 
 use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory};
 
-use super::pathfinding_services::{PathfindingOpts, RouteCallback};
+use super::PathfindingOpts;
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn find_route(

@@ -11,14 +11,13 @@ use crate::{
     },
     memory::{creep_memory, game_memory::GameMemory},
     pathfinding::{
-        pathfinding_services::{PathfindingOpts, try_find_path},
-        room_pather::PathGoals,
+        pathfinding_services_multi::try_find_path, pathfinding_services_single, room_pather_multi::PathGoals, room_pather_single::PathGoal, PathfindingOpts
     },
     room::room_ops::{self, default_move_costs},
     state::game::GameState,
     utils::{
         self,
-        general::{GeneralUtils, pos_range},
+        general::{pos_range, GeneralUtils},
         pos::{get_adjacent_positions_conditional, is_xy_exit},
     },
 };
@@ -28,7 +27,7 @@ use super::my_creep_ops;
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn create_move_request(
     creep_name: &str,
-    goals: &PathGoals,
+    goal: &PathGoal,
     opts: PathfindingOpts,
     game_state: &mut GameState,
     memory: &GameMemory,
@@ -49,12 +48,12 @@ pub fn create_move_request(
     // If we are at the goal
     let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
     if let Some(pos) = creep_state.pos {
-        if goals.0.contains_key(&pos) { return }
+        if goal.pos == pos { return }
     }
 
     let creep_memory = memory.creeps.get(creep_name).unwrap();
 
-    let Ok(path) = try_find_path(&creep.inner().pos(), goals, opts, game_state, memory) else {
+    let Ok(path) = pathfinding_services_single::try_find_path(&creep.inner().pos(), goal, opts, game_state, memory) else {
         return;
     };
 

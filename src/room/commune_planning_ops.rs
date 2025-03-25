@@ -5,8 +5,8 @@ use screeps::{HasPosition, Position, RoomName};
 use crate::{
     memory::game_memory::GameMemory,
     pathfinding::{
-        pathfinding_services::{self, PathfindingOpts},
-        room_pather::{self, PathGoals},
+        pathfinding_services_multi::{self},
+        room_pather_multi::{self, PathGoals}, PathfindingOpts,
     },
     state::{game::GameState, room::CommunePlan},
 };
@@ -114,7 +114,7 @@ fn find_fast_filler_start_positions(
         start_positions.push(source_pos);
 
         if let Ok(path) =
-            pathfinding_services::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), game_state, memory)
+            pathfinding_services_multi::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), game_state, memory)
         {
             let shortest_len = {
                 if let Some(shortest_path) = &shortest_path {
