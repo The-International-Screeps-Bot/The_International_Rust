@@ -5,14 +5,10 @@ use crate::constants::creep::CreepRole;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CreepMemory {
-    #[serde(rename = "0")]
     pub role: CreepRole,
     pub room_from: RoomName,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_index: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub scout_target: Option<RoomName>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub rampart_only_shoving: Option<bool>,
 }
 

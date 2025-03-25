@@ -24,13 +24,9 @@ use super::{
 #[derive(Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub struct GameMemory {
-    #[serde(rename = "0")]
     pub breaking_version: u32,
-    #[serde(rename = "1")]
     pub me: String,
-    #[serde(rename = "3")]
     pub compressed_memory: bool,
-    #[serde(rename = "2")]
     pub rooms: HashMap<RoomName, RoomMemory>,
     pub remotes: HashMap<RoomName, RemoteRoomMemory>,
     pub communes: HashMap<RoomName, CommuneRoomMemory>,
@@ -107,6 +103,8 @@ impl GameMemory {
     fn read_json() -> Result<GameMemory, GeneralError> {
         let stringified_memory = raw_memory::get().as_string().unwrap();
         
+        info!("Read JSON memory {}", stringified_memory);
+        
         match serde_json::from_str::<GameMemory>(&stringified_memory) {
             Ok(memory) => Ok(memory),
             Err(err) => {
@@ -120,6 +118,8 @@ impl GameMemory {
     #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     fn read_base32768_bitcode() -> Result<GameMemory, GeneralError> {
         let stringified_memory = raw_memory::get().as_string().unwrap();
+        
+        info!("READ base32768 MEMORY {}", stringified_memory);
         
         let mut bits = Vec::new();
         // Try to decode memory to bitcode
@@ -171,6 +171,8 @@ impl GameMemory {
             warn!("Base32768 encoding error");
             return;
         };
+        
+        info!("Base32768 encoded memory written successfully {}", base);
 
         raw_memory::set(&JsString::from(base));
     }

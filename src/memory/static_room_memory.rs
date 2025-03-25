@@ -12,14 +12,11 @@ use super::{game_memory::GameMemory, room_memory::InvaderCodeInfo};
 #[derive(Serialize, Deserialize, Debug)]
 /// Used for all rooms that have a controller
 pub struct ClaimableRoomMemory {
-    #[serde(skip_serializing_if = "Option::is_none")]
     /// The name of the owner if it isn't owned by us
     pub non_me_owner: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     /// Wether or not we have claimed this room
     pub my_claim: Option<bool>,
     // #[serde(serialize_with="serialize_pos")]
-    #[serde(with = "screeps::local::serde_position_packed")]
     pub controller_pos: Position,
 }
 

@@ -22,7 +22,7 @@ impl Settings {
             allies,
             compressed_memory: true,
             breaking_version: 4,
-            log_filter: LevelFilter::Info,
+            log_filter: LevelFilter::Trace,
         }
     }
 }

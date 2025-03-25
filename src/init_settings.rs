@@ -4,7 +4,7 @@ pub fn init_settings(settings: &mut Settings, game_state: &GameState) {
 
     // Omnipresent settings
     
-    settings.log_filter = log::LevelFilter::Trace;
+    // settings.log_filter = log::LevelFilter::Trace;
 
     // MMO or Season
     if game_state.shard.contains("shard") {

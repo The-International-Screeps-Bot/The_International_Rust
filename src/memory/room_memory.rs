@@ -19,7 +19,6 @@ use super::game_memory::GameMemory;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomMemory {
     pub room_type: StaticRoomType,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub danger: Option<u32>,
     pub last_scout: u32,
 }
@@ -44,19 +43,14 @@ impl RoomMemory {
 /// Distinct descriptions of rooms that implies certain properties and does not change over time
 pub enum StaticRoomType {
     /// Rooms we can potentially claim
-    #[serde(rename = "0")]
     Claimable,
     /// The rooms surrounding the center of a sector that potentially contain portals
-    #[serde(rename = "1")]
     Keeper,
     /// The center room of a sector
-    #[serde(rename = "2")]
     Center,
     /// Rooms bordering sectors, excluding corners
-    #[serde(rename = "3")]
     CardinalHighway,
     /// Rooms bordering sectors that are corners and potentially contain portals
-    #[serde(rename = "4")]
     Intersection,
 }
 
@@ -106,7 +100,6 @@ pub struct RemoteRoomMemory {
     pub source_paths: Vec<Vec<Position>>,
     /// Not really sure what this is for
     pub cost: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
     /// How long to abandon this remote for, generally due to unsustainable conflict-costs or invaders that can't be fought off
     pub abandon: Option<u32>,
 }
@@ -167,11 +160,9 @@ impl EnemyRoomMemory {
 /// Rooms with sources and minerals (In the base game all rooms with sources also have minerals)
 pub struct HarvestableRoomMemory {
     /* #[serde(with = "screeps::local::serde_position_packed")] */
-    #[serde(skip_serializing_if = "Option::is_none")]
     /// Communes that have tried and failed, based on distance, to make this room a remote
     pub remote_blacklist: Option<HashSet<RoomName>>,
     pub source_positions: Vec<Position>,
-    #[serde(with = "screeps::local::serde_position_packed")]
     pub mineral_pos: Position,
     pub mineral_type: constants::minerals::ResourceType,
 }
