@@ -85,11 +85,12 @@ impl GameMemory {
         }
     }
 
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     pub fn load_from_memory_or_default() -> GameMemory {
         SETTINGS.with_borrow(|settings| {
             let memory: Result<GameMemory, GeneralError> = match settings.compressed_memory {
-                true => GameMemory::read_base32768_bitcode_or_default(),
-                false => GameMemory::read_or_default(),
+                true => GameMemory::read_base32768_bitcode(),
+                false => GameMemory::read_json(),
             };
             
             if let Ok(memory) = memory {
@@ -100,22 +101,10 @@ impl GameMemory {
             
             GameMemory::new(settings)
         })
-        
-        // let stringified_memory = raw_memory::get().as_string().unwrap();
-        // info!("TRYING TO LOAD MEMORY");
-        // match serde_json::from_str::<GameMemory>(&stringified_memory) {
-        //     Ok(memory) => memory,
-        //     Err(err) => {
-        //         error!("memory parse error on initial read {:?}", err);
-
-        //         // Would not be surprised if this errored, since SETTINGS is made in the same local_thread!{}
-        //         // Doesn't seem to panic so, keep it ig?
-        //         SETTINGS.with_borrow(|settings| GameMemory::new(&settings))
-        //     }
-        // }
     }
     
-    fn read_or_default() -> Result<GameMemory, GeneralError> {
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+    fn read_json() -> Result<GameMemory, GeneralError> {
         let stringified_memory = raw_memory::get().as_string().unwrap();
         
         match serde_json::from_str::<GameMemory>(&stringified_memory) {
@@ -128,7 +117,8 @@ impl GameMemory {
         }
     }
     
-    fn read_base32768_bitcode_or_default() -> Result<GameMemory, GeneralError> {
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+    fn read_base32768_bitcode() -> Result<GameMemory, GeneralError> {
         let stringified_memory = raw_memory::get().as_string().unwrap();
         
         let mut bits = Vec::new();
@@ -149,6 +139,7 @@ impl GameMemory {
         Ok(memory)
     }
 
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     pub fn write(&self) {
         match self.compressed_memory {
             true => self.write_bitcode_base32768(),
@@ -156,6 +147,7 @@ impl GameMemory {
         }
     }
 
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     /// Write to memory using JSON (ew!)
     pub fn write_json(&self) {
         match serde_json::to_string(self) {
@@ -166,10 +158,12 @@ impl GameMemory {
         }
     }
 
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     /// Write to memory using bitcode encoding + base32768
     pub fn write_bitcode_base32768(&self) {
-        let Ok(bits) = bitcode::serialize(self) else {
-            warn!("Bitcode serialization error");
+        let x = bitcode::serialize(self);
+        let Ok(bits) = x else {
+            warn!("Bitcode serialization error {:?}", x);
             return;
         };
 
@@ -181,6 +175,7 @@ impl GameMemory {
         raw_memory::set(&JsString::from(base));
     }
 
+    #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
     pub fn tick_update(&mut self, game_state: &mut GameState, settings: &Settings) {
         self.try_migrate(game_state, settings);
         self.scout_visible_rooms(game_state);
@@ -202,6 +197,8 @@ impl GameMemory {
     }
 
     fn migrate(&mut self, game_state: &GameState, settings: &Settings) -> GeneralResult {
+        info!("Migrating game memory");
+        
         collective_ops::kill_all_creeps(game_state);
         mem::swap(self, &mut GameMemory::new(settings));
 
@@ -251,6 +248,7 @@ impl GameMemory {
 #[cfg(test)]
 mod tests {
     use screeps::RoomName;
+    use serde::{Deserialize, Serialize};
     use wasm_bindgen_test::*;
 
     use crate::{constants::general::GeneralResult, memory::{game_memory::GameMemory, room_memory::{self, RoomMemory}}, settings::Settings, state::game::GameState};
@@ -265,7 +263,7 @@ mod tests {
         memory.rooms.insert(room_name, room_memory);
 
         memory.write();
-        let read_memory = GameMemory::read_or_default();
+        let read_memory = GameMemory::read_base32768_bitcode();
 
         // eprintln!("read memory {:?}", read_memory);
         
@@ -275,5 +273,25 @@ mod tests {
     #[wasm_bindgen_test]
     fn pass() {
         assert_eq!(1, 1);
+    }
+    
+    #[derive(Serialize, Deserialize, Default)]
+    struct SerTest {
+        pub name: String,
+        pub age: u32,
+    }
+    
+    #[test]
+    fn test_bitcode() {
+        let ser_test = SerTest {
+            name: "John".to_string(),
+            age: 30,
+        };
+        
+        let serialized = serde_json::to_string(&ser_test).unwrap();
+        let deserialized: SerTest = serde_json::from_str(&serialized).unwrap();
+        
+        assert_eq!(ser_test.name, deserialized.name);
+        assert_eq!(ser_test.age, deserialized.age);
     }
 }
