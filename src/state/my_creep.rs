@@ -18,6 +18,7 @@ pub struct MyCreepState {
     pub cost: Option<u32>,
     pub spawning: bool,
     pub fatigue: u32,
+    pub pos: Position,
     /// The next position the creep intends to move to
     pub move_request: Option<Position>,
     /// The position which the creep is registered to move to or stay at
@@ -39,6 +40,7 @@ impl MyCreepState {
             cost: None,
             spawning: creep.spawning(),
             fatigue: creep.fatigue(),
+            pos: creep.pos(),
             move_request: None,
             move_target: None,
             move_options: None,
@@ -52,6 +54,7 @@ impl MyCreepState {
     pub fn tick_update(&mut self, creep: &MyCreep) {
         self.spawning = creep.inner().spawning();
         self.fatigue = creep.inner().fatigue();
+        self.pos = creep.inner().pos();
 
         self.move_request = None;
         self.action_pos = None;

@@ -12,7 +12,6 @@ use super::game::GameState;
 /// State for creeps we either incedentally own or do not own
 pub struct CreepState {
     pub name: String,
-    pub pos: Option<Position>,
     /// Cached part's of the creep, not accounting for health state
     pub parts: Option<CreepParts>,
     pub parts_by_type: Option<CreepPartsByType>,
@@ -23,7 +22,6 @@ impl CreepState {
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            pos: None,
             parts: None,
             parts_by_type: None,
             active_parts_by_type: None,
@@ -31,7 +29,6 @@ impl CreepState {
     }
     
     pub fn tick_update(&mut self) {
-        self.pos = None;
         self.active_parts_by_type = None;
     }
 

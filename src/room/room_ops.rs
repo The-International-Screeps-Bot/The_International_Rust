@@ -24,7 +24,7 @@ use crate::{
         room_memory::{
             AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
         }, static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
-    }, pathfinding::{portal_router, room_costs, route_costs, PathfindingOpts}, settings::Settings, state::{
+    }, pathfinding::{portal_router_single, room_costs, route_costs, PathfindingOpts}, settings::Settings, state::{
         commune::CommuneState, game::GameState, market::MarketState, room::{self, NotMyConstructionSites, RoomState}
     }, utils::{
         self,
@@ -466,10 +466,7 @@ pub fn try_add_remote(
 
     // Check the route distance
 
-    let mut goals = HashSet::new();
-    goals.insert(*scouting_room_name);
-
-    let route = portal_router::find_route(*room_name, goals, &PathfindingOpts::new(), &memory);
+    let route = portal_router_single::find_route(*room_name, scouting_room_name, &PathfindingOpts::new(), &memory);
 
     let Ok(route) = route else {
         warn!("Unable to find route for room {}", room_name);

@@ -47,15 +47,14 @@ pub fn create_move_request(
     }
 
     // If we are at the goal
-    let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
-    let creep_pos = creep_state.pos.unwrap();
+    let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
 
-    if goal.pos == creep_pos {
+    if goal.pos == my_creep_state.pos {
         return Err(GeneralError::Fail);
     }
 
     // If we are near the goal, just make a move request to it
-    if creep_pos.get_range_to(goal.pos) == 1 {
+    if my_creep_state.pos.get_range_to(goal.pos) == 1 {
         let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
         my_creep_state.move_request = Some(goal.pos);
 
@@ -65,11 +64,11 @@ pub fn create_move_request(
     // If we have a valid path, continue to use it
 
     if try_use_existing_path(creep_name, goal, game_state, memory).is_ok() {
-        return Ok(GeneralResult::Success)
+        return Ok(GeneralResult::Success);
     }
 
     // If there is no existing path, create one
-     
+
     let creep = game_state.creeps.get(creep_name).unwrap();
 
     // Try to create a new path
@@ -131,40 +130,35 @@ fn try_use_existing_path(
     };
 
     // Ok we are done the basic guard clauses
-    
-    let creep_pos = {
-        let creep_state = game_state.creep_states.get(creep_name).unwrap();
-        creep_state.pos.unwrap()
-    };
+
+    let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
 
     // If we are right next to the first pos in the path, move towards it
-    if creep_pos.is_near_to(first) {
-        let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    if my_creep_state.pos.is_near_to(first) {
         my_creep_state.move_request = Some(first);
-        
+
         return Ok(());
     }
-    
+
     // If we are on a position in the path
-    if let Some(index) = path.iter().position(|pos| pos == &creep_pos) {
-        
+    if let Some(index) = path.iter().position(|pos| pos == &my_creep_state.pos) {
         // Remove all positions earlier on the path that we are not on
         let new_path = path[index + 1..].to_vec();
         if new_path.is_empty() {
             panic!("Path ended up empty unexpectedly {}", creep_name);
         }
-        
+
         // Assign move request and update path
-        
+
         let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
         my_creep_state.move_request = Some(new_path[0]);
-        
+
         let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
         creep_memory.move_path = Some(new_path);
 
         return Ok(());
     }
-    
+
     Err(GeneralError::Fail)
 }
 

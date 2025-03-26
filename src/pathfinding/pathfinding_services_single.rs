@@ -18,15 +18,17 @@ pub fn try_find_path(origin: &Position, goal: &PathGoal, opts: PathfindingOpts, 
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn find_allowed_rooms(origin: &Position, goal: &PathGoal, opts: &PathfindingOpts, memory: &GameMemory) -> HashSet<RoomName> {
+    let origin_room_name = origin.room_name();
+    
     let mut allowed_rooms: HashSet<RoomName> = HashSet::new();
-    allowed_rooms.insert(origin.room_name());
+    allowed_rooms.insert(origin_room_name);
 
     let goal_room_name = goal.pos.room_name();
-    if goal_room_name == origin.room_name() {
+    if goal_room_name == origin_room_name {
         return allowed_rooms;
     }
     
-    let Ok(route) = portal_router_single::find_route(origin.room_name(), &goal_room_name, opts, memory) else {
+    let Ok(route) = portal_router_single::find_route(origin_room_name, &goal_room_name, opts, memory) else {
         return allowed_rooms
     };
     

@@ -18,19 +18,21 @@ pub fn try_find_path(origin: &Position, goals: &PathGoals, opts: PathfindingOpts
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn find_allowed_rooms(origin: &Position, goals: &PathGoals, opts: &PathfindingOpts, memory: &GameMemory) -> HashSet<RoomName> {
+    let origin_room_name = origin.room_name();
+    
     let mut allowed_rooms: HashSet<RoomName> = HashSet::new();
-    allowed_rooms.insert(origin.room_name());
+    allowed_rooms.insert(origin_room_name);
 
     let goal_room_names = HashSet::from_iter(goals.0.iter().map(|pos| {
         pos.0.room_name()
     }));
     // Early return if all the goals are in the origin room
     // Comes at the cost of making creeps unable to move around intra-room obstacles
-    if goal_room_names.len() == 1 && goal_room_names.contains(&origin.room_name()) {
+    if goal_room_names.len() == 1 && goal_room_names.contains(&origin_room_name) {
         return allowed_rooms;
     }
     
-    let Ok(route) = portal_router_multi::find_route(origin.room_name(), goal_room_names, opts, memory) else {
+    let Ok(route) = portal_router_multi::find_route(origin_room_name, goal_room_names, opts, memory) else {
         return allowed_rooms
     };
     
