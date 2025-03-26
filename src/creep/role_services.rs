@@ -55,7 +55,7 @@ pub fn register_commune_harvest_strength(game_state: &mut GameState, memory: &mu
     for room_name in room_names {
         let room_state = game_state.room_states.get(&room_name).unwrap();
         for creep_name in room_state.creeps_by_role[CreepRole::SourceHarvester].clone() {
-            source_harvester_ops::register_harvest_strength(
+            source_harvester_ops::register_source(
                 creep_name.as_str(),
                 &room_name,
                 game_state,

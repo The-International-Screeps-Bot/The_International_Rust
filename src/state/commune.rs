@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use screeps::{source, Position, Room, RoomName};
 use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
@@ -22,12 +22,12 @@ pub struct CommuneState {
     /// Number of carry parts worth of hauling the commune appears to have
     pub haul_strength: u32,
     pub mineral_harvest_strength: u32,
-    pub used_mineral_positions: Vec<Position>,
     pub source_harvest_strengths: Vec<u32>,
-    pub used_source_harvest_positions: Vec<Vec<Position>>,
+    pub source_harvest_creeps: Vec<u8>,
     pub structure_plans: SparseCostMatrix,
     pub rampart_plans: SparseCostMatrix,
     pub planning_completed: bool,
+    pub reserved_positions: HashSet<Position>,
 }
 
 impl CommuneState {
@@ -36,10 +36,12 @@ impl CommuneState {
         // mineral harvest positions are found by the commune planner
 
         let mut source_harvest_strengths: Vec<u32> = Vec::new();
+        let mut source_harvest_creeps: Vec<u8> = Vec::new();
 
         if let Some(harvestable_room_memory) = memory.harvestable_rooms.get(&room_name) {
             for i in 0..harvestable_room_memory.source_positions.len() {
                 source_harvest_strengths.push(0);
+                source_harvest_creeps.push(0);
             }
         }
 
@@ -60,13 +62,13 @@ impl CommuneState {
             repair_strength: 0,
             haul_strength: 0,
             mineral_harvest_strength: 0,
-            used_mineral_positions: Vec::new(),
             source_harvest_strengths,
-            used_source_harvest_positions: Vec::new(),
+            source_harvest_creeps,
             // Derive from pre-existing plans if they exist
             structure_plans: SparseCostMatrix::new(),
             rampart_plans: SparseCostMatrix::new(),
             planning_completed: false,
+            reserved_positions: HashSet::new(),
         }
     }
     

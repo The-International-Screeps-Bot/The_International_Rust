@@ -22,9 +22,11 @@ pub fn drop_harvest(
 ) -> CreepOperationResult {
     info!("Trying to drop harvest");
     let creep = game_state.creeps.get(creep_name).unwrap();
+    
+    let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
 
     let source_pos = source.pos();
-    if creep.inner().pos().is_near_to(source_pos) {
+    if my_creep_state.pos.is_near_to(source_pos) {
         match creep.inner().harvest(source) {
             Ok(()) | Err(ErrorCode::NotEnough) => CreepOperationResult::Fail,
             Err(e) => {

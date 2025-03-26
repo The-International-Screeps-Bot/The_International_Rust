@@ -47,7 +47,7 @@ pub struct RoomState {
 
     // Sources
     pub sources: Option<Vec<Source>>,
-    pub harvest_positions: Option<Vec<Position>>,
+    pub harvest_positions: Option<Vec<Vec<Position>>>,
 
     // Creeps
     pub my_creeps: Vec<String>,

@@ -22,14 +22,14 @@ use crate::{
     }, creep::creep_move_ops::try_run_move_request, memory::{
         game_memory::GameMemory,
         room_memory::{
-            AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
+            self, AllyRoomMemory, EnemyRoomMemory, HarvestableRoomMemory, HighwayRoomMemory, PortalRoomMemory, RemoteRoomMemory, RoomMemory, StaticRoomType
         }, static_room_memory::{ClaimableRoomMemory, KeeperRoomMemory},
     }, pathfinding::{portal_router_single, room_costs, route_costs, PathfindingOpts}, settings::Settings, state::{
         commune::CommuneState, game::GameState, market::MarketState, room::{self, NotMyConstructionSites, RoomState}
     }, utils::{
         self,
         general::{for_adjacent_positions, GeneralUtils},
-        pos::{for_positions_in_range_in_room, get_positions_in_range_in_room},
+        pos::{for_positions_in_range_in_room, get_adjacent_positions_unbounded, get_positions_in_range_in_room},
     }, GAME_STATE
 };
 
@@ -370,7 +370,8 @@ pub fn commune_sources(room_name: &RoomName, game_state: &mut GameState) -> Vec<
 pub fn harvest_positions(
     room_name: &RoomName,
     game_state: &mut GameState,
-) -> Option<Vec<Position>> {
+    memory: &GameMemory,
+) -> Option<Vec<Vec<Position>>> {
     {
         let room_data = game_state.room_states.get(room_name).unwrap();
 
@@ -379,17 +380,25 @@ pub fn harvest_positions(
             return Some(harvest_positions.clone());
         }
     }
+    
+    let Some(harvestable_room_memory) = memory.harvestable_rooms.get(room_name) else {
+        return None;
+    };
 
-    let sources = get_sources(room_name, game_state);
-
-    let new_harvest_positions: Vec<Position> = Vec::new();
+    let mut new_harvest_positions: Vec<Vec<Position>> = Vec::new();
     let room = game_state.rooms.get(room_name).unwrap();
 
-    for source in sources {
-        utils::general::for_adjacent_positions(source.pos(), &|adjacent_pos| {
-            let terrain = room.look_for_at(look::TERRAIN, adjacent_pos);
-            terrain.contains(&Terrain::Wall);
-        })
+    for source_pos in harvestable_room_memory.source_positions.iter() {
+        let mut positions = Vec::new();
+        
+        for adj_pos in get_adjacent_positions_unbounded(source_pos) {
+            let terrain = room.look_for_at(look::TERRAIN, &adj_pos);
+            if terrain.contains(&Terrain::Wall) { continue }
+            
+            positions.push(adj_pos);
+        } 
+        
+        new_harvest_positions.push(positions);
     }
 
     let room_data = game_state.room_states.get_mut(&room.name()).unwrap();
