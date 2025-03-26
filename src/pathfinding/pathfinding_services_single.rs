@@ -6,12 +6,7 @@ use screeps::{
 
 use crate::{constants::general::GeneralResult, memory::game_memory::GameMemory, state::game::GameState};
 
-use super::{portal_router, room_pather_single::{self, PathGoal}, route_costs::{self, economy_creep_costs}, PathfindingOpts};
-
-
-
-pub type RoomCallback = fn(&RoomName) -> u8;
-pub type RouteCallback = fn(&RoomName, &GameMemory) -> u8;
+use super::{portal_router_single, room_pather_single::{self, PathGoal}, route_costs::{self, economy_creep_costs}, PathfindingOpts};
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_find_path(origin: &Position, goal: &PathGoal, opts: PathfindingOpts, game_state: &mut GameState, memory: &GameMemory) -> Result<Vec<Position>, GeneralResult> {
@@ -31,7 +26,7 @@ fn find_allowed_rooms(origin: &Position, goal: &PathGoal, opts: &PathfindingOpts
         return allowed_rooms;
     }
     
-    let Ok(route) = portal_router::find_route(origin.room_name(), HashSet::from_iter([goal_room_name]), opts, memory) else {
+    let Ok(route) = portal_router_single::find_route(origin.room_name(), &goal_room_name, opts, memory) else {
         return allowed_rooms
     };
     

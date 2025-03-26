@@ -5,7 +5,8 @@ use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
 use crate::{memory::game_memory::GameMemory, state::game::GameState};
 
-pub mod portal_router;
+pub mod portal_router_multi;
+pub mod portal_router_single;
 pub mod pathfinding_services_multi;
 pub mod pathfinding_services_single;
 pub mod room_pather_multi;
