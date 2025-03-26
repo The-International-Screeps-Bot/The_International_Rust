@@ -56,7 +56,7 @@ pub struct RoomState {
 }
 
 impl RoomState {
-    pub fn new(room: &Room, room_name: RoomName, game_state: &GameState) -> Self {
+    pub fn new(room_name: RoomName, game_state: &GameState) -> Self {
         Self {
             name: room_name,
             status: None,

@@ -223,7 +223,7 @@ impl GameMemory {
                 continue;
             }
 
-            if let Ok(commune_memory) = CommuneRoomMemory::new(&room_name, game_state) {
+            if let Ok(commune_memory) = CommuneRoomMemory::new(&room_name, game_state, self) {
                 self.communes.insert(room_name, commune_memory);
             }
         }

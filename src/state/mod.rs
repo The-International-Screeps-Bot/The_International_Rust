@@ -9,3 +9,4 @@ pub mod tick_intervals;
 pub mod simple_allies;
 pub mod segments;
 pub mod stats_segment;
+pub mod remote;

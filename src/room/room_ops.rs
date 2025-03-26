@@ -401,7 +401,7 @@ pub fn harvest_positions(
 pub fn room_type(room_name: &RoomName, memory: &mut GameMemory) {}
 
 pub fn room_status(room_name: &RoomName, game_state: &mut GameState) -> RoomStatus {
-    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    let room_state = game_state.get_or_create_room_state_mut(room_name);
 
     if let Some(status) = room_state.status {
         return status;
@@ -517,7 +517,7 @@ pub fn try_add_remote(
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTerrain {
     {
-        let room_state = game_state.room_states.get(room_name).unwrap();
+        let room_state = game_state.get_or_create_room_state_mut(room_name);
 
         if let Some(terrain) = &room_state.terrain {
             return terrain.clone();
@@ -536,7 +536,7 @@ pub fn terrain(room_name: &RoomName, game_state: &mut GameState) -> LocalRoomTer
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> SparseCostMatrix {
     {
-        let room_state = game_state.room_states.get(room_name).unwrap();
+        let room_state = game_state.get_or_create_room_state_mut(room_name);
 
         if let Some(sparse_terrain) = &room_state.sparse_terrain {
             return sparse_terrain.clone();
@@ -548,10 +548,7 @@ pub fn sparse_terrain(room_name: &RoomName, game_state: &mut GameState) -> Spars
 
     for x in 0..ROOM_DIMENSIONS {
         for y in 0..ROOM_DIMENSIONS {
-            let room_xy = RoomXY {
-                x: RoomCoordinate::new(x).unwrap(),
-                y: RoomCoordinate::new(y).unwrap(),
-            };
+            let room_xy = RoomXY::checked_new(x, y).unwrap();
 
             let terrain_type = terrain.get_xy(room_xy);
             match terrain_type {
@@ -576,7 +573,7 @@ pub fn default_move_costs(
 ) -> SparseCostMatrix {
     {
         // log::info!("room_name {} rooms {:?}", room_name, game_state.rooms);
-        let room_state = game_state.room_states.get(room_name).unwrap();
+        let room_state = game_state.get_or_create_room_state_mut(room_name);
 
         if let Some(default_move_ops) = &room_state.default_move_ops {
             return default_move_ops.clone();

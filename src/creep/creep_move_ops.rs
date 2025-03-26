@@ -54,7 +54,8 @@ pub fn create_move_request(
     }
 
     // If we are near the goal, just make a move request to it
-    if my_creep_state.pos.get_range_to(goal.pos) == 1 {
+    let goal_range = my_creep_state.pos.get_range_to(goal.pos);
+    if goal_range <= goal.range as u32 {
         let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
         my_creep_state.move_request = Some(goal.pos);
 
@@ -69,11 +70,11 @@ pub fn create_move_request(
 
     // If there is no existing path, create one
 
-    let creep = game_state.creeps.get(creep_name).unwrap();
+    let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
 
     // Try to create a new path
     let Ok(path) = pathfinding_services_single::try_find_path(
-        &creep.inner().pos(),
+        my_creep_state.pos,
         goal,
         opts,
         game_state,
@@ -82,20 +83,13 @@ pub fn create_move_request(
         return Err(GeneralError::Fail);
     };
 
-    log::info!(
-        "Created move request for creep {} to {}",
-        creep_name,
-        path[1]
-    );
-
     let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
     creep_state.move_request = Some(path[1]);
 
     let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
 
-    creep_memory.move_goal_pos = path.last().copied();
+    creep_memory.move_goal_pos = Some(goal.pos);
     creep_memory.move_path = Some(path);
-    creep_memory.move_target_pos = Some(goal.pos);
 
     Ok(GeneralResult::Success)
 }
@@ -176,7 +170,7 @@ pub fn assign_move_target_as_pos(
     move_targets.insert(pos, creep_name.to_string());
 
     let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
-    creep_state.move_target = Some(pos);
+    creep_state.action_pos = Some(pos);
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
@@ -189,7 +183,7 @@ pub fn assign_move_target(
     move_targets.insert(position, creep_name.to_string());
 
     let creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
-    creep_state.move_target = Some(position);
+    creep_state.action_pos = Some(position);
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
@@ -206,7 +200,7 @@ pub fn try_run_move_request(
         return;
     };
 
-    if let Some(move_target) = creep_state.move_target {
+    if let Some(move_target) = creep_state.action_pos {
         if move_request == move_target {
             return;
         }
@@ -214,7 +208,7 @@ pub fn try_run_move_request(
         // If we do have a move target, delete it so we can run the move request
 
         move_targets.remove(&move_request);
-        creep_state.move_target = None;
+        creep_state.action_pos = None;
     };
 
     let cost = run_move_request(
@@ -401,21 +395,20 @@ pub fn get_move_options(
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 pub fn try_run_move_target(creep_name: &str, game_state: &GameState) {
-    let creep_state = game_state.my_creep_states.get(creep_name).unwrap();
-    let Some(move_target) = creep_state.move_target else {
+    let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+    let Some(move_target) = my_creep_state.action_pos else {
         return;
     };
 
-    let creep = game_state.creeps.get(creep_name).unwrap();
-    let creep_pos = creep.inner().pos();
-
-    if creep_pos == move_target {
+    if my_creep_state.pos == move_target {
         return;
     }
 
-    let Some(direction) = creep_pos.get_direction_to(move_target) else {
+    let Some(direction) =  my_creep_state.pos.get_direction_to(move_target) else {
         error!("Failed to get direction to move target");
         return;
     };
+    
+    let creep = game_state.creeps.get(creep_name).unwrap();
     creep.inner().move_direction(direction);
 }

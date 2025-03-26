@@ -1,4 +1,4 @@
-use std::{collections::HashSet, default};
+use std::{collections::HashSet, default, u8};
 
 use enum_map::Enum;
 use screeps::{
@@ -9,9 +9,9 @@ use screeps::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::general::{GeneralError, GeneralResult},
+    constants::{general::{GeneralError, GeneralResult}, spawning::spawn_priority_bounds::SOURCE_HARVESTER},
     room::room_ops::{self, find_room_type},
-    state::game::GameState,
+    state::game::GameState, utils::pos::get_adjacent_positions,
 };
 
 use super::game_memory::GameMemory;
@@ -72,11 +72,13 @@ impl HighwayRoomMemory {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommuneRoomMemory {
     /// The highest controller level the room has had without loosing ownership (implied by commune memory existing)
-    highest_rcl: u8,
+    pub highest_rcl: u8,
+    // Derived from completed commune base plans
+    pub source_harvest_positions: Vec<Vec<Position>>,
 }
 
 impl CommuneRoomMemory {
-    pub fn new(room_name: &RoomName, game_state: &mut GameState) -> Result<Self, GeneralError> {
+    pub fn new(room_name: &RoomName, game_state: &mut GameState, memory: &GameMemory) -> Result<Self, GeneralError> {
         
         let Some(room) = game_state.rooms.get(room_name) else {
             return Err(GeneralError::Fail);
@@ -85,8 +87,27 @@ impl CommuneRoomMemory {
         let controller = room.controller().unwrap();
         let rcl = controller.level();
         
+        // Temporary construction of source harvest positions
+        let sparse_terrain = room_ops::sparse_terrain(room_name, game_state);
+        let harvestable_room_memory = memory.harvestable_rooms.get(room_name).unwrap();
+        
+        let source_harvest_positions = harvestable_room_memory.source_positions.iter().map(|pos| {
+            let mut positions = Vec::new();
+            for adj_pos in get_adjacent_positions(pos) {
+                // Skip positions that are not walkable
+                if sparse_terrain.get(adj_pos.xy()) == u8::MAX {
+                    continue;
+                }
+                
+                positions.push(adj_pos);
+            } 
+            positions
+        }).collect::<Vec<Vec<Position>>>();
+        
         Ok(Self {
             highest_rcl: rcl,
+            // Derived from completed commune base plans
+            source_harvest_positions,
         })
     }
 }

@@ -21,8 +21,6 @@ pub struct MyCreepState {
     pub pos: Position,
     /// The next position the creep intends to move to
     pub move_request: Option<Position>,
-    /// The position which the creep is registered to move to or stay at
-    pub move_target: Option<Position>,
     pub move_options: Option<Vec<Position>>,
     /// The coord for which the creep intends to action.
     /// A harvester's action_coord is where it wants to harvest at
@@ -42,7 +40,6 @@ impl MyCreepState {
             fatigue: creep.fatigue(),
             pos: creep.pos(),
             move_request: None,
-            move_target: None,
             move_options: None,
             action_pos: None,
             parts: None,
@@ -57,8 +54,6 @@ impl MyCreepState {
         self.pos = creep.inner().pos();
 
         self.move_request = None;
-        self.action_pos = None;
-        self.move_target = None;
         self.move_options = None;
 
         self.active_parts_by_type = None;

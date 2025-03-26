@@ -151,7 +151,7 @@ impl GameState {
         for (room_name, room) in js_rooms.keys().zip(js_rooms.values()) {
             if !self.room_states.contains_key(&room_name) {
                 self.room_states
-                    .insert(room_name, RoomState::new(&room, room_name, self));
+                    .insert(room_name, RoomState::new(room_name, self));
             }
 
             self.rooms.insert(room_name, room);
@@ -285,5 +285,25 @@ impl GameState {
         }
 
         self.terminal_communes = terminal_communes;
+    }
+    
+    pub fn get_or_create_room_state_mut(&mut self, room_name: &RoomName) -> &mut RoomState {        
+        if self.room_states.contains_key(room_name) {
+            return self.room_states.get_mut(room_name).unwrap();
+        }
+    
+        let room_state = RoomState::new(*room_name, self);
+        self.room_states.insert(*room_name, room_state);
+        self.room_states.get_mut(room_name).unwrap()
+    }
+    
+    pub fn get_or_create_creep_state(&mut self, creep_name: &str) -> &mut CreepState {
+        if self.creep_states.contains_key(creep_name) {
+            return self.creep_states.get_mut(creep_name).unwrap();
+        }
+    
+        let creep_state = CreepState::new(creep_name);
+        self.creep_states.insert(creep_name.to_string(), creep_state);
+        self.creep_states.get_mut(creep_name).unwrap()
     }
 }
