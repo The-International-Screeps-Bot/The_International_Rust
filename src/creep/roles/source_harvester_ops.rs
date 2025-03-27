@@ -26,6 +26,7 @@ pub fn register_source(
 
     let commune_state = game_state.commune_states.get_mut(room_name).unwrap();
     commune_state.source_harvest_strengths[source_index] += work_parts;
+    commune_state.source_harvest_creeps[source_index] += 1;
 
     // Register source position
     try_register_harvest_pos(creep_name, room_name, source_index, game_state, memory)

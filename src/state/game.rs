@@ -92,6 +92,7 @@ impl GameState {
         self.update_rooms();
         self.update_communes(memory);
         self.update_creep_id_index();
+        self.update_flags();
 
         // state type updating
 

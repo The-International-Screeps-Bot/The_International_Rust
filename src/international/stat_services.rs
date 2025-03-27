@@ -15,6 +15,8 @@ pub fn tick_update(game_state: &mut GameState, memory: &mut GameMemory) {
         stats.gpl_progress = game::gpl::progress() as u64;
         stats.gpl_total = game::gpl::progress_total() as u64;
         stats.total_creeps = game_state.creeps.len() as u32;
+        stats.intents = 0;
+        stats.energy_harvested = 0;
     }
 
     game_state.segments.stats.combined_rcl = stat_ops::find_combined_rcl(game_state)

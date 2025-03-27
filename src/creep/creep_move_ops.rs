@@ -137,7 +137,7 @@ fn try_use_existing_path(
     // If we are on a position in the path
     if let Some(index) = path.iter().position(|pos| pos == &my_creep_state.pos) {
         // Remove all positions earlier on the path that we are not on
-        let new_path = path[index + 1..].to_vec();
+        let new_path = path[index..].to_vec();
         if new_path.is_empty() {
             panic!("Path ended up empty unexpectedly {}", creep_name);
         }
@@ -147,7 +147,7 @@ fn try_use_existing_path(
         // Assign move request and update path
 
         let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
-        my_creep_state.move_request = Some(new_path[0]);
+        my_creep_state.move_request = Some(new_path[1]);
 
         let creep_memory = memory.creeps.get_mut(creep_name).unwrap();    
         creep_memory.move_path = Some(new_path);
@@ -396,7 +396,7 @@ pub fn get_move_options(
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-pub fn try_run_move_target(creep_name: &str, game_state: &GameState) {
+pub fn try_run_move_target(creep_name: &str, game_state: &mut GameState) {
     let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
     let Some(move_target) = my_creep_state.action_pos else {
         return;
@@ -413,4 +413,6 @@ pub fn try_run_move_target(creep_name: &str, game_state: &GameState) {
     
     let creep = game_state.creeps.get(creep_name).unwrap();
     creep.inner().move_direction(direction);
+    
+    game_state.segments.stats.intents += 1;
 }

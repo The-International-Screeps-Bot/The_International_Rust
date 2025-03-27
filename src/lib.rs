@@ -16,7 +16,7 @@ use room::{
     commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services},
     room_services,
 };
-use screeps::{game, RoomName};
+use screeps::{RoomName, game};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
 
@@ -24,6 +24,7 @@ use crate::{settings::Settings, state::game::GameState};
 
 mod constants;
 mod creep;
+mod debug;
 mod init;
 mod init_settings;
 mod international;
@@ -37,7 +38,6 @@ mod state;
 mod structures;
 mod tick_init;
 mod utils;
-mod debug;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
@@ -78,6 +78,18 @@ pub fn game_loop() {
                 info!("Log filter: {}", settings.log_filter);
 
                 loop_with_params(memory, game_state, settings);
+
+                let min_intents_cost = 0.2 * game_state.segments.stats.intents as f64;
+                let end_cpu = game::cpu::get_used();
+
+                info!(
+                    "Ending tick: {} \n lost CPU: {:.3} \n used CPU: {:.3} \n spent at least {:.3} on intents \n spent {:.3} on calculations",
+                    tick,
+                    end_cpu,
+                    end_cpu - start_cpu,
+                    min_intents_cost,
+                    end_cpu - start_cpu - min_intents_cost,
+                );
             });
         });
     });
@@ -90,13 +102,6 @@ pub fn game_loop() {
             info!("Finished profiling {}", trace_output);
         }
     }
-
-    info!(
-        "Ending tick: {} lost CPU: {:.3} used CPU: {:.3}",
-        tick,
-        game::cpu::get_used(),
-        game::cpu::get_used() - start_cpu
-    );
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
@@ -110,7 +115,7 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     game_state.tick_update(memory);
     memory.tick_update(game_state, settings);
     room_services::try_create_commune_states(game_state, memory);
-    
+
     stat_services::tick_update(game_state, memory);
 
     room_services::gc_commune_memories(game_state, memory);
@@ -118,7 +123,7 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     room_services::try_scout_rooms(game_state, memory);
 
     my_creep_services::organize_creeps(game_state, memory);
-    
+
     commune_services::try_active_safe_mode(game_state, memory);
     construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);
@@ -131,12 +136,12 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
 
     role_services::try_scouts(game_state, memory);
     role_services::try_harvest_commune_sources(game_state, memory);
-    
+
     my_creep_services::move_creeps(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
-    
+
     run_flags(game_state, memory);
-    
+
     memory.write(game_state);
 }

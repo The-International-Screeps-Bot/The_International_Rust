@@ -21,6 +21,7 @@ pub struct StatsSegment {
     pub cpu_used: u32,
     pub game_time: u32,
     pub energy_harvested: u32,
+    pub intents: u32,
 }
 
 impl StatsSegment {

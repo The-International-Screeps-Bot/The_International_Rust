@@ -74,6 +74,9 @@ impl CommuneState {
     
     pub fn tick_update(&mut self, room_name: &RoomName) {
         self.spawns_by_activity = None;
+        
+        self.source_harvest_strengths = self.source_harvest_strengths.iter().map(|_| 0).collect();
+        self.source_harvest_creeps = self.source_harvest_creeps.iter().map(|_| 0).collect();
     }
 
     pub fn interval_update(&mut self, room_name: &RoomName) {

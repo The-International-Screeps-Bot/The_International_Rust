@@ -111,7 +111,7 @@ fn run_move_requests(
     }
 }
 
-fn run_move_targets(room_name: &RoomName, game_state: &GameState) {
+fn run_move_targets(room_name: &RoomName, game_state: &mut GameState) {
     let room_state = game_state.room_states.get(room_name).unwrap();
     let creep_names: Vec<String> = room_state.my_creeps.to_vec();
 

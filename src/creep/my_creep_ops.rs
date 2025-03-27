@@ -29,9 +29,9 @@ pub fn drop_harvest(
     let harvest_pos = my_creep_state.harvest_pos.unwrap();
 
     // If we are adjacent to the source, try to harvest it
-    if my_creep_state.pos.is_near_to(harvest_pos) {
+    if my_creep_state.pos == harvest_pos {
         // If the source has no energy in it, don't try to harvest it
-        if source.energy() > 0 {
+        if source.energy() == 0 {
             return CreepOperationResult::InProgress;
         };
 
@@ -40,6 +40,7 @@ pub fn drop_harvest(
                 // let creep_state = game_state.creep_states.get(creep_name).unwrap();
                 // let parts = any_creep_ops::parts
                 game_state.segments.stats.energy_harvested += 1;
+                game_state.segments.stats.intents += 1;
                 CreepOperationResult::Success
             }
             Err(e) => {
