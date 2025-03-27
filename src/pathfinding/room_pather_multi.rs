@@ -7,7 +7,7 @@ use screeps::{Direction, Position, RoomName, RoomVisual, pathfinder::SearchGoal,
 use screeps_utils::sparse_cost_matrix::{self, SparseCostMatrix};
 
 use crate::{
-    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS}, memory::game_memory::GameMemory, room::room_ops::{self, sparse_terrain, terrain}, state::game::GameState, utils::{general::GeneralUtils, pos::get_positions_in_range_in_room}
+    constants::general::{GeneralResult, DIAGONAL_CARDINAL_DIRECTIONS, DIRECTIONS}, memory::game_memory::GameMemory, room::room_ops::{self, sparse_terrain, terrain}, state::game::GameState, utils::{general::GeneralUtils, pos::get_positions_in_range_in_room, visuals::visualize_path}
 };
 
 use super::{room_costs::economy_room_costs, RoomPathfinderOpts};
@@ -123,9 +123,7 @@ pub fn find_path(
                 let mut path_vec = path.into_iter().collect::<Vec<Position>>();
                 path_vec.reverse();
 
-                let room_visual = RoomVisual::new(Some(pos.room_name()));
-                let points = path_vec.iter().map(|pos| (pos.x().u8() as f32, pos.y().u8() as f32)).collect();
-                room_visual.poly(points, None);
+                visualize_path(&path_vec);
 
                 return Ok(path_vec);
             }

@@ -5,7 +5,7 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    AccountPowerCreep, Creep, MaybeHasId, OwnedStructureProperties, Room, RoomName,
+    AccountPowerCreep, Creep, Flag, MaybeHasId, OwnedStructureProperties, Room, RoomName,
     SharedCreepProperties, StructureType,
     game::{self, shard},
 };
@@ -53,6 +53,7 @@ pub struct GameState {
     pub scout_targets: HashSet<RoomName>,
     pub intervals: TickIntervals,
     pub segments: Segments,
+    pub flags: HashMap<String, Flag>,
 }
 
 impl GameState {
@@ -77,6 +78,7 @@ impl GameState {
             scout_targets: HashSet::new(),
             intervals: TickIntervals::new(),
             segments: Segments::new(),
+            flags: HashMap::new(),
         }
     }
 
@@ -289,6 +291,14 @@ impl GameState {
         self.terminal_communes = terminal_communes;
     }
 
+    fn update_flags(&mut self) {
+        let js_flags = game::flags();
+        for (flag_name, flag) in js_flags.keys().zip(js_flags.values()) {
+            
+            self.flags.insert(flag_name, flag);
+        }
+    }
+
     pub fn get_or_create_room_state_mut(&mut self, room_name: &RoomName) -> &mut RoomState {
         if self.room_states.contains_key(room_name) {
             return self.room_states.get_mut(room_name).unwrap();
@@ -297,14 +307,14 @@ impl GameState {
         let room_state = RoomState::new(*room_name, self);
         self.room_states.insert(*room_name, room_state);
         self.room_states.get_mut(room_name).unwrap()
-        
+
         // let maybe_state = self.room_states.get_mut(room_name);
-        
+
         // match maybe_state {
         //     Some(state) => state,
         //     None => {
         //         drop(maybe_state);
-                
+
         //         let room_state = RoomState::new(*room_name, self);
         //         self.room_states.insert(*room_name, room_state);
         //         self.room_states.get_mut(room_name).unwrap()

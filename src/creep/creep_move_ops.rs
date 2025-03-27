@@ -11,15 +11,14 @@ use crate::{
     },
     memory::{creep_memory, game_memory::GameMemory},
     pathfinding::{
-        PathfindingOpts, pathfinding_services_multi::try_find_path, pathfinding_services_single,
-        room_pather_multi::PathGoals, room_pather_single::PathGoal,
+        pathfinding_services_multi::try_find_path, pathfinding_services_single, room_pather_multi::PathGoals, room_pather_single::PathGoal, PathfindingOpts
     },
     room::room_ops::{self, default_move_costs},
     state::game::GameState,
     utils::{
         self,
-        general::{GeneralUtils, pos_range},
-        pos::{get_adjacent_positions_conditional, is_xy_exit},
+        general::{pos_range, GeneralUtils},
+        pos::{get_adjacent_positions_conditional, is_xy_exit}, visuals::visualize_path,
     },
 };
 
@@ -56,8 +55,8 @@ pub fn create_move_request(
     // If we are near the goal, just make a move request to it
     let goal_range = my_creep_state.pos.get_range_to(goal.pos);
     if goal_range <= goal.range as u32 {
-        let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
-        my_creep_state.move_request = Some(goal.pos);
+        // let creep_state = game_state.creep_states.get_mut(creep_name).unwrap();
+        // my_creep_state.move_request = Some(goal.pos);
 
         return Err(GeneralError::Fail);
     }
@@ -128,11 +127,12 @@ fn try_use_existing_path(
     let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
 
     // If we are right next to the first pos in the path, move towards it
-    if my_creep_state.pos.is_near_to(first) {
-        my_creep_state.move_request = Some(first);
+    // Disabling this as it doesn't account for variable goal range
+    // if my_creep_state.pos.is_near_to(first) {
+    //     my_creep_state.move_request = Some(first);
 
-        return Ok(());
-    }
+    //     return Ok(());
+    // }
 
     // If we are on a position in the path
     if let Some(index) = path.iter().position(|pos| pos == &my_creep_state.pos) {
@@ -141,13 +141,15 @@ fn try_use_existing_path(
         if new_path.is_empty() {
             panic!("Path ended up empty unexpectedly {}", creep_name);
         }
+        
+        visualize_path(&new_path);
 
         // Assign move request and update path
 
         let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
         my_creep_state.move_request = Some(new_path[0]);
 
-        let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
+        let creep_memory = memory.creeps.get_mut(creep_name).unwrap();    
         creep_memory.move_path = Some(new_path);
 
         return Ok(());

@@ -3,14 +3,16 @@ use screeps::{ErrorCode, HasPosition, ObjectId, Part, SharedCreepProperties, Sou
 
 use crate::{
     constants::creep::{
-        CreepOperationResult, CreepPart, CreepParts, CreepPartsByType, CreepRole,
-        CREEP_PARTS_BY_TYPE,
-    }, creep::my_creep::MyCreep, memory::game_memory::GameMemory, pathfinding::{room_pather_multi::PathGoals, room_pather_single::PathGoal, PathfindingOpts}, state::{game::GameState, my_creep::MyCreepState}
+        CREEP_PARTS_BY_TYPE, CreepOperationResult, CreepPart, CreepParts, CreepPartsByType,
+        CreepRole,
+    },
+    creep::{any_creep_ops, my_creep::MyCreep},
+    memory::game_memory::GameMemory,
+    pathfinding::{PathfindingOpts, room_pather_multi::PathGoals, room_pather_single::PathGoal},
+    state::{game::GameState, my_creep::MyCreepState},
 };
 
-use super::{
-    creep_move_ops, roles::source_harvester_ops
-};
+use super::{creep_move_ops, roles::source_harvester_ops};
 
 // Transfer these over to MyCreep, if we are commiting to the types decrepancy
 
@@ -22,30 +24,51 @@ pub fn drop_harvest(
 ) -> CreepOperationResult {
     info!("Trying to drop harvest");
     let creep = game_state.creeps.get(creep_name).unwrap();
-    
+
     let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
     let harvest_pos = my_creep_state.harvest_pos.unwrap();
-    
-    let creep_state = game_state.creep_states.get(creep_name).unwrap();
 
+    // If we are adjacent to the source, try to harvest it
     if my_creep_state.pos.is_near_to(harvest_pos) {
-        match creep.inner().harvest(source) {
-            Ok(()) | Err(ErrorCode::NotEnough) => CreepOperationResult::Fail,
+        // If the source has no energy in it, don't try to harvest it
+        if source.energy() > 0 {
+            return CreepOperationResult::InProgress;
+        };
+
+        return match creep.inner().harvest(source) {
+            Ok(e) => {
+                // let creep_state = game_state.creep_states.get(creep_name).unwrap();
+                // let parts = any_creep_ops::parts
+                game_state.segments.stats.energy_harvested += 1;
+                CreepOperationResult::Success
+            }
             Err(e) => {
+                let creep_state = game_state.creep_states.get(creep_name).unwrap();
+
                 warn!(
                     "creep {} unexpected error {:?} when harvesting",
-                    creep_state.name,
-                    e
+                    creep_state.name, e
                 );
                 CreepOperationResult::Exception
             }
-        }
-    } else {
-        info!("{} is moving to harvest pos {}", creep_state.name, harvest_pos);
-        // The creep needs to move to the source to harvest it.
-        creep_move_ops::create_move_request(creep_name, &PathGoal::new(harvest_pos, 1), PathfindingOpts::new(), game_state, memory);
-        CreepOperationResult::InProgress
+        };
     }
+
+    // We are not near the source, so try to move towards it
+
+    info!(
+        "creep is moving to harvest pos {}",
+        harvest_pos
+    );
+    // The creep needs to move to the source to harvest it.
+    creep_move_ops::create_move_request(
+        creep_name,
+        &PathGoal::new(harvest_pos, 0),
+        PathfindingOpts::new(),
+        game_state,
+        memory,
+    );
+    CreepOperationResult::InProgress
 }
 
 pub fn clean_creep_memories(game_state: &GameState, memory: &mut GameMemory) {
