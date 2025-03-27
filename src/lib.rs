@@ -6,6 +6,7 @@ use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use creep::{my_creep::MyCreep, my_creep_services, role_services};
+use debug::flags::run_flags;
 use international::{
     construction_site_services, global_request_ops, global_request_services, stat_services,
 };
@@ -36,6 +37,7 @@ mod state;
 mod structures;
 mod tick_init;
 mod utils;
+mod debug;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
@@ -133,5 +135,8 @@ fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, setting
     my_creep_services::move_creeps(game_state, memory);
 
     stat_services::try_write_stats(game_state, memory);
+    
+    run_flags(game_state, memory);
+    
     memory.write(game_state);
 }
