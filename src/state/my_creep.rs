@@ -30,6 +30,7 @@ pub struct MyCreepState {
     pub parts: Option<Vec<Part>>,
     pub parts_by_type: Option<CreepPartsByType>,
     pub active_parts_by_type: Option<ActiveCreepPartsByType>,
+    pub harvest_pos: Option<Position>,
 }
 
 impl MyCreepState {
@@ -45,6 +46,7 @@ impl MyCreepState {
             parts: None,
             parts_by_type: None,
             active_parts_by_type: None,
+            harvest_pos: None,
         }
     }
 

@@ -24,24 +24,26 @@ pub fn drop_harvest(
     let creep = game_state.creeps.get(creep_name).unwrap();
     
     let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
+    let harvest_pos = my_creep_state.harvest_pos.unwrap();
+    
+    let creep_state = game_state.creep_states.get(creep_name).unwrap();
 
-    let source_pos = source.pos();
-    if my_creep_state.pos.is_near_to(source_pos) {
+    if my_creep_state.pos.is_near_to(harvest_pos) {
         match creep.inner().harvest(source) {
             Ok(()) | Err(ErrorCode::NotEnough) => CreepOperationResult::Fail,
             Err(e) => {
                 warn!(
                     "creep {} unexpected error {:?} when harvesting",
-                    creep.inner().name(),
+                    creep_state.name,
                     e
                 );
                 CreepOperationResult::Exception
             }
         }
     } else {
-        info!("{} is moving to source {}", creep.inner().name(), source.pos());
+        info!("{} is moving to harvest pos {}", creep_state.name, harvest_pos);
         // The creep needs to move to the source to harvest it.
-        creep_move_ops::create_move_request(creep_name, &PathGoal::new(source_pos, 1), PathfindingOpts::new(), game_state, memory);
+        creep_move_ops::create_move_request(creep_name, &PathGoal::new(harvest_pos, 1), PathfindingOpts::new(), game_state, memory);
         CreepOperationResult::InProgress
     }
 }

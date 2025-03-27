@@ -5,7 +5,9 @@ use std::{
 
 use enum_map::EnumMap;
 use screeps::{
-    game::{self, shard}, AccountPowerCreep, Creep, MaybeHasId, OwnedStructureProperties, Room, RoomName, SharedCreepProperties, StructureType
+    AccountPowerCreep, Creep, MaybeHasId, OwnedStructureProperties, Room, RoomName,
+    SharedCreepProperties, StructureType,
+    game::{self, shard},
 };
 
 use super::{
@@ -98,7 +100,7 @@ impl GameState {
         self.update_structures_state();
 
         //
-        
+
         self.find_highest_rcl();
         self.update_terminal_communes();
     }
@@ -114,12 +116,13 @@ impl GameState {
             };
 
             if !self.my_creep_states.contains_key(&creep_name) {
-                self.my_creep_states
-                    .insert(creep_name.clone(), MyCreepState::new(creep_name.as_str(), &any_creep));
-            }
-            else {
+                self.my_creep_states.insert(
+                    creep_name.clone(),
+                    MyCreepState::new(creep_name.as_str(), &any_creep),
+                );
+            } else {
                 let my_creep_state = self.my_creep_states.get_mut(&creep_name).unwrap();
-                
+
                 my_creep_state.tick_update(&creep);
             }
 
@@ -204,7 +207,7 @@ impl GameState {
         for (room_name, commune_state) in &mut self.commune_states {
             commune_state.tick_update(room_name);
         }
-        
+
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
@@ -218,7 +221,6 @@ impl GameState {
     }
 
     fn update_my_creeps_state(&mut self) {
-
         // Tick update done in update_my_creeps
 
         if !utils::general::is_tick_interval(self.tick, 100) {
@@ -237,7 +239,7 @@ impl GameState {
         if !utils::general::is_tick_interval(self.tick, 100) {
             return;
         }
-        
+
         // Delete creep states every so often
         self.creep_states = HashMap::new();
 
@@ -286,24 +288,38 @@ impl GameState {
 
         self.terminal_communes = terminal_communes;
     }
-    
-    pub fn get_or_create_room_state_mut(&mut self, room_name: &RoomName) -> &mut RoomState {        
+
+    pub fn get_or_create_room_state_mut(&mut self, room_name: &RoomName) -> &mut RoomState {
         if self.room_states.contains_key(room_name) {
             return self.room_states.get_mut(room_name).unwrap();
         }
-    
+
         let room_state = RoomState::new(*room_name, self);
         self.room_states.insert(*room_name, room_state);
         self.room_states.get_mut(room_name).unwrap()
+        
+        // let maybe_state = self.room_states.get_mut(room_name);
+        
+        // match maybe_state {
+        //     Some(state) => state,
+        //     None => {
+        //         drop(maybe_state);
+                
+        //         let room_state = RoomState::new(*room_name, self);
+        //         self.room_states.insert(*room_name, room_state);
+        //         self.room_states.get_mut(room_name).unwrap()
+        //     }
+        // }
     }
-    
+
     pub fn get_or_create_creep_state(&mut self, creep_name: &str) -> &mut CreepState {
         if self.creep_states.contains_key(creep_name) {
             return self.creep_states.get_mut(creep_name).unwrap();
         }
-    
+
         let creep_state = CreepState::new(creep_name);
-        self.creep_states.insert(creep_name.to_string(), creep_state);
+        self.creep_states
+            .insert(creep_name.to_string(), creep_state);
         self.creep_states.get_mut(creep_name).unwrap()
     }
 }

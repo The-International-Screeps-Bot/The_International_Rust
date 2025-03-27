@@ -38,10 +38,10 @@ fn try_register_harvest_pos(
     game_state: &mut GameState,
     memory: &mut GameMemory,
 ) {
-    let creep_memory = memory.creeps.get(creep_name).unwrap();
+    let my_creep_state = game_state.my_creep_states.get(creep_name).unwrap();
 
     // If we already have an existing harvest position, record it and stop
-    if let Some(harvest_pos) = creep_memory.harvest_pos {
+    if let Some(harvest_pos) = my_creep_state.harvest_pos {
         let commune_state = game_state.commune_states.get_mut(room_name).unwrap();
         commune_state.reserved_positions.insert(harvest_pos);
 
@@ -83,8 +83,8 @@ fn try_register_harvest_pos(
 
     // Record it in our memory
 
-    let creep_memory = memory.creeps.get_mut(creep_name).unwrap();
-    creep_memory.harvest_pos = Some(harvest_pos);
+    let my_creep_state = game_state.my_creep_states.get_mut(creep_name).unwrap();
+    my_creep_state.harvest_pos = Some(harvest_pos);
 }
 
 pub fn try_harvest(creep_name: &str, game_state: &mut GameState, memory: &mut GameMemory) {

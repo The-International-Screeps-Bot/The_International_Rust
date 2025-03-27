@@ -8,7 +8,6 @@ pub struct CreepMemory {
     pub role: CreepRole,
     pub room_from: RoomName,
     /// A position that the creep intends to stand on without unreasonable disruption
-    pub harvest_pos: Option<Position>,
     pub source_index: Option<usize>,
     pub scout_target: Option<RoomName>,
     pub rampart_only_shoving: Option<bool>,
@@ -21,7 +20,6 @@ impl CreepMemory {
         Self {
             role,
             room_from,
-            harvest_pos: None,
             source_index: None,
             scout_target: None,
             rampart_only_shoving: None,
