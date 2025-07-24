@@ -10,11 +10,14 @@ use crate::{
     memory::game_memory::GameMemory,
     room::room_ops,
     state::game::GameState,
-    utils::general::{is_tick_interval, GeneralUtils},
+    utils::{self, general::{is_tick_interval, GeneralUtils}},
 };
 
 pub fn run_towers(room_name: &RoomName, game_state: &mut GameState, memory: &mut GameMemory) {
-    let mut towers = room_ops::structures(room_name, game_state).tower.clone();
+    let mut towers = room_ops::structures_by_type(room_name, game_state).tower.clone();
+    if towers.is_empty() {
+        return; 
+    }
 
     if towers_creep_actions(room_name, game_state, memory, &mut towers) == TowersResult::Stop {
         return;
@@ -47,20 +50,24 @@ fn tower_my_creep_actions(
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
     let room_state = game_state.room_states.get_mut(room_name).unwrap();
-    let Some(creeps) = &mut room_state.my_creeps else {
-        return TowersResult::Continue;
-    };
+    let mut creep_names = &mut room_state.my_creeps.clone();
     
     // Also make sure the creep isn't in enemy attack coords and hasn't been healed too often over the last few ticks (use a tower heal heat metric)
 
-    creeps.retain(|creep| creep.inner().hits() < creep.inner().hits_max());
+    creep_names.retain(|creep_name| {
+        let my_creep = game_state.creeps.get(creep_name).unwrap();
 
-    if creeps.is_empty() {
+        my_creep.inner().hits() < my_creep.inner().hits_max()
+    });
+
+    if creep_names.is_empty() {
         return TowersResult::Continue;
     }
 
     towers.retain(|tower| {
-        tower.heal(creeps[0].inner());
+
+        let my_creep = game_state.creeps.get(&creep_names[0]).unwrap();
+        tower.heal(my_creep.inner());
 
         false
     });
@@ -136,7 +143,7 @@ pub fn find_towers_attack_power(towers: &[StructureTower], target_pos: &Position
     let mut total_attack_power = 0;
 
     for tower in towers {
-        let range = GeneralUtils::pos_range(&tower.pos(), target_pos);
+        let range = utils::general::pos_range(&tower.pos(), target_pos);
 
         total_attack_power += screeps_utils::math::tower_attack_power_at_range(range as u8)
     }
@@ -194,7 +201,7 @@ fn towers_repair_ramparts(
     memory: &GameMemory,
     towers: &mut Vec<StructureTower>,
 ) -> TowersResult {
-    let mut ramparts = &mut room_ops::structures(room_name, game_state).rampart;
+    let mut ramparts = room_ops::structures_by_type(room_name, game_state).rampart.clone();
 
     if ramparts.is_empty() {
         return TowersResult::Continue;

@@ -72,7 +72,7 @@ module.exports.loop = function () {
             wasm_module.initialize_instance();
 
             let cpu_after = Game.cpu.getUsed();
-            console.log(`[JS] ${cpu_after - cpu_before}cpu used to initialize wasm`);
+            console.log(`[JS] ${cpu_after - cpu_before} cpu used to initialize wasm`);
 
             // run the setup function, which configures logging
             wasm_module.init();

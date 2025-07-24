@@ -1,10 +1,23 @@
 use std::collections::HashMap;
 
+use enum_map::{EnumMap, enum_map};
 use screeps::{
-    find, game::map::RoomStatus, ObjectId, Path, Position, Room, RoomName, Source, StructureContainer, StructureController, StructureFactory, StructureNuker, StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal, StructureType
+    ConstructionSite, LocalRoomTerrain, ObjectId, Path, Position, Room, RoomName, Source,
+    Structure, StructureContainer, StructureController, StructureFactory, StructureNuker,
+    StructureObject, StructurePowerSpawn, StructureProperties, StructureStorage, StructureTerminal,
+    StructureType, find, game::map::RoomStatus,
 };
+use screeps_utils::sparse_cost_matrix::SparseCostMatrix;
 
-use crate::{constants::{room::NotMyCreeps, structure::{OrganizedStructures, SpawnsByActivity}}, creep::my_creep::MyCreep};
+use crate::{
+    constants::{
+        creep::CreepRole,
+        general::{GeneralError, GeneralResult},
+        room::{NO_VISION_STATE_EXPIRATION, NotMyCreeps},
+        structure::{OrganizedStructures, SpawnsByActivity},
+    },
+    creep::my_creep::MyCreep,
+};
 
 use super::game::GameState;
 
@@ -14,45 +27,113 @@ pub type RoomStates = HashMap<RoomName, RoomState>;
 pub struct RoomState {
     pub name: RoomName,
     pub status: Option<RoomStatus>,
+    pub terrain: Option<LocalRoomTerrain>,
+    pub sparse_terrain: Option<SparseCostMatrix>,
+    pub default_move_ops: Option<SparseCostMatrix>,
+    pub enemy_threat_positions: Option<SparseCostMatrix>,
+    pub last_seen: u32,
+    pub expired: bool,
 
     // Structures
-    pub structures: Option<OrganizedStructures>,
+    pub structures: Option<Vec<StructureObject>>,
+    pub structures_by_type: Option<OrganizedStructures>,
     pub storage: Option<StructureStorage>,
     pub terminal: Option<StructureTerminal>,
-    pub power_spawn: Option<StructurePowerSpawn>,
     pub controller: Option<StructureController>,
-    pub nuker: Option<StructureNuker>,
-    pub factory: Option<StructureFactory>,
+
+    pub my_construction_sites: Option<Vec<ConstructionSite>>,
+    pub not_my_construction_sites: Option<NotMyConstructionSites>,
     pub commune_plan: Option<CommunePlan>,
-    pub spawns_by_activity: Option<SpawnsByActivity>,
 
     // Sources
     pub sources: Option<Vec<Source>>,
-    pub harvest_positions: Option<Vec<Position>>,
+    pub harvest_positions: Option<Vec<Vec<Position>>>,
 
     // Creeps
-    pub my_creeps: Option<Vec<MyCreep>>,
+    pub my_creeps: Vec<String>,
+    pub creeps_by_role: EnumMap<CreepRole, Vec<String>>,
     pub not_my_creeps: Option<NotMyCreeps>,
 }
 
 impl RoomState {
-    pub fn new(room: &Room, room_name: RoomName) -> Self {
+    pub fn new(room_name: RoomName, game_state: &GameState) -> Self {
         Self {
             name: room_name,
             status: None,
+            terrain: None,
+            sparse_terrain: None,
+            default_move_ops: None,
+            enemy_threat_positions: None,
+            last_seen: game_state.tick,
+            expired: false,
             structures: None,
+            structures_by_type: None,
             storage: None,
             terminal: None,
-            power_spawn: None,
             controller: None,
-            nuker: None,
-            factory: None,
+            my_construction_sites: None,
+            not_my_construction_sites: None,
             commune_plan: None,
             sources: None,
             harvest_positions: None,
-            my_creeps: None,
+            my_creeps: Vec::new(),
             not_my_creeps: None,
-            spawns_by_activity: None,
+            creeps_by_role: creeps_by_role(),
+        }
+    }
+
+    /// Track when the room was last seen.
+    /// If the room hasn't been seen for awhile, remove it
+    /// Otherwise if we do see the room, record the fact (reset timer)
+    pub fn track_vision(&mut self, has_vision: bool, tick: u32) {
+        if has_vision {
+            self.last_seen = tick;
+            return;
+        }
+
+        // We don't have vision
+
+        // If the room hasn't been seen for awhile, record that it is expired
+        if tick - self.last_seen >= NO_VISION_STATE_EXPIRATION {
+            self.expired = true;
+        }
+    }
+
+    pub fn tick_update(&mut self, room_name: &RoomName) {
+        self.my_construction_sites = None;
+        self.not_my_construction_sites = None;
+
+        self.my_creeps = Vec::new();
+        self.creeps_by_role = creeps_by_role();
+        self.not_my_creeps = None;
+
+        self.structures = None;
+        self.structures_by_type = None;
+        self.storage = None;
+        self.terminal = None;
+        self.controller = None;
+
+        self.enemy_threat_positions = None;
+    }
+
+    pub fn interval_update(&mut self, room_name: &RoomName) {
+        self.terrain = None;
+        self.sparse_terrain = None;
+        self.default_move_ops = None;
+    }
+}
+
+#[derive(Debug)]
+pub struct NotMyConstructionSites {
+    pub ally: Vec<ConstructionSite>,
+    pub enemy: Vec<ConstructionSite>,
+}
+
+impl NotMyConstructionSites {
+    pub fn new() -> Self {
+        Self {
+            ally: Vec::new(),
+            enemy: Vec::new(),
         }
     }
 }
@@ -60,10 +141,10 @@ impl RoomState {
 // All of the data associated with a commune's base plan
 #[derive(Debug)]
 pub struct CommunePlan {
-    pub grid_map: [u8; 2500],
+    pub grid_map: SparseCostMatrix,
     pub terrain_map: [u8; 2500],
-    pub road_map: [u8; 2500],
-    pub plan_map: [u8; 2500],
+    pub road_map: SparseCostMatrix,
+    pub plan_map: SparseCostMatrix,
     pub plan_attempts: Vec<CommunePlanAttemptSummary>,
     pub current_attempt: CommunePlanAttemptData,
     /// FastFiller
@@ -73,10 +154,10 @@ pub struct CommunePlan {
 impl CommunePlan {
     pub fn new() -> Self {
         Self {
-            grid_map: [0; 2500],
+            grid_map: SparseCostMatrix::new(),
             terrain_map: [0; 2500],
-            road_map: [0; 2500],
-            plan_map: [0; 2500],
+            road_map: SparseCostMatrix::new(),
+            plan_map: SparseCostMatrix::new(),
             plan_attempts: Vec::new(),
             current_attempt: CommunePlanAttemptData::new(),
             fast_filler_start_positions: None,
@@ -160,18 +241,26 @@ pub struct CommunePlanAttemptSummary {
     upgrade_path: Vec<Position>,
 }
 
-pub struct RemotePlanner {}
-
-pub struct RoomStateOps;
-
-impl RoomStateOps {
-    pub fn update_state(state: &mut RoomState) {
-        state.structures = None;
-        state.storage = None;
-        state.terminal = None;
-        state.power_spawn = None;
-        state.controller = None;
-        state.nuker = None;
-        state.factory = None;
+fn creeps_by_role() -> EnumMap<CreepRole, Vec<String>> {
+    enum_map! {
+        CreepRole::SourceHarvester => Vec::new(),
+        CreepRole::Builder => Vec::new(),
+        CreepRole::Upgrader => Vec::new(),
+        CreepRole::Scout => Vec::new(),
+        CreepRole::Hauler => Vec::new(),
+        CreepRole::Repairer => Vec::new(),
+        CreepRole::Antifa => Vec::new(),
+        CreepRole::Unknown => Vec::new(),
+        CreepRole::FastFill => Vec::new(),
+        CreepRole::MineralHarvester => Vec::new(),
+        CreepRole::RemoteHauler => Vec::new(),
+        CreepRole::RemoteMineralHarvester => Vec::new(),
+        CreepRole::RemoteBuilder => Vec::new(),
+        CreepRole::RemoteSourceHarvester => Vec::new(),
+        CreepRole::Downgraders => Vec::new(),
+        CreepRole::Claimer => Vec::new(),
+        CreepRole::RemoteReserver => Vec::new(),
+        CreepRole::Hub => Vec::new(),
+        CreepRole::Vanguard => Vec::new(),
     }
 }

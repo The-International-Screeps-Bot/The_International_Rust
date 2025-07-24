@@ -1,4 +1,7 @@
-use std::default;
+use std::{
+    default,
+    fmt::{self, Debug}, u32,
+};
 
 use enum_map::{Enum, EnumMap};
 use screeps::{constants::creep::Part, BodyPart, Position, SpawnOptions};
@@ -7,42 +10,45 @@ use crate::memory::creep_memory::CreepMemory;
 
 use super::creep::{CreepPart, CreepRole};
 
+#[derive(Debug)]
 pub struct IndividualUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
     pub extra_parts: Vec<CreepPart>,
-    pub parts_quota: u32,
+    pub extra_parts_quota: u32,
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: u32,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub creeps_quota: u32,
     pub spawn_target: Option<Position>,
 }
 
+#[derive(Debug)]
 pub struct GroupUniformSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
     pub extra_parts: Vec<CreepPart>,
-    pub parts_quota: u32,
+    pub extra_parts_quota: u32,
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: Option<u32>,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
     pub spawn_target: Option<Position>,
 }
 
+#[derive(Debug)]
 pub struct GroupDiverseSpawnRequestArgs {
     pub role: CreepRole,
     pub default_parts: Vec<CreepPart>,
     pub extra_parts: Vec<CreepPart>,
-    pub parts_quota: u32,
+    pub extra_parts_quota: u32,
     pub min_cost_per_creep: u32,
     pub max_cost_per_creep: Option<u32>,
     pub memory_additions: CreepMemory,
-    pub priority: u32,
+    pub priority: f32,
     pub max_creeps: Option<u32>,
     pub threshold: Option<f32>,
     pub spawn_target: Option<Position>,
@@ -52,6 +58,53 @@ pub enum SpawnRequestArgs {
     IndividualUniform(IndividualUniformSpawnRequestArgs),
     GroupUniform(GroupUniformSpawnRequestArgs),
     GroupDiverse(GroupDiverseSpawnRequestArgs),
+}
+
+impl Debug for SpawnRequestArgs {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let role = match self {
+            SpawnRequestArgs::IndividualUniform(args) => args.role,
+            SpawnRequestArgs::GroupUniform(args) => args.role,
+            SpawnRequestArgs::GroupDiverse(args) => args.role,
+        };
+
+        write!(
+            f,
+            "role: {:?} default parts: {:?} extra parts: {:?} extra parts quota {:?} min cost: {:?} priority: {:?} request type: {:?}",
+            role,
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.default_parts,
+                SpawnRequestArgs::GroupUniform(args) => &args.default_parts,
+                SpawnRequestArgs::GroupDiverse(args) => &args.default_parts,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.extra_parts,
+                SpawnRequestArgs::GroupUniform(args) => &args.extra_parts,
+                SpawnRequestArgs::GroupDiverse(args) => &args.extra_parts,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => &args.extra_parts_quota,
+                SpawnRequestArgs::GroupUniform(args) => &args.extra_parts_quota,
+                SpawnRequestArgs::GroupDiverse(args) => &args.extra_parts_quota,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => args.min_cost_per_creep,
+                SpawnRequestArgs::GroupUniform(args) => args.min_cost_per_creep,
+                SpawnRequestArgs::GroupDiverse(args) => args.min_cost_per_creep,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => args.priority,
+                SpawnRequestArgs::GroupUniform(args) => args.priority,
+                SpawnRequestArgs::GroupDiverse(args) => args.priority,
+            },
+            match self {
+                SpawnRequestArgs::IndividualUniform(args) => "IndividualUniform",
+                SpawnRequestArgs::GroupUniform(args) => "GroupUniform",
+                SpawnRequestArgs::GroupDiverse(args) => "GroupDiverse",
+            },
+        )
+    }
 }
 
 #[derive(Debug, Default)]
@@ -64,12 +117,25 @@ pub enum SpawnRequestTypes {
 
 pub struct SpawnRequest {
     pub role: CreepRole,
-    pub priority: u32,
+    pub priority: f32,
     pub tier: u32,
     pub cost: u32,
     pub memory: CreepMemory,
     pub body_part_counts: EnumMap<CreepPart, u32>,
     pub spawn_target: Option<Position>,
+}
+
+impl Debug for SpawnRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let role = self.role;
+
+        write!(
+            f,
+            "{:?}",
+            role,
+        )
+    }
 }
 
 #[derive(Default)]
@@ -93,3 +159,40 @@ impl BodypartsByPriority {
         }
     }
 }
+
+pub mod spawn_priority_bounds {
+    pub const SOURCE_HARVESTER: (f32, f32) = (2.0, 1000.0);
+    pub const HAULER: (f32, f32) = (1.0, 1000.0);
+    // 0-1 as a percent of repair need fulfilled. Perhaps repair need increases as ramparts get closer to being super low
+    pub const URGENT_REPAIRER: (f32, f32) = (3.0, 4.0);
+    // 0-1 as a percent of damage need fulfilled
+    pub const DEFENDER: (f32, f32) = (3.0, 4.0);
+
+    // Remote room
+    // Each remote room adds + 1 priority
+    pub const REMOTE_RESERVER: (f32, f32) = (10.0, 1000.0);
+    pub const REMOTE_BUILDER: (f32, f32) = (10.2, 1000.0);
+
+    // Remote source
+    // Each remote source adds +1 priority
+
+    pub const REMOTE_SOURCE_HARVESTER: (f32, f32) = (10.1, 1000.0);
+    // Source harvester + .1
+    pub const REMOTE_HAULER: (f32, f32) = (10.3, 1000.0);
+
+    // Still need to figure these out. Ideally we spawn them in between efficiency peaks. As in, when we can spawn very efficient creeps don't spawn these guys, otherwise spawn them
+    // Determine how much repair, upgrade, build combat and scout spawn time we need
+    // Compare to predictions of spawn time for remoting and other needs
+    // Cut down on remotes until we have sufficient spawn time for these creeps
+    // Then, when we would have spent spawn time on the less efficient remotes, we instead spawn these guys
+
+    pub const NORMAL_REPAIRER: (f32, f32) = (0.0, 1000.0);
+    pub const UPGRADER: (f32, f32) = (0.0, 1000.0);
+    pub const BUILDER: (f32, f32) = (0.0, 1000.0);
+    // Give more spawn time the more RCL weighted hate we have
+    pub const ANTIFA: (f32, f32) = (0.0, 1000.0);
+    pub const SCOUT: (f32, f32) = (0.0, 1000.0);
+}
+
+/// The minimum cost to spawn a creep (say, with 1 MOVE part)
+pub const MIN_SPAWN_COST: u32 = 50;

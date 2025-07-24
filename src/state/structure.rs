@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use screeps::{ObjectId, Structure};
+use screeps::{ObjectId, Position, Structure};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct StructuresState {
     // Should add logic to clear this list every 100 ticks or so.
     pub active_statuses: StructureActiveStatuses,
@@ -11,7 +11,7 @@ pub struct StructuresState {
 impl StructuresState {
     pub fn new() -> Self {
         Self {
-            ..Default::default()
+            active_statuses: HashMap::new(),
         }
     }
 }

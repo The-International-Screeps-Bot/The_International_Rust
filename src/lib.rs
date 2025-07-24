@@ -1,35 +1,43 @@
 // FIXME: remove this, but right now it's just causing warning fatigue
 #![allow(unused)]
+#![feature(int_roundings)]
 
 use core::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
-use creep::my_creep::MyCreep;
-use international::{construction_site_services, global_request_ops, global_request_services};
+use creep::{my_creep::MyCreep, my_creep_services, role_services};
+use debug::flags::run_flags;
+use international::{
+    construction_site_services, global_request_ops, global_request_services, stat_services,
+};
 use log::*;
 use memory::game_memory::GameMemory;
-use room::commune::{commune_services, my_room::MyRoom};
-use screeps::{game, RoomName};
+use room::{
+    commune::{commune_services, defense_ops, my_room::MyRoom, spawning::spawn_services},
+    room_services,
+};
+use screeps::{RoomName, game};
 use state::{creep::CreepState, room::RoomState};
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    settings::Settings,
-    state::game::{GameState},
-};
+use crate::{settings::Settings, state::game::GameState};
 
 mod constants;
 mod creep;
+mod debug;
+mod init;
+mod init_settings;
 mod international;
 mod logging;
 mod memory;
+mod other;
 mod pathfinding;
 mod room;
 mod settings;
 mod state;
 mod structures;
+mod tick_init;
 mod utils;
-mod init;
 
 thread_local! {
     static GAME_STATE: RefCell<GameState> = RefCell::new(GameState::new());
@@ -42,48 +50,48 @@ thread_local! {
     static MY_CREEP_STATES: RefCell<HashMap<String, MyCreep>> = RefCell::new(HashMap::new());
 }
 
-#[wasm_bindgen]
-pub fn init() {
-    logging::setup_logger(LevelFilter::Trace);
-    info!("Initializing...");
-    GAME_STATE.with_borrow_mut(|game_state| {
-        game_state.init_tick = game::time();
-    });
+static INIT: std::sync::Once = std::sync::Once::new();
 
-    SETTINGS.with_borrow_mut(|settings| {
-        settings.allies.insert(String::from("PandaMaster"));
-    });
-}
-
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = loop)]
 pub fn game_loop() {
+    let start_cpu = game::cpu::get_used();
+
     #[cfg(feature = "profile")]
     {
-        screeps_timing::start_trace(Box::new(|| {
-            (screeps::game::cpu::get_used() * 1000.0) as u64
-        }));
+        screeps_timing::start_trace(Box::new(|| (game::cpu::get_used() * 1000.0) as u64));
     }
 
     let tick = game::time();
     let bucket = game::cpu::bucket();
-    info!("Starting game tick {} with {} bucket", tick, bucket);
+    info!(
+        "Starting game tick {} with {} bucket starting at used CPU: {}",
+        tick, bucket, start_cpu
+    );
 
-    trace!("this is a trace message");
-    debug!("this is a debug message");
-    info!("this is an info message");
-    warn!("this is an important warning!");
-    error!("this is a critical error");
+    INIT.call_once(|| {
+        init::init();
+    });
 
     MEMORY.with_borrow_mut(|memory| {
         SETTINGS.with_borrow(|settings| {
             GAME_STATE.with_borrow_mut(|game_state| {
-                
+                info!("Log filter: {}", settings.log_filter);
+
                 loop_with_params(memory, game_state, settings);
-                debug!("{:#?}", game_state);
+
+                let min_intents_cost = 0.2 * game_state.segments.stats.intents as f64;
+                let end_cpu = game::cpu::get_used();
+
+                info!(
+                    "Ending tick: {} \n lost CPU: {:.3} \n used CPU: {:.3} \n spent at least {:.3} on intents \n spent {:.3} on calculations",
+                    tick,
+                    end_cpu,
+                    end_cpu - start_cpu,
+                    min_intents_cost,
+                    end_cpu - start_cpu - min_intents_cost,
+                );
             });
         });
-
-        memory.write();
     });
 
     #[cfg(feature = "profile")]
@@ -91,25 +99,49 @@ pub fn game_loop() {
         let trace = screeps_timing::stop_trace();
 
         if let Ok(trace_output) = serde_json::to_string(&trace) {
-            info!("{}", trace_output);
+            info!("Finished profiling {}", trace_output);
         }
     }
-
-    info!("Ending tick {}: {:.3} CPU", tick, game::cpu::get_used());
 }
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn loop_with_params(memory: &mut GameMemory, game_state: &mut GameState, settings: &Settings) {
-
     /* let mut my_creeps: HashMap<String, MyCreep> = HashMap::new();
     let mut my_creep_names: Vec<String> = Vec::new();
 
     let mut my_rooms: HashMap<RoomName, MyRoom> = HashMap::new();
     let mut my_room_names: Vec<RoomName> = Vec::new(); */
 
-    game_state.update(memory);
+    game_state.tick_update(memory);
+    memory.tick_update(game_state, settings);
+    room_services::try_create_commune_states(game_state, memory);
 
-    construction_site_services::manage_sites(memory);
+    stat_services::tick_update(game_state, memory);
+
+    room_services::gc_commune_memories(game_state, memory);
+    my_creep_services::clean_creep_memories(game_state, memory);
+    room_services::try_scout_rooms(game_state, memory);
+
+    my_creep_services::organize_creeps(game_state, memory);
+
+    commune_services::try_active_safe_mode(game_state, memory);
+    construction_site_services::manage_sites(game_state, memory);
     global_request_services::manage_requests(game_state, memory);
     commune_services::run_towers(game_state, memory);
+
+    role_services::try_register_scout_targets(game_state, memory);
+    role_services::register_commune_harvest_strength(game_state, memory);
+
+    commune_services::run_spawning(game_state, memory);
+
+    role_services::try_scouts(game_state, memory);
+    role_services::try_harvest_commune_sources(game_state, memory);
+
+    my_creep_services::move_creeps(game_state, memory);
+
+    stat_services::try_write_stats(game_state, memory);
+
+    run_flags(game_state, memory);
+
+    memory.write(game_state);
 }

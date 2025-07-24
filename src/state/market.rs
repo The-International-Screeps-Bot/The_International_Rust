@@ -21,6 +21,11 @@ impl MarketState {
             ..Default::default()
         }
     }
+
+    pub fn tick_update(&mut self) {
+        self.my_orders = None;
+        self.all_orders = None;
+    }
 }
 
 pub type ResourceHistory = HashMap<MarketResourceType, HashMap<u32, u32>>;

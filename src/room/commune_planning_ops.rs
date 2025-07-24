@@ -1,9 +1,17 @@
-use screeps::RoomName;
+use std::collections::{HashMap, HashSet};
+
+use screeps::{HasPosition, Position, RoomName};
 
 use crate::{
     memory::game_memory::GameMemory,
+    pathfinding::{
+        pathfinding_services_multi::{self},
+        room_pather_multi::{self, PathGoals}, PathfindingOpts,
+    },
     state::{game::GameState, room::CommunePlan},
 };
+
+use super::room_ops;
 
 pub struct CommunePlanningOps;
 
@@ -42,61 +50,102 @@ pub enum CommunePlanResult {
 
 pub struct CommunePlanStampArgs {}
 
-impl CommunePlanningOps {
-    pub fn attempt_plan(
-        room_name: &RoomName,
-        game_state: &mut GameState,
-        memory: &mut GameMemory,
-    ) -> CommunePlanResult {
-        let room_state = game_state.room_states.get_mut(room_name).unwrap();
-        room_state.commune_plan = Some(CommunePlan::new());
+pub fn attempt_plan(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+) -> CommunePlanResult {
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    room_state.commune_plan = Some(CommunePlan::new());
 
-        if Self::try_config_planner(room_name, game_state, memory) == CommunePlanResult::Never {
-            return CommunePlanResult::Never;
+    if try_config_plan(room_name, game_state, memory) == CommunePlanResult::Never {
+        return CommunePlanResult::Never;
+    }
+
+    CommunePlanResult::Success
+}
+
+fn try_config_plan(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+) -> CommunePlanResult {
+    let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    let mut plan = CommunePlan::new();
+
+    if plan.fast_filler_start_positions.is_none() {
+        return CommunePlanResult::Success;
+    }
+
+    plan.terrain_map = [0; 50 * 50];
+
+    plan.fast_filler_start_positions = Some(find_fast_filler_start_positions(
+        room_name, game_state, memory,
+    ));
+
+    let Some(fast_filler_start_positions) = plan.fast_filler_start_positions else {
+        return CommunePlanResult::Never;
+    };
+
+    if fast_filler_start_positions.is_empty() {
+        return CommunePlanResult::Never;
+    }
+
+    CommunePlanResult::Success
+}
+
+fn find_fast_filler_start_positions(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+) -> Vec<Position> {
+    let mut start_positions = Vec::new();
+
+    let sources = room_ops::get_sources(room_name, game_state);
+    let mut shortest_path: Option<Vec<Position>> = None;
+    let controller_pos = room_ops::controller(room_name, game_state)
+        .as_ref()
+        .unwrap()
+        .pos();
+
+    for source in sources {
+        let source_pos = source.pos();
+
+        start_positions.push(source_pos);
+
+        if let Ok(path) =
+            pathfinding_services_multi::try_find_path(&source_pos, &PathGoals::new_from_pos(controller_pos, 1), PathfindingOpts::new(), game_state, memory)
+        {
+            let shortest_len = {
+                if let Some(shortest_path) = &shortest_path {
+                    shortest_path.len()
+                } else {
+                    usize::MAX
+                }
+            };
+
+            if path.len() < shortest_len {
+                shortest_path = Some(path);
+            }
         }
-
-        CommunePlanResult::Success
     }
 
-    fn try_config_planner(
-        room_name: &RoomName,
-        game_state: &mut GameState,
-        memory: &mut GameMemory,
-    ) -> CommunePlanResult {
-        let room_state = game_state.room_states.get_mut(room_name).unwrap();
-        let mut plan = CommunePlan::new();
+    // use chunker and select valid fastFiller for each chunk
 
-        if plan.fast_filler_start_positions.is_none() {
-            return CommunePlanResult::Success;
-        }
+    start_positions
+}
 
-        plan.terrain_map = [0; 50 * 50];
+fn try_config_current_plan(
+    room_name: &RoomName,
+    game_state: &mut GameState,
+    memory: &mut GameMemory,
+    plan: &mut CommunePlan,
+) {
 
-        Self::find_fast_filler_start_positions(room_name, game_state, memory);
+    // let room_state = game_state.room_states.get_mut(room_name).unwrap();
+    // let Some(commune_plan) = &room_state.commune_plan else {
+    //     return
+    // };
 
-        let Some(fast_filler_start_positions) = plan.fast_filler_start_positions else {
-            return CommunePlanResult::Never;
-        };
-
-        if fast_filler_start_positions.is_empty() {
-            return CommunePlanResult::Never;
-        }
-
-        CommunePlanResult::Success
-    }
-
-    fn find_fast_filler_start_positions(
-        room_name: &RoomName,
-        game_state: &mut GameState,
-        memory: &mut GameMemory,
-    ) {
-    }
-
-    fn try_config_plan(
-        room_name: &RoomName,
-        game_state: &mut GameState,
-        memory: &mut GameMemory,
-        plan: &mut CommunePlan,
-    ) {
-    }
+    // room_state.commune_plan = Some(CommunePlan::new());
 }

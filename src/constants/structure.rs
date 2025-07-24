@@ -1,7 +1,14 @@
 use std::collections::HashMap;
 
 use enum_map::Enum;
-use screeps::{StructureContainer, StructureController, StructureExtension, StructureExtractor, StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLab, StructureLink, StructureNuker, StructureObject, StructureObserver, StructurePortal, StructurePowerBank, StructurePowerSpawn, StructureRampart, StructureRoad, StructureSpawn, StructureStorage, StructureTerminal, StructureTower, StructureType, StructureWall};
+use log::error;
+use screeps::{
+    HasStore, StructureContainer, StructureController, StructureExtension, StructureExtractor,
+    StructureFactory, StructureInvaderCore, StructureKeeperLair, StructureLab, StructureLink,
+    StructureNuker, StructureObject, StructureObserver, StructurePortal, StructurePowerBank,
+    StructurePowerSpawn, StructureRampart, StructureRoad, StructureSpawn, StructureStorage,
+    StructureTerminal, StructureTower, StructureType, StructureWall,
+};
 
 pub type OldOrganizedStructures = HashMap<StructureType, Vec<StructureObject>>;
 
@@ -43,7 +50,7 @@ pub enum CustomStructureType {
 }
 
 impl CustomStructureType {
-    pub fn as_structure_type(self) -> StructureType {
+    pub fn as_structure_type(&self) -> StructureType {
         match self {
             Self::Spawn => StructureType::Spawn,
             Self::Extension => StructureType::Extension,
@@ -68,6 +75,33 @@ impl CustomStructureType {
             Self::InvaderCore => StructureType::InvaderCore,
         }
     }
+
+    pub fn from_structure_type(structure_type: StructureType) -> Self {
+        match structure_type {
+            StructureType::Spawn => Self::Spawn,
+            StructureType::Extension => Self::Extension,
+            StructureType::Road => Self::Road,
+            StructureType::Wall => Self::Wall,
+            StructureType::Rampart => Self::Rampart,
+            StructureType::KeeperLair => Self::KeeperLair,
+            StructureType::Portal => Self::Portal,
+            StructureType::Controller => Self::Controller,
+            StructureType::Link => Self::Link,
+            StructureType::Storage => Self::Storage,
+            StructureType::Tower => Self::Tower,
+            StructureType::Observer => Self::Observer,
+            StructureType::PowerBank => Self::PowerBank,
+            StructureType::PowerSpawn => Self::PowerSpawn,
+            StructureType::Extractor => Self::Extractor,
+            StructureType::Lab => Self::Lab,
+            StructureType::Terminal => Self::Terminal,
+            StructureType::Container => Self::Container,
+            StructureType::Nuker => Self::Nuker,
+            StructureType::Factory => Self::Factory,
+            StructureType::InvaderCore => Self::InvaderCore,
+            _ => panic!("Unknown structure type: {:?}", structure_type),
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -86,6 +120,9 @@ pub struct OrganizedStructures {
     pub lab: Vec<StructureLab>,
     pub container: Vec<StructureContainer>,
     pub invader_core: Vec<StructureInvaderCore>,
+    pub power_spawn: Vec<StructurePowerSpawn>,
+    pub factory: Vec<StructureFactory>,
+    pub nuker: Vec<StructureNuker>,
 }
 
 #[derive(Debug, Clone)]
@@ -101,4 +138,9 @@ impl SpawnsByActivity {
             inactive: Vec::new(),
         }
     }
+}
+
+pub enum SpawningStructure {
+    StructureSpawn,
+    StructureExtension,
 }

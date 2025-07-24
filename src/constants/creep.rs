@@ -1,19 +1,35 @@
+use core::panic;
 use std::collections::HashMap;
 
-use enum_map::{Enum, EnumMap};
-use screeps::{BodyPart, Creep, Part};
+use enum_map::{enum_map, Enum, EnumMap};
+use screeps::{BodyPart, Creep, Part, Position};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Enum, Debug)]
 pub enum CreepRole {
-    #[default]
+    // Commune
     SourceHarvester,
     Hauler,
     Upgrader,
     Builder,
-    Scout,
+    MineralHarvester,
     Repairer,
+    FastFill,
+    Hub,
+    // Remote
+    RemoteHauler,
+    RemoteSourceHarvester,
+    RemoteMineralHarvester,
+    RemoteReserver,
+    RemoteBuilder,
+    // Global
+    Scout,
+    Claimer,
+    Vanguard,
+    // Includes dismantlers, melee attackers, healers, ranged attackers (and defenders)
     Antifa,
+    Downgraders,
+    // Other
     Unknown,
 }
 
@@ -24,9 +40,23 @@ pub enum CreepOperationResult {
     Exception,
 }
 
-pub type CreepParts = Vec<Part>;
-pub type CreepPartsByType = HashMap<Part, u32>;
-pub type ActiveCreepPartsByType = HashMap<Part, u32>;
+pub type CreepParts = Vec<CreepPart>;
+pub type CreepPartsByType = EnumMap<CreepPart, u32>;
+
+thread_local! {
+    pub static CREEP_PARTS_BY_TYPE: CreepPartsByType = enum_map! {
+        CreepPart::Move => 0,
+        CreepPart::Work => 0,
+        CreepPart::Carry => 0,
+        CreepPart::Attack => 0,
+        CreepPart::RangedAttack => 0,
+        CreepPart::Tough => 0,
+        CreepPart::Heal => 0,
+        CreepPart::Claim => 0,
+    };
+}
+
+pub type ActiveCreepPartsByType = HashMap<CreepPart, u32>;
 
 #[derive(Debug, Enum, Copy, Clone)]
 pub enum CreepPart {
@@ -53,6 +83,77 @@ impl CreepPart {
             Self::Claim => 600,
         }
     }
+
+    pub const fn to_part(&self) -> Part {
+        match self {
+            Self::Move => Part::Move,
+            Self::Work => Part::Work,
+            Self::Carry => Part::Carry,
+            Self::Attack => Part::Attack,
+            Self::RangedAttack => Part::RangedAttack,
+            Self::Tough => Part::Tough,
+            Self::Heal => Part::Heal,
+            Self::Claim => Part::Claim,
+        }
+    }
+
+    pub fn from_part(part: &Part) -> CreepPart {
+        match part {
+            Part::Move => CreepPart::Move,
+            Part::Work => CreepPart::Work,
+            Part::Carry => CreepPart::Carry,
+            Part::Attack => CreepPart::Attack,
+            Part::RangedAttack => CreepPart::RangedAttack,
+            Part::Tough => CreepPart::Tough,
+            Part::Heal => CreepPart::Heal,
+            Part::Claim => CreepPart::Claim,
+            _ => panic!("Unknown part: {:?}", part),
+        }
+    }
 }
 
 pub type BodypartCounts = EnumMap<CreepPart, u32>;
+
+#[derive(Debug, Enum, Copy, Clone, Eq, PartialEq)]
+pub enum PriorityCreepPart {
+    Tough,
+    Claim,
+    Attack,
+    RangedAttack,
+    SecondaryTough,
+    Work,
+    Carry,
+    Move,
+    SecondaryAttack,
+    Heal,
+}
+
+pub const PARTS_BY_PRIORITY: [PriorityCreepPart; 10] = [
+    PriorityCreepPart::Tough,
+    PriorityCreepPart::Claim,
+    PriorityCreepPart::Attack,
+    PriorityCreepPart::RangedAttack,
+    PriorityCreepPart::SecondaryTough,
+    PriorityCreepPart::Work,
+    PriorityCreepPart::Carry,
+    PriorityCreepPart::Move,
+    PriorityCreepPart::SecondaryAttack,
+    PriorityCreepPart::Heal,
+];
+
+thread_local! {
+    pub static PARTS_BY_PRIORITY_PART: EnumMap<PriorityCreepPart, CreepPart> = enum_map! {
+        PriorityCreepPart::Tough => CreepPart::Tough,
+        PriorityCreepPart::Claim => CreepPart::Claim,
+        PriorityCreepPart::Attack => CreepPart::Attack,
+        PriorityCreepPart::RangedAttack => CreepPart::RangedAttack,
+        PriorityCreepPart::SecondaryTough => CreepPart::Tough,
+        PriorityCreepPart::Work => CreepPart::Work,
+        PriorityCreepPart::Carry => CreepPart::Carry,
+        PriorityCreepPart::Move => CreepPart::Move,
+        PriorityCreepPart::SecondaryAttack => CreepPart::Attack,
+        PriorityCreepPart::Heal => CreepPart::Heal,
+    };
+}
+
+pub type MoveTargets = HashMap<Position, String>;

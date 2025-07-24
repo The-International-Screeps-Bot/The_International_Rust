@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::constants::creep::CreepRole;
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct StatsMemory {
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct StatsSegment {
     pub total_creeps: u32,
     pub alive_power_creeps: u32,
     pub power_creep_count: u32,
@@ -16,13 +16,15 @@ pub struct StatsMemory {
     pub gcl_total: u64,
     pub gpl_progress: u64,
     pub gpl_total: u64,
-    pub remotes: HashMap<RoomName, RemoteStatsMemory>,
-    pub communes: HashMap<RoomName, CommuneStatsMemory>,
+    pub remotes: HashMap<RoomName, RemoteSegmentStats>,
+    pub communes: HashMap<RoomName, CommuneSegmentStats>,
     pub cpu_used: u32,
     pub game_time: u32,
+    pub energy_harvested: u32,
+    pub intents: u32,
 }
 
-impl StatsMemory {
+impl StatsSegment {
     pub fn new() -> Self {
         Self {
             ..Default::default()
@@ -30,12 +32,12 @@ impl StatsMemory {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct RemoteStatsMemory {
-
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RemoteSegmentStats {
+    pub energy_in_harvest: u32,
 }
 
-impl RemoteStatsMemory {
+impl RemoteSegmentStats {
     pub fn new() -> Self {
         Self {
             ..Default::default()
@@ -43,8 +45,8 @@ impl RemoteStatsMemory {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct CommuneStatsMemory {
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct CommuneSegmentStats {
     pub creeps: u32,
     pub creeps_from_room: u32,
     pub power_creeps: u32,
@@ -65,7 +67,7 @@ pub struct CommuneStatsMemory {
     pub spawn_usage_percent: u32,
 }
 
-impl CommuneStatsMemory {
+impl CommuneSegmentStats {
     pub fn new() -> Self {
         Self {
             ..Default::default()

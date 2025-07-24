@@ -7,10 +7,29 @@ use crate::{
 
 use super::room_ops;
 
-pub fn move_creeps(game_state: &mut GameState, memory: &mut GameMemory) {
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+pub fn try_scout_rooms(game_state: &mut GameState, memory: &mut GameMemory) {
     let room_names: Vec<RoomName> = game_state.rooms.keys().cloned().collect();
     for room_name in &room_names {
-        room_ops::move_creeps(room_name, game_state, memory);
+        room_ops::try_scout_room(room_name, game_state, memory);
+    }
+}
+
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+pub fn try_create_commune_states(game_state: &mut GameState, memory: &mut GameMemory) {
+    let room_names: Vec<RoomName> = game_state.communes.iter().cloned().collect();
+    for room_name in &room_names {
+        room_ops::try_create_commune_state(room_name, game_state, memory);
+    }
+}
+
+#[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
+pub fn gc_commune_memories(game_state: &GameState, memory: &mut GameMemory) {
+    let room_names: Vec<RoomName> = memory.communes.keys().cloned().collect();
+    for room_name in room_names {
+        if !game_state.rooms.contains_key(&room_name) {
+            memory.communes.remove(&room_name);
+        }
     }
 }
 

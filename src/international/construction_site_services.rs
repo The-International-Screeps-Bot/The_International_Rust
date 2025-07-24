@@ -5,7 +5,8 @@ use screeps::{game, ConstructionSite, MaybeHasId, ObjectId};
 use crate::{
     constants::general::{CONSTRUCTION_PROGRESS_AGE_MULTIPLIER, MIN_CONSTRUCTION_SITE_AGE},
     memory::game_memory::GameMemory,
-    utils::general::GeneralUtils,
+    state::game::GameState,
+    utils::{self, general::GeneralUtils},
 };
 
 /// Register new construction sites,
@@ -13,11 +14,13 @@ use crate::{
 /// delete and remove sites that are too old
 /// increment the age of remaining sites
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
-pub fn manage_sites(memory: &mut GameMemory) {
+pub fn manage_sites(game_state: &mut GameState, memory: &mut GameMemory) {
     // only run the following logic every so often
 
-    let interval = 100;
-    if !GeneralUtils::is_tick_interval(interval) {
+    if !utils::general::is_tick_interval(
+        game_state.tick,
+        game_state.intervals.construction_sites_update,
+    ) {
         return;
     }
 
@@ -55,7 +58,7 @@ pub fn manage_sites(memory: &mut GameMemory) {
 
     for (id, age) in &mut memory.construction_sites {
         // times inveral because we only run the code every interval, but we cant to track how many ticks have passed
-        *age += interval;
+        *age += game_state.intervals.construction_sites_update;
     }
 }
 
